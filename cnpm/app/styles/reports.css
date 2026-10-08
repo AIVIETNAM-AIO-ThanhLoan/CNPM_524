@@ -1,0 +1,214 @@
+/* Thanh chọn Tuần / Tháng nằm trên cùng */
+.reports-header {
+  padding: 16px;
+}
+
+.reports-header .segmented {
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+/* Kỳ báo cáo: mũi tên trước/sau và khoảng thời gian */
+.period-box {
+  margin: 8px 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 8px;
+  border-radius: 10px;
+  background-color: var(--color-petal);
+}
+
+.period-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: var(--color-wine);
+  cursor: pointer;
+}
+
+.period-center {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.period-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-wine);
+}
+
+.period-range {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+/* Hai ô Chi tiêu và Thu: nhãn bên trái, số tiền bên phải */
+.stat-pair {
+  margin: 16px 16px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-card,
+.stat-full {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  background-color: #ffffff;
+}
+
+.stat-card .stat-label,
+.stat-full .stat-label {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-wine);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.stat-amount {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.stat-full {
+  margin: 12px 16px 0;
+}
+
+/* Tab Chi tiêu / Thu nhập */
+.type-tabs {
+  margin: 20px 16px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.type-tab {
+  padding: 10px 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.type-tab.active {
+  border-bottom-color: var(--color-burgundy);
+  color: var(--color-burgundy);
+  font-weight: 600;
+}
+
+/* Biểu đồ tròn */
+.donut-wrap {
+  margin: 24px 0 0;
+  display: flex;
+  justify-content: center;
+}
+
+.donut {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+}
+
+.donut-hole {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  text-align: center;
+}
+
+.donut-label {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.donut-total {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-wine);
+}
+
+/* Danh sách danh mục: icon có màu, không nền */
+.category-list {
+  margin: 16px 16px 0;
+}
+
+.category-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.category-row:last-child {
+  border-bottom: none;
+}
+
+.category-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-icon {
+  width: 24px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.category-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-wine);
+}
+
+.category-amount-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.category-amount {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.category-percent {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.category-chevron {
+  flex-shrink: 0;
+  color: var(--color-muted);
+}

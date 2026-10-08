@@ -1,0 +1,12 @@
+# File thừa ở root, giữ trên máy nhưng không đưa lên git
+/node_modules/
+/package.json
+/package-lock.json
+
+# macOS
+.DS_Store
+
+# Cache và file sinh tự động
+*.tsbuildinfo
+next-env.d.ts
+.next/
