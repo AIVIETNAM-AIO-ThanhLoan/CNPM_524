@@ -23,3 +23,21 @@
 ## Trạng thái
 
 Dự án đang ở giai đoạn phân tích và thiết kế. Công nghệ và hướng dẫn cài đặt sẽ được cập nhật khi nhóm chốt phương án triển khai.
+
+## Chạy ứng dụng (frontend)
+
+Ứng dụng Next.js (App Router) nằm ngay ở thư mục gốc của repo.
+
+```bash
+npm install
+npm run dev
+```
+
+Mở [http://localhost:3000](http://localhost:3000).
+
+Scripts:
+
+- `npm run dev`: chạy môi trường phát triển
+- `npm run build`: build production
+- `npm run start`: chạy bản build
+- `npm run lint`: kiểm tra ESLint
