@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Lock, Phone, Wallet } from 'lucide-react';
 import GoogleIcon from '../components/GoogleIcon';
+import { requestJson } from '../lib/client-api';
 import '../styles/auth.css';
 
 export default function LoginPage() {
@@ -13,16 +14,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  // TODO: thay bằng gọi API đăng nhập thật. Hiện chỉ kiểm tra có nhập đủ thông tin.
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!account.trim() || !password) {
       setErrorMsg('Vui lòng nhập số điện thoại/email và mật khẩu.');
       return;
     }
     setErrorMsg('');
-    router.push('/profile');
+    setBusy(true);
+    try {
+      await requestJson('/api/auth/login', { account, password });
+      router.push('/profile');
+      router.refresh();
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : 'Đăng nhập thất bại.');
+    } finally { setBusy(false); }
   };
 
   return (
@@ -65,22 +74,20 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <Link href="/forgot-password" className="auth-forgot">
-            Quên mật khẩu?
-          </Link>
+          <p className="auth-forgot">Khôi phục mật khẩu chưa được hỗ trợ.</p>
 
           {errorMsg && <div className="auth-error">{errorMsg}</div>}
 
-          <button type="submit" className="auth-submit">
-            Đăng nhập
+          <button type="submit" className="auth-submit" disabled={busy}>
+            {busy ? 'Đang đăng nhập…' : 'Đăng nhập'}
           </button>
         </form>
 
         <div className="auth-divider">hoặc</div>
 
-        <button type="button" className="auth-google">
+        <button type="button" className="auth-google" disabled title="Chưa cấu hình đăng nhập Google">
           <GoogleIcon />
-          Đăng nhập với Google
+          Google (sắp có)
         </button>
 
         <p className="auth-footer">

@@ -1,0 +1,11 @@
+.ledger-page { gap: 16px; padding-left: 16px; padding-right: 16px; }
+.ledger-page .page-header { padding-left: 0; padding-right: 0; }
+.ledger-form { display: flex; flex-direction: column; gap: 16px; }
+.ledger-form label { display: flex; flex-direction: column; gap: 6px; font-weight: 500; }
+.ledger-form input, .ledger-form select { width: 100%; padding: 12px; border: 1px solid var(--color-line); background: white; border-radius: 8px; color: var(--color-ink); }
+.ledger-form p { font-size: 13px; color: var(--color-muted); }
+.ledger-error { color: var(--color-danger); padding: 12px 16px; }
+.data-status { padding: 12px 16px; color: var(--color-muted); }
+button:disabled { opacity: 0.55; cursor: wait; }
+details summary { cursor: pointer; }
+details[open] summary { margin-bottom: 16px; }

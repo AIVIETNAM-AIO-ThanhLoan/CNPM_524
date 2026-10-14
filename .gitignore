@@ -4,12 +4,15 @@
 # Dependencies và build
 /node_modules/
 /.next/
+/.next-test-*/
+/.tsconfig-test-*.json
 /out/
 /build/
 /coverage
 
 # Biến môi trường
 .env*
+!.env.example
 
 # TypeScript và Next.js tự sinh
 *.tsbuildinfo
