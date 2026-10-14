@@ -5,25 +5,36 @@
 
 .header-top {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
 }
 
-.greeting {
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--color-wine);
-}
-
+/* Thẻ tổng quan nền đậm, nổi bật nhất trên trang */
 .summary-card {
   margin: 16px 16px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--color-rose) 0%, #c9607a 100%);
+  box-shadow: 0 8px 20px rgba(181, 72, 92, 0.25);
+  color: #ffffff;
+}
+
+.summary-card .segmented-btn {
+  background-color: #7a1f35;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.summary-card .segmented-btn.active {
+  background-color: #9a2a45;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 2px #ffffff;
 }
 
 .summary-card .card-title {
   margin: 16px 0;
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-wine);
+  color: #ffffff;
 }
 
 .stats-row {
@@ -37,20 +48,31 @@
   text-align: center;
 }
 
+.stat-item .stat-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
 .stat-value {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
-}
-
-.stat-value.remaining {
-  color: var(--color-wine);
+  color: #ffffff;
 }
 
 .budget-section {
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .budget-info {
@@ -58,26 +80,26 @@
   justify-content: space-between;
   margin-bottom: 8px;
   font-size: 13px;
-  color: var(--color-muted);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .budget-percent {
-  font-weight: 600;
-  color: var(--color-wine);
+  font-weight: 700;
+  color: #ffffff;
 }
 
 .progress-bar {
   width: 100%;
-  height: 6px;
-  background-color: var(--color-line);
-  border-radius: 3px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background-color: var(--color-rose);
-  border-radius: 3px;
+  background: linear-gradient(90deg, #f2b134 0%, #f28c28 100%);
+  border-radius: 4px;
 }
 
 .action-buttons {
@@ -103,8 +125,9 @@
   gap: 8px;
   padding: 20px 12px;
   border: none;
-  border-radius: 12px;
-  background-color: var(--color-petal);
+  border-radius: 14px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(74, 14, 28, 0.08);
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -114,18 +137,56 @@
 }
 
 .suggestion-icon {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background-color: var(--color-blush);
-  color: var(--color-wine);
+  border-radius: 14px;
 }
 
 .suggestion-text {
   font-size: 12px;
-  font-weight: 500;
-  color: var(--color-muted);
+  font-weight: 600;
+  color: var(--color-wine);
+}
+
+/* Điều hướng ngày trong thẻ tổng quan */
+.period-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 8px;
+  border-radius: 12px;
+  background-color: #7a1f35;
+}
+
+.period-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.period-nav-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.day-empty {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: center;
 }
