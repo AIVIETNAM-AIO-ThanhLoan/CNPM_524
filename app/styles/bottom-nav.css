@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 6px 8px 12px;
+  padding: 6px 8px calc(12px + env(safe-area-inset-bottom));
   background-color: #ffffff;
   border-top: 1px solid var(--color-line);
   box-shadow: 0 -2px 8px rgba(74, 14, 28, 0.06);
@@ -33,7 +33,7 @@
 
 .nav-item:hover,
 .nav-item.nav-active {
-  color: var(--color-burgundy);
+  color: var(--color-brand);
 }
 
 .nav-qr {
@@ -46,8 +46,17 @@
   justify-content: center;
   border: none;
   border-radius: 16px;
-  background-color: var(--color-wine);
+  background: linear-gradient(135deg, #0b5cad 0%, #3c98e6 100%);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(74, 14, 28, 0.25);
+  box-shadow: 0 6px 16px rgba(60, 152, 230, 0.4);
   cursor: pointer;
+}
+
+/* Chấm nhỏ dưới icon đang chọn */
+.nav-item.nav-active::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--color-brand);
 }

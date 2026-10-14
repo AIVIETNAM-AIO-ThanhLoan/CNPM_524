@@ -25,7 +25,7 @@
   outline: none;
   background: transparent;
   font-size: 15px;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 .search-input::placeholder {
@@ -40,7 +40,7 @@
   margin-bottom: 12px;
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 .summary-pair {
@@ -70,10 +70,10 @@
   margin-bottom: 8px;
   padding: 8px 12px;
   border-radius: 8px;
-  background-color: var(--color-petal);
+  background-color: var(--color-haze);
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 .tx-list {
@@ -109,14 +109,14 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background-color: var(--color-blush);
-  color: var(--color-wine);
+  background-color: var(--color-frost);
+  color: var(--color-ink);
 }
 
 .tx-title {
   font-size: 15px;
   font-weight: 500;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 .tx-time {
@@ -149,14 +149,14 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background-color: var(--color-blush);
-  color: var(--color-wine);
+  background-color: var(--color-frost);
+  color: var(--color-ink);
 }
 
 .empty-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 .empty-text {

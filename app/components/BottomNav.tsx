@@ -6,7 +6,7 @@ import { ChartColumn, CircleUserRound, House, QrCode, ReceiptText } from 'lucide
 import '../styles/bottom-nav.css';
 
 const navItems = [
-  { href: '/', label: 'Ứng dụng', Icon: House },
+  { href: '/', label: 'Trang chủ', Icon: House },
   { href: '/reports', label: 'Báo cáo', Icon: ChartColumn },
   { href: '/history', label: 'Lịch sử', Icon: ReceiptText },
   { href: '/profile', label: 'Tôi', Icon: CircleUserRound },

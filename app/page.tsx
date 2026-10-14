@@ -1,21 +1,29 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowRightLeft, Bell, ChevronLeft, ChevronRight, Coins, Plus, QrCode, Users } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowRightLeft,
+  ArrowUp,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  MessageCircle,
+  Plus,
+  QrCode,
+  Search,
+  BellRing,
+} from 'lucide-react';
 import BottomNav from './components/BottomNav';
-import { colorAt } from './lib/colors';
+import { BUDGET_ON_BRAND, ON_BRAND, PALETTE } from './lib/colors';
 import './styles/home.css';
 
-const suggestions = [
-  { Icon: ArrowRightLeft, label: 'Quy đổi tiền tệ' },
-  { Icon: Coins, label: 'Giá vàng' },
-  { Icon: Users, label: 'Chia tiền nhóm' },
+// Đề xuất: mỗi chức năng một màu có nghĩa. Giá vàng dùng chữ "Au" đúng màu vàng
+const suggestions: { label: string; color: string; Icon?: typeof BellRing; mark?: string }[] = [
+  { Icon: ArrowRightLeft, label: 'Quy đổi tiền tệ', color: PALETTE.teal },
+  { mark: 'Au', label: 'Giá vàng', color: PALETTE.gold },
+  { Icon: BellRing, label: 'Lời nhắc', color: PALETTE.indigo },
 ];
-
-// Màu đánh dấu từng chỉ số, lấy từ bảng màu danh mục
-const INCOME_DOT = colorAt(3).bg; // xanh lá
-const EXPENSE_DOT = colorAt(0).bg; // đỏ cam
-const REMAINING_DOT = colorAt(2).bg; // vàng
 
 const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
@@ -30,6 +38,9 @@ const dayRecords: Record<string, { income: number; expense: number }> = {
   '2026-10-13': { income: 0, expense: 350000 },
 };
 
+// TODO: số thông báo chưa đọc lấy từ database. Hiện là số mẫu.
+const UNREAD_NOTIFICATIONS = 3;
+
 const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 const pad = (n: number) => String(n).padStart(2, '0');
 const monthKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
@@ -37,6 +48,10 @@ const dayKey = (d: Date) => `${monthKey(d)}-${pad(d.getDate())}`;
 const monthLabel = (d: Date) => `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
 const dayLabel = (d: Date) =>
   `${WEEKDAYS[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+
+// Ngân sách: xanh khi dưới 70%, vàng từ 70% đến 90%, đỏ khi vượt 90%
+const budgetColor = (percent: number) =>
+  percent > 90 ? BUDGET_ON_BRAND.alert : percent > 70 ? BUDGET_ON_BRAND.warning : BUDGET_ON_BRAND.ok;
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<'month' | 'day'>('month');
@@ -59,25 +74,36 @@ export default function Home() {
     <div className="app-page">
       <header className="home-header">
         <div className="header-top">
+          <label className="home-search">
+            <Search size={18} strokeWidth={1.8} />
+            <input type="text" placeholder="Tìm kiếm giao dịch" aria-label="Tìm kiếm giao dịch" />
+          </label>
           <button type="button" className="icon-btn" aria-label="Thông báo">
             <Bell size={22} strokeWidth={1.8} />
+            {UNREAD_NOTIFICATIONS > 0 && (
+              <span className="notif-badge">{UNREAD_NOTIFICATIONS}</span>
+            )}
+          </button>
+          <button type="button" className="icon-btn" aria-label="Tin nhắn">
+            <MessageCircle size={22} strokeWidth={1.8} />
           </button>
         </div>
       </header>
 
-      {/* Thẻ tổng quan thu chi */}
+      {/* Thẻ tổng quan thu chi: nền maroon, chữ trắng */}
       <section className="card summary-card">
-        <div className="segmented">
+        <div className="home-segmented">
+          <span className={`home-segmented-thumb ${isMonth ? '' : 'is-right'}`} />
           <button
             type="button"
-            className={`segmented-btn ${isMonth ? 'active' : ''}`}
+            className={`home-segmented-btn ${isMonth ? 'active' : ''}`}
             onClick={() => setViewMode('month')}
           >
             Tháng
           </button>
           <button
             type="button"
-            className={`segmented-btn ${!isMonth ? 'active' : ''}`}
+            className={`home-segmented-btn ${!isMonth ? 'active' : ''}`}
             onClick={() => setViewMode('day')}
           >
             Ngày
@@ -91,7 +117,7 @@ export default function Home() {
             aria-label={isMonth ? 'Tháng trước' : 'Ngày trước'}
             onClick={() => (isMonth ? shiftMonth(-1) : shiftDay(-1))}
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
           </button>
           <span className="period-nav-label">{isMonth ? monthLabel(month) : dayLabel(day)}</span>
           <button
@@ -100,31 +126,32 @@ export default function Home() {
             aria-label={isMonth ? 'Tháng sau' : 'Ngày sau'}
             onClick={() => (isMonth ? shiftMonth(1) : shiftDay(1))}
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={18} />
           </button>
         </div>
 
         <div className="stats-row">
           <div className="stat-item">
             <span className="stat-label">
-              <span className="stat-dot" style={{ backgroundColor: INCOME_DOT }} />
+              <ArrowDown size={14} strokeWidth={2} style={{ color: ON_BRAND.income }} />
               Thu
             </span>
-            <p className="stat-value">{formatMoney(totals.income)}</p>
+            <p className="stat-value" style={{ color: ON_BRAND.income }}>
+              {formatMoney(totals.income)}
+            </p>
           </div>
           <div className="stat-item">
             <span className="stat-label">
-              <span className="stat-dot" style={{ backgroundColor: EXPENSE_DOT }} />
+              <ArrowUp size={14} strokeWidth={2} style={{ color: ON_BRAND.expense }} />
               Chi
             </span>
-            <p className="stat-value">{formatMoney(totals.expense)}</p>
+            <p className="stat-value" style={{ color: ON_BRAND.expense }}>
+              {formatMoney(totals.expense)}
+            </p>
           </div>
           <div className="stat-item">
-            <span className="stat-label">
-              <span className="stat-dot" style={{ backgroundColor: REMAINING_DOT }} />
-              Còn lại
-            </span>
-            <p className="stat-value">{formatMoney(remaining)}</p>
+            <span className="stat-label">Còn lại</span>
+            <p className="stat-value stat-main">{formatMoney(remaining)}</p>
           </div>
         </div>
 
@@ -132,10 +159,18 @@ export default function Home() {
           <div className="budget-section">
             <div className="budget-info">
               <span>Ngân sách</span>
-              <span className="budget-percent">{totals.budget}%</span>
+              <span className="budget-percent" style={{ color: budgetColor(totals.budget) }}>
+                {totals.budget}%
+              </span>
             </div>
             <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${totals.budget}%` }} />
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${totals.budget}%`,
+                  backgroundColor: budgetColor(totals.budget),
+                }}
+              />
             </div>
           </div>
         ) : (
@@ -161,20 +196,21 @@ export default function Home() {
       <section className="suggestions-section">
         <h3 className="section-title">Đề xuất</h3>
         <div className="suggestion-grid">
-          {suggestions.map(({ Icon, label }, i) => {
-            const color = colorAt(i + 4);
-            return (
-              <button key={label} type="button" className="suggestion-card">
-                <span
-                  className="suggestion-icon"
-                  style={{ backgroundColor: color.bg, color: color.fg }}
-                >
+          {suggestions.map(({ Icon, mark, label, color }) => (
+            <button key={label} type="button" className="suggestion-card">
+              <span
+                className="suggestion-icon"
+                style={{ backgroundColor: `${color}24`, color }}
+              >
+                {Icon ? (
                   <Icon size={22} strokeWidth={1.8} />
-                </span>
-                <span className="suggestion-text">{label}</span>
-              </button>
-            );
-          })}
+                ) : (
+                  <span className="suggestion-mark">{mark}</span>
+                )}
+              </span>
+              <span className="suggestion-text">{label}</span>
+            </button>
+          ))}
         </div>
       </section>
 

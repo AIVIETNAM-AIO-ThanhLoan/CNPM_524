@@ -16,7 +16,7 @@
   justify-content: space-between;
   padding: 10px 8px;
   border-radius: 10px;
-  background-color: var(--color-petal);
+  background-color: var(--color-haze);
 }
 
 .period-btn {
@@ -27,7 +27,7 @@
   height: 32px;
   border: none;
   background: none;
-  color: var(--color-wine);
+  color: var(--color-ink);
   cursor: pointer;
 }
 
@@ -40,7 +40,7 @@
 .period-text {
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 .period-range {
@@ -72,7 +72,7 @@
 .stat-full .stat-label {
   margin: 0;
   font-size: 14px;
-  color: var(--color-wine);
+  color: var(--color-ink);
   text-transform: none;
   letter-spacing: 0;
 }
@@ -107,8 +107,8 @@
 }
 
 .type-tab.active {
-  border-bottom-color: var(--color-burgundy);
-  color: var(--color-burgundy);
+  border-bottom-color: var(--color-brand);
+  color: var(--color-brand);
   font-weight: 600;
 }
 
@@ -150,7 +150,7 @@
 .donut-total {
   font-size: 14px;
   font-weight: 700;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 /* Danh sách danh mục: icon có màu, không nền */
@@ -191,7 +191,7 @@
 .category-name {
   font-size: 15px;
   font-weight: 500;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 .category-amount-group {
@@ -218,13 +218,13 @@
 
 /* Ô Chi tiêu và Thu: đậm và nhạt để phân biệt ngay */
 .stat-card.stat-expense {
-  border-color: var(--color-burgundy);
-  background-color: var(--color-burgundy);
+  border-color: var(--color-brand);
+  background-color: var(--color-brand);
 }
 
 .stat-card.stat-income {
-  border-color: var(--color-blush);
-  background-color: var(--color-blush);
+  border-color: var(--color-frost);
+  background-color: var(--color-frost);
 }
 
 .stat-expense .stat-label,
@@ -234,5 +234,5 @@
 
 .stat-income .stat-label,
 .stat-income .stat-amount {
-  color: var(--color-wine);
+  color: var(--color-ink);
 }

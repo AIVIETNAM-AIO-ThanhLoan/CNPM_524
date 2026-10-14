@@ -1,46 +1,183 @@
 .home-header {
-  padding: 20px 16px 10px;
+  padding: 16px 16px 10px;
   background-color: #ffffff;
 }
 
 .header-top {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
+  gap: 4px;
 }
 
-/* Thẻ tổng quan nền đậm, nổi bật nhất trên trang */
-.summary-card {
-  margin: 16px 16px 0;
-  padding: 20px;
-  background: linear-gradient(135deg, var(--color-rose) 0%, #c9607a 100%);
-  box-shadow: 0 8px 20px rgba(181, 72, 92, 0.25);
-  color: #ffffff;
+/* Ô tìm kiếm: nền trắng, viền rõ, icon và chữ gợi ý đủ tương phản */
+.home-search {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  margin-right: 4px;
+  padding: 0 12px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background-color: #ffffff;
+  color: var(--color-brand);
 }
 
-.summary-card .segmented-btn {
-  background-color: #7a1f35;
+.home-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--color-ink);
+}
+
+.home-search input::placeholder {
+  color: #5c4a50;
+}
+
+/* Chuông thông báo có badge số chưa đọc */
+.header-top .icon-btn {
+  position: relative;
+}
+
+.notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 2px solid #ffffff;
+  background-color: #e4572e;
   color: #ffffff;
+  font-size: 10px;
   font-weight: 700;
 }
 
-.summary-card .segmented-btn.active {
-  background-color: #9a2a45;
+/* Thẻ tổng quan: nền maroon đậm, chữ trắng */
+.summary-card {
+  position: relative;
+  overflow: hidden;
+  margin: 16px 16px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #0b5cad 0%, #3c98e6 100%);
+  box-shadow: 0 8px 20px rgba(11, 92, 173, 0.3);
   color: #ffffff;
-  box-shadow: inset 0 0 0 2px #ffffff;
 }
 
-.summary-card .card-title {
-  margin: 16px 0;
-  font-size: 16px;
+/* Hai vòng tròn trắng mờ ở góc tạo chiều sâu */
+.summary-card::before,
+.summary-card::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+.summary-card::before {
+  width: 220px;
+  height: 220px;
+  top: -110px;
+  right: -70px;
+}
+
+.summary-card::after {
+  width: 140px;
+  height: 140px;
+  bottom: -70px;
+  left: -40px;
+}
+
+/* Segmented control trên nền maroon: mục đang chọn nền trắng, chữ maroon, có hiệu ứng trượt */
+.home-segmented {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.home-segmented-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 9px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: transform 0.25s ease;
+}
+
+.home-segmented-thumb.is-right {
+  transform: translateX(calc(100% + 4px));
+}
+
+.home-segmented-btn {
+  position: relative;
+  z-index: 1;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+
+.home-segmented-btn.active {
+  color: var(--color-brand);
+}
+
+/* Điều hướng tháng/ngày: gọn, không nền */
+.period-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 6px;
+  border-radius: 14px;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.period-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
   color: #ffffff;
+  cursor: pointer;
+}
+
+.period-nav-label {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #ffffff;
+  text-align: center;
 }
 
 .stats-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+  margin-top: 16px;
   margin-bottom: 20px;
 }
 
@@ -52,25 +189,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   color: rgba(255, 255, 255, 0.75);
-}
-
-.stat-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
 }
 
 .stat-value {
   margin: 0;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   color: #ffffff;
 }
 
+/* Số dư chính: trắng và to nhất */
+.stat-value.stat-main {
+  font-size: 22px;
+  font-weight: 700;
+}
+
 .budget-section {
-  margin-top: 20px;
+  margin-top: 4px;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -85,7 +222,6 @@
 
 .budget-percent {
   font-weight: 700;
-  color: #ffffff;
 }
 
 .progress-bar {
@@ -98,14 +234,32 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #f2b134 0%, #f28c28 100%);
   border-radius: 4px;
+}
+
+.day-empty {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: center;
 }
 
 .action-buttons {
   display: flex;
   gap: 12px;
   margin: 20px 16px 0;
+}
+
+.action-buttons .btn-primary {
+  background-color: #073e7a;
+}
+
+.action-buttons .btn-secondary {
+  background-color: transparent;
+  border-color: #0b5cad;
+  color: #0b5cad;
 }
 
 .suggestions-section {
@@ -136,6 +290,7 @@
   transform: translateY(-2px);
 }
 
+/* Icon đề xuất: nền và icon cùng một màu có nghĩa, màu nền nhạt được gán inline */
 .suggestion-icon {
   width: 48px;
   height: 48px;
@@ -145,48 +300,14 @@
   border-radius: 14px;
 }
 
+.suggestion-mark {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
 .suggestion-text {
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-wine);
-}
-
-/* Điều hướng ngày trong thẻ tổng quan */
-.period-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 16px 0 0;
-  padding: 8px;
-  border-radius: 12px;
-  background-color: #7a1f35;
-}
-
-.period-nav-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: #ffffff;
-  cursor: pointer;
-}
-
-.period-nav-label {
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.day-empty {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
-  text-align: center;
+  color: var(--color-ink);
 }
