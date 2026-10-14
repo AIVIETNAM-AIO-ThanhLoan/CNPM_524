@@ -179,10 +179,13 @@
 }
 
 .category-icon {
-  width: 24px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
+  border-radius: 50%;
 }
 
 .category-name {
@@ -211,4 +214,25 @@
 .category-chevron {
   flex-shrink: 0;
   color: var(--color-muted);
+}
+
+/* Ô Chi tiêu và Thu: đậm và nhạt để phân biệt ngay */
+.stat-card.stat-expense {
+  border-color: var(--color-burgundy);
+  background-color: var(--color-burgundy);
+}
+
+.stat-card.stat-income {
+  border-color: var(--color-blush);
+  background-color: var(--color-blush);
+}
+
+.stat-expense .stat-label,
+.stat-expense .stat-amount {
+  color: #ffffff;
+}
+
+.stat-income .stat-label,
+.stat-income .stat-amount {
+  color: var(--color-wine);
 }

@@ -13,6 +13,7 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
+import { colorAt } from '../lib/colors';
 import '../styles/reports.css';
 
 type Category = { name: string; amount: number; Icon: typeof Gift };
@@ -55,15 +56,6 @@ const weekPeriod: Period = {
   ],
 };
 
-// Màu các phần biểu đồ và icon, chỉ lấy từ bảng màu burgundy; lặp lại khi hết màu
-const CHART_COLORS = [
-  'var(--color-wine)',
-  'var(--color-burgundy)',
-  'var(--color-rose)',
-  'var(--color-rose-soft)',
-  'var(--color-blush)',
-];
-
 const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 const sumOf = (items: Category[]) => items.reduce((sum, item) => sum + item.amount, 0);
 
@@ -89,7 +81,7 @@ export default function Reports() {
           .map((item, i) => {
             const from = start;
             start += (item.amount / total) * 100;
-            return `${CHART_COLORS[i % CHART_COLORS.length]} ${from}% ${start}%`;
+            return `${colorAt(i).bg} ${from}% ${start}%`;
           })
           .join(', ')})`;
 
@@ -128,13 +120,13 @@ export default function Reports() {
       </div>
 
       <div className="stat-pair">
-        <div className="stat-card">
+        <div className="stat-card stat-expense">
           <span className="stat-label">Chi tiêu</span>
-          <span className="stat-amount text-expense">-{formatMoney(totalExpense)}</span>
+          <span className="stat-amount">-{formatMoney(totalExpense)}</span>
         </div>
-        <div className="stat-card">
+        <div className="stat-card stat-income">
           <span className="stat-label">Thu</span>
-          <span className="stat-amount text-income">+{formatMoney(totalIncome)}</span>
+          <span className="stat-amount">+{formatMoney(totalIncome)}</span>
         </div>
       </div>
 
@@ -174,13 +166,16 @@ export default function Reports() {
 
       <section className="category-list">
         {items.map(({ name, amount, Icon }, i) => {
-          const color = CHART_COLORS[i % CHART_COLORS.length];
+          const color = colorAt(i);
           const percent = total === 0 ? 0 : (amount / total) * 100;
           return (
             <div key={name} className="category-row">
               <div className="category-info">
-                <span className="category-icon" style={{ color }}>
-                  <Icon size={22} strokeWidth={1.8} />
+                <span
+                  className="category-icon"
+                  style={{ backgroundColor: color.bg, color: color.fg }}
+                >
+                  <Icon size={18} strokeWidth={1.8} />
                 </span>
                 <span className="category-name">{name}</span>
               </div>
