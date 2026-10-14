@@ -2,21 +2,21 @@
 
 /* Bảng màu thương hiệu. Tailwind tạo sẵn class như bg-burgundy, text-wine... */
 @theme {
-  --color-wine: #4a0e1c; /* Tiêu đề, nền tối, nút QR */
-  --color-burgundy: #800020; /* Nút chính, mục đang chọn, chi tiêu */
-  --color-rose: #b5485c; /* Điểm nhấn phụ, thu nhập, thanh tiến độ */
-  --color-rose-soft: #dda0ab; /* Điểm nhấn nhạt cho biểu đồ */
-  --color-blush: #f2d0d6; /* Nền icon, badge */
-  --color-petal: #f7e4ea; /* Vùng chức năng nền nhạt */
-  --color-muted: #7a6268; /* Chữ phụ */
-  --color-line: #ead3d9; /* Đường kẻ, viền */
-  --color-danger: #b3261e; /* Lỗi, cảnh báo */
+  --color-ink: #0b2f4f; /* Tiêu đề, chữ chính */
+  --color-brand: #3c98e6; /* Xanh nước biển nhạt: màu chủ đạo, tab đang chọn */
+  --color-sky: #5bb0e8; /* Điểm nhấn phụ, thanh tiến độ */
+  --color-sky-soft: #9fd3f2; /* Điểm nhấn nhạt cho biểu đồ */
+  --color-frost: #dceefa; /* Nền icon, badge nhạt */
+  --color-haze: #eaf4fb; /* Vùng chức năng nền nhạt */
+  --color-muted: #5f7385; /* Chữ phụ */
+  --color-line: #d6e6f2; /* Đường kẻ, viền */
+  --color-danger: #c62828; /* Lỗi */
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
   background: #ffffff;
-  color: var(--color-wine);
+  color: var(--color-ink);
   font-family: var(--font-sans);
 }
 
@@ -37,18 +37,18 @@ body {
 .page-title {
   font-size: 28px;
   font-weight: 600;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 .section-title {
   margin-bottom: 12px;
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-wine);
+  color: var(--color-ink);
 }
 
 .card {
-  background-color: var(--color-petal);
+  background-color: var(--color-haze);
   border-radius: 16px;
   padding: 20px;
 }
@@ -63,11 +63,11 @@ body {
 }
 
 .text-income {
-  color: var(--color-rose);
+  color: #1f9d6b;
 }
 
 .text-expense {
-  color: var(--color-burgundy);
+  color: #e4572e;
 }
 
 /* Nhóm nút chọn (Tháng/Ngày, Tuần/Tháng) */
@@ -81,7 +81,7 @@ body {
   padding: 10px 16px;
   border: none;
   border-radius: 10px;
-  background-color: var(--color-petal);
+  background-color: var(--color-haze);
   color: var(--color-muted);
   font-size: 14px;
   font-weight: 500;
@@ -90,7 +90,7 @@ body {
 }
 
 .segmented-btn.active {
-  background-color: var(--color-burgundy);
+  background-color: var(--color-brand);
   color: #ffffff;
 }
 
@@ -113,14 +113,14 @@ body {
 
 .btn-primary {
   border: none;
-  background-color: var(--color-burgundy);
+  background-color: var(--color-brand);
   color: #ffffff;
 }
 
 .btn-secondary {
-  border: 1px solid var(--color-burgundy);
+  border: 1px solid var(--color-brand);
   background-color: #ffffff;
-  color: var(--color-burgundy);
+  color: var(--color-brand);
 }
 
 .btn-primary:active,
@@ -137,10 +137,10 @@ body {
   border: none;
   border-radius: 50%;
   background: none;
-  color: var(--color-wine);
+  color: var(--color-ink);
   cursor: pointer;
 }
 
 .icon-btn:hover {
-  background-color: var(--color-petal);
+  background-color: var(--color-haze);
 }

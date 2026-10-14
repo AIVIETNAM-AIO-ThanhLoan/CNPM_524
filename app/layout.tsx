@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Chi Tiêu",
   description: "Quản lý thu chi cá nhân",
+  applicationName: "Chi Tiêu",
+  appleWebApp: {
+    capable: true,
+    title: "Chi Tiêu",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#7a0c2e",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

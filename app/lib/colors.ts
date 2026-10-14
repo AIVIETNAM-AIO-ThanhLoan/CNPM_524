@@ -17,3 +17,28 @@ export const CATEGORY_COLORS: ColorPair[] = [
 // Lấy màu theo vị trí, lặp lại khi hết bảng màu
 export const colorAt = (index: number): ColorPair =>
   CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+
+// Bảng màu đề xuất: maroon là thương hiệu, còn lại mang nghĩa riêng
+export const PALETTE = {
+  brand: '#3C98E6', // nút chính, tab đang chọn, thẻ tổng quan
+  income: '#1F9D6B', // thu
+  expense: '#E4572E', // chi
+  warning: '#E0A526', // ngân sách sắp vượt (70–90%)
+  alert: '#C62828', // ngân sách vượt 90%
+  teal: '#14A3A3', // quy đổi tiền tệ
+  gold: '#C98A10', // giá vàng
+  indigo: '#6D52C9', // chia tiền nhóm
+};
+
+// Biến thể sáng hơn của màu thu/chi để đọc được trên nền maroon
+export const ON_BRAND = {
+  income: '#8FE8BC',
+  expense: '#FFB9A6',
+};
+
+// Màu thanh ngân sách trên thẻ xanh: xanh mint khi còn ổn, vàng và đỏ khi sắp vượt hoặc đã vượt
+export const BUDGET_ON_BRAND = {
+  ok: '#8FE8BC',
+  warning: '#FFD166',
+  alert: '#FF7A6B',
+};
