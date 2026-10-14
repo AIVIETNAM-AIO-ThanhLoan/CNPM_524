@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Chi Tiêu',
-    short_name: 'Chi Tiêu',
+    name: 'Ting Ting',
+    short_name: 'Ting Ting',
     description: 'Quản lý thu chi cá nhân',
     start_url: '/',
     display: 'standalone',

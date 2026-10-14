@@ -157,7 +157,7 @@ try {
     const { cookie: newCookie } = await api('/api/auth/login', { body: a });
     await admin.execute('UPDATE sessions SET expires_at = UTC_TIMESTAMP() - INTERVAL 1 DAY WHERE user_id = ?', [me.id]);
     await api('/api/wallets', { cookie: newCookie, status: 401 });
-    for (const route of ['/', '/login', '/register', '/history', '/reports', '/profile']) {
+    for (const route of ['/', '/login', '/register', '/history', '/reports', '/profile', '/chat', '/notifications']) {
         const response = await fetch(`${origin}${route}`);
         check(response.status === 200, `${route} renders`);
     }
@@ -219,6 +219,17 @@ try {
             checks += 2;
             const overflows = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
             check(!overflows, 'Home layout fits mobile width');
+            await page.getByRole('link', { name: 'Trợ lý AI', exact: true }).click();
+            await page.waitForURL('**/chat');
+            await page.getByRole('heading', { name: 'Trợ lý AI - Ting Ting' }).waitFor();
+            await page.getByRole('button', { name: 'Gợi ý cách tiết kiệm', exact: true }).click();
+            await page.getByText('Tính năng trợ lý AI đang được phát triển. Hiện mình chỉ trả lời mẫu.', { exact: true }).waitFor();
+            checks++;
+            await page.goto(origin);
+            await page.getByRole('link', { name: 'Thông báo', exact: true }).click();
+            await page.waitForURL('**/notifications');
+            await page.getByRole('button', { name: 'Đọc tất cả', exact: true }).click();
+            check(await page.getByLabel('Chưa đọc', { exact: true }).count() === 0, 'Upstream notifications interaction preserved');
             await page.goto(`${origin}/transactions/new`);
             check(!(await page.locator('form').first().evaluate((form) => form.checkValidity())), 'Empty transaction form is invalid');
             check(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), 'Transaction form fits mobile width');

@@ -19,6 +19,7 @@ import {
   BellRing,
 } from 'lucide-react';
 import BottomNav from './components/BottomNav';
+import { NOTIFICATIONS, unreadCount } from './lib/notifications';
 import { BUDGET_ON_BRAND, ON_BRAND, PALETTE } from './lib/colors';
 import './styles/home.css';
 
@@ -31,7 +32,7 @@ const suggestions: { label: string; color: string; Icon?: typeof BellRing; mark?
 
 const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
-const UNREAD_NOTIFICATIONS = 0;
+const UNREAD_NOTIFICATIONS = unreadCount(NOTIFICATIONS);
 
 const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -70,15 +71,15 @@ export default function Home({ initialDate }: { initialDate: string }) {
             <Search size={18} strokeWidth={1.8} />
             <input type="text" placeholder="Tìm giao dịch và nhấn Enter" aria-label="Tìm kiếm giao dịch" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/history?q=${encodeURIComponent(search)}`); }} />
           </label>
-          <button type="button" className="icon-btn" aria-label="Thông báo">
+          <Link href="/notifications" className="icon-btn chat-entry" aria-label="Thông báo">
             <Bell size={22} strokeWidth={1.8} />
             {UNREAD_NOTIFICATIONS > 0 && (
               <span className="notif-badge">{UNREAD_NOTIFICATIONS}</span>
             )}
-          </button>
-          <button type="button" className="icon-btn" aria-label="Tin nhắn">
+          </Link>
+          <Link href="/chat" className="icon-btn chat-entry" aria-label="Trợ lý AI">
             <MessageCircle size={22} strokeWidth={1.8} />
-          </button>
+          </Link>
         </div>
       </header>
 

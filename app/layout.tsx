@@ -14,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chi Tiêu",
+  title: "Ting Ting",
   description: "Quản lý thu chi cá nhân",
-  applicationName: "Chi Tiêu",
+  applicationName: "Ting Ting",
   appleWebApp: {
     capable: true,
-    title: "Chi Tiêu",
+    title: "Ting Ting",
     statusBarStyle: "default",
   },
 };

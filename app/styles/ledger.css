@@ -9,3 +9,5 @@
 button:disabled { opacity: 0.55; cursor: wait; }
 details summary { cursor: pointer; }
 details[open] summary { margin-bottom: 16px; }
+.tx-extra { margin: 0 16px 16px; }
+.tx-form .tx-amount-input { padding: 0; border: none; background: transparent; border-radius: 0; }
