@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Lock, Phone, User, Wallet } from 'lucide-react';
 import GoogleIcon from '../components/GoogleIcon';
+import { requestJson } from '../lib/client-api';
 import '../styles/auth.css';
 
 export default function RegisterPage() {
@@ -15,16 +16,17 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  // TODO: thay bằng gọi API đăng ký thật. Hiện chỉ kiểm tra dữ liệu nhập vào.
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!fullName.trim() || !account.trim() || !password) {
       setErrorMsg('Vui lòng nhập đầy đủ thông tin.');
       return;
     }
-    if (password.length < 6) {
-      setErrorMsg('Mật khẩu phải có ít nhất 6 ký tự.');
+    if (password.length < 8 || password.length > 128) {
+      setErrorMsg('Mật khẩu cần từ 8 đến 128 ký tự.');
       return;
     }
     if (password !== confirmPassword) {
@@ -32,7 +34,13 @@ export default function RegisterPage() {
       return;
     }
     setErrorMsg('');
-    router.push('/login');
+    setBusy(true);
+    try {
+      await requestJson('/api/auth/register', { name: fullName, account, password });
+      router.push('/login');
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : 'Đăng ký thất bại.');
+    } finally { setBusy(false); }
   };
 
   return (
@@ -99,16 +107,16 @@ export default function RegisterPage() {
 
           {errorMsg && <div className="auth-error">{errorMsg}</div>}
 
-          <button type="submit" className="auth-submit">
-            Đăng ký
+          <button type="submit" className="auth-submit" disabled={busy}>
+            {busy ? 'Đang tạo tài khoản…' : 'Đăng ký'}
           </button>
         </form>
 
         <div className="auth-divider">hoặc</div>
 
-        <button type="button" className="auth-google">
+        <button type="button" className="auth-google" disabled title="Chưa cấu hình đăng nhập Google">
           <GoogleIcon />
-          Đăng ký với Google
+          Google (sắp có)
         </button>
 
         <p className="auth-footer">

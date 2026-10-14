@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { Coins, Languages, User } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import { getCurrentUser } from '../lib/session';
+import { wallets } from '../lib/ledger';
+import LogoutButton from '../components/LogoutButton';
 import '../styles/profile.css';
 
 const settings = [
@@ -9,10 +11,9 @@ const settings = [
   { Icon: Coins, label: 'Tiền tệ mặc định', value: 'VND' },
 ];
 
-export default function Profile() {
-  // TODO: khi có backend, nếu user không null thì render giao diện đã đăng nhập
-  // (tên, tài khoản, bảo mật, đăng xuất). Hiện chỉ có giao diện chưa đăng nhập.
-  const user = getCurrentUser();
+export default async function Profile() {
+  const user = await getCurrentUser();
+  const accounts = user ? await wallets(user.id) : [];
 
   return (
     <div className="app-page">
@@ -42,6 +43,17 @@ export default function Profile() {
           </div>
         </>
       )}
+
+      {user && <section className="card settings-card">
+        <h2 className="settings-title">{user.name}</h2>
+        <p>{user.account}</p>
+        <h3 className="section-title">Ví của tôi</h3>
+        {accounts.map((wallet) => <div className="settings-row" key={wallet.id}>
+          <span>{wallet.name}</span><strong>{Number(wallet.balance).toLocaleString('vi-VN')}đ</strong>
+        </div>)}
+        <div className="profile-actions"><Link className="btn-primary" href="/transactions/new">Ghi giao dịch / thêm ví</Link></div>
+        <LogoutButton />
+      </section>}
 
       <section className="card settings-card">
         <h2 className="settings-title">Cài đặt chung</h2>
