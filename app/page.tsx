@@ -14,7 +14,9 @@ import {
   Search,
   BellRing,
 } from 'lucide-react';
+import Link from 'next/link';
 import BottomNav from './components/BottomNav';
+import { NOTIFICATIONS, unreadCount } from './lib/notifications';
 import { BUDGET_ON_BRAND, ON_BRAND, PALETTE } from './lib/colors';
 import './styles/home.css';
 
@@ -24,6 +26,8 @@ const suggestions: { label: string; color: string; Icon?: typeof BellRing; mark?
   { mark: 'Au', label: 'Giá vàng', color: PALETTE.gold },
   { Icon: BellRing, label: 'Lời nhắc', color: PALETTE.indigo },
 ];
+
+const unreadNotifications = unreadCount(NOTIFICATIONS);
 
 const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
@@ -37,9 +41,6 @@ const monthRecords: Record<string, { income: number; expense: number; budget: nu
 const dayRecords: Record<string, { income: number; expense: number }> = {
   '2026-10-13': { income: 0, expense: 350000 },
 };
-
-// TODO: số thông báo chưa đọc lấy từ database. Hiện là số mẫu.
-const UNREAD_NOTIFICATIONS = 3;
 
 const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -78,15 +79,15 @@ export default function Home() {
             <Search size={18} strokeWidth={1.8} />
             <input type="text" placeholder="Tìm kiếm giao dịch" aria-label="Tìm kiếm giao dịch" />
           </label>
-          <button type="button" className="icon-btn" aria-label="Thông báo">
+          <Link href="/notifications" className="icon-btn chat-entry" aria-label="Thông báo">
             <Bell size={22} strokeWidth={1.8} />
-            {UNREAD_NOTIFICATIONS > 0 && (
-              <span className="notif-badge">{UNREAD_NOTIFICATIONS}</span>
+            {unreadNotifications > 0 && (
+              <span className="notif-badge">{unreadNotifications}</span>
             )}
-          </button>
-          <button type="button" className="icon-btn" aria-label="Tin nhắn">
+          </Link>
+          <Link href="/chat" className="icon-btn chat-entry" aria-label="Trợ lý AI">
             <MessageCircle size={22} strokeWidth={1.8} />
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -183,10 +184,10 @@ export default function Home() {
       </section>
 
       <div className="action-buttons">
-        <button type="button" className="btn-primary">
+        <Link href="/transactions/new" className="btn-primary">
           <Plus size={18} strokeWidth={2} />
           Ghi giao dịch
-        </button>
+        </Link>
         <button type="button" className="btn-secondary">
           <QrCode size={18} strokeWidth={1.8} />
           QR của tôi

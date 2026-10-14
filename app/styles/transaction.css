@@ -1,0 +1,254 @@
+.tx-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+.tx-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.tx-round-btn {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--color-haze);
+  color: var(--color-ink);
+}
+
+.tx-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.tx-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px;
+}
+
+/* Chọn loại giao dịch: mục đang chọn là nền xanh */
+.tx-type-switch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: 12px;
+  background-color: var(--color-haze);
+}
+
+.tx-type-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 9px;
+  background-color: #0b5cad;
+  transition: transform 0.25s ease;
+}
+
+.tx-type-thumb.is-right {
+  transform: translateX(calc(100% + 4px));
+}
+
+.tx-type-btn {
+  position: relative;
+  z-index: 1;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+
+.tx-type-btn.active {
+  color: #ffffff;
+}
+
+/* Ô số tiền lớn, dễ nhìn */
+.tx-amount-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 14px;
+  background-color: var(--color-haze);
+}
+
+.tx-amount-label {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.tx-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.tx-amount-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.tx-amount-input::placeholder {
+  color: var(--color-muted);
+}
+
+.tx-amount-unit {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.tx-section-title {
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.tx-categories {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.tx-category {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(11, 47, 79, 0.06);
+  cursor: pointer;
+}
+
+.tx-category.selected {
+  border-color: #0b5cad;
+}
+
+.tx-category-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.tx-category-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.tx-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tx-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tx-field-label {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.tx-field-input {
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  outline: none;
+  font-size: 15px;
+  color: var(--color-ink);
+  background-color: #ffffff;
+}
+
+.tx-field-input:focus {
+  border-color: #0b5cad;
+}
+
+.tx-save {
+  margin-top: 4px;
+  height: 52px;
+  width: 100%;
+  font-size: 16px;
+}
+
+.tx-save:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Màn hình xác nhận sau khi lưu */
+.tx-success {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+}
+
+.tx-success-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #8fe8bc;
+  color: #0b5cad;
+}
+
+.tx-success-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.tx-success-text {
+  font-size: 15px;
+  color: var(--color-muted);
+}
+
+.tx-success-btn {
+  margin-top: 12px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  background-color: #0b5cad;
+}
