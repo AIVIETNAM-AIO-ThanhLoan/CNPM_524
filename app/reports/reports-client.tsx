@@ -5,18 +5,40 @@ import Link from 'next/link';
 import { dateKey } from '../lib/client-api';
 import { useFinance } from '../lib/use-finance';
 import {
+  Banknote,
+  Car,
   ChevronLeft,
   ChevronRight,
   Gift,
+  GraduationCap,
+  House,
+  ShoppingBag,
+  UtensilsCrossed,
+  Wallet,
 } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import { colorAt } from '../lib/colors';
 import '../styles/reports.css';
 
-type Category = { name: string; amount: number; Icon: typeof Gift };
+type Category = { name: string; amount: number };
 
 const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 const sumOf = (items: Category[]) => items.reduce((sum, item) => sum + item.amount, 0);
+
+// Icon theo tên danh mục; danh mục khác dùng icon ví
+const ICONS: Record<string, typeof Wallet> = {
+  'Ăn uống': UtensilsCrossed,
+  'Tiền nhà': House,
+  'Đi lại': Car,
+  'Học tập': GraduationCap,
+  'Mua sắm': ShoppingBag,
+  Lương: Banknote,
+  Thưởng: Gift,
+};
+const iconFor = (name: string) => ICONS[name] ?? Wallet;
+
+const daysBetween = (start: string, end: string) =>
+  Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86400000) + 1;
 
 export default function Reports({ initialDate }: { initialDate: string }) {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
@@ -38,16 +60,18 @@ export default function Reports({ initialDate }: { initialDate: string }) {
   const shift = (delta: number) => setAnchor((old) => viewMode === 'month'
     ? new Date(old.getFullYear(), old.getMonth() + delta, 1, 12)
     : new Date(old.getFullYear(), old.getMonth(), old.getDate() + delta * 7, 12));
+
   const period = {
-    label: viewMode === 'month' ? `Tháng ${anchor.getMonth() + 1}/${anchor.getFullYear()}` : 'Theo tuần',
-    range: `${startDate} – ${endDate}`,
-    income: data.breakdown.filter((c) => c.kind === 'income').map((c): Category => ({ name: c.name, amount: Number(c.amount), Icon: Gift })),
-    expense: data.breakdown.filter((c) => c.kind === 'expense').map((c): Category => ({ name: c.name, amount: Number(c.amount), Icon: Gift })),
+    label: viewMode === 'month' ? `Tháng ${anchor.getMonth() + 1}/${anchor.getFullYear()}` : 'Tuần này',
+    range: `${startDate.slice(8)}/${startDate.slice(5, 7)} – ${endDate.slice(8)}/${endDate.slice(5, 7)}`,
+    income: data.breakdown.filter((c) => c.kind === 'income').map((c): Category => ({ name: c.name, amount: Number(c.amount) })),
+    expense: data.breakdown.filter((c) => c.kind === 'expense').map((c): Category => ({ name: c.name, amount: Number(c.amount) })),
   };
 
   const totalExpense = sumOf(period.expense);
   const totalIncome = sumOf(period.income);
   const difference = totalIncome - totalExpense;
+  const avgExpensePerDay = totalExpense / daysBetween(startDate, endDate);
 
   const isExpense = tab === 'expense';
   const items = isExpense ? period.expense : period.income;
@@ -103,6 +127,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
       {loading && <p className="data-status" role="status">Đang tải dữ liệu…</p>}
       {error && <p className="data-status" role="alert">{error} <Link href="/login">Đăng nhập</Link></p>}
       {!loading && !error && !data.breakdown.length && <p className="data-status">Chưa có thu/chi trong kỳ này.</p>}
+
       <div className="stat-pair">
         <div className="stat-card stat-expense">
           <span className="stat-label">Chi tiêu</span>
@@ -120,6 +145,10 @@ export default function Reports({ initialDate }: { initialDate: string }) {
           {difference >= 0 ? '+' : '-'}
           {formatMoney(Math.abs(difference))}
         </span>
+      </div>
+      <div className="stat-full">
+        <span className="stat-label">Chi trung bình/ngày</span>
+        <span className="stat-amount">{formatMoney(Math.round(avgExpensePerDay))}</span>
       </div>
 
       <div className="type-tabs">
@@ -149,11 +178,14 @@ export default function Reports({ initialDate }: { initialDate: string }) {
       </div>
 
       <section className="category-list">
-        {items.map(({ name, amount, Icon }, i) => {
+        {items.map(({ name, amount }, i) => {
           const color = colorAt(i);
+          const Icon = iconFor(name);
           const percent = total === 0 ? 0 : (amount / total) * 100;
+          // Bấm danh mục để xem các giao dịch của danh mục đó trong tháng
+          const href = `/history?month=${startDate.slice(0, 7)}&q=${encodeURIComponent(name)}`;
           return (
-            <div key={name} className="category-row">
+            <Link key={name} href={href} className="category-row">
               <div className="category-info">
                 <span
                   className="category-icon"
@@ -170,7 +202,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
                 <span className="category-percent">{percent.toFixed(1)} %</span>
               </div>
               <ChevronRight size={18} className="category-chevron" />
-            </div>
+            </Link>
           );
         })}
       </section>

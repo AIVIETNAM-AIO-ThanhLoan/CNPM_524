@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { atomic } from '@/app/lib/db';
 import { api, jsonBody, text } from '@/app/lib/http';
-import { accountInput, passwordInput, throttle } from '@/app/lib/auth-input';
+import { accountInput, assertNotThrottled, passwordInput, recordFailure } from '@/app/lib/auth-input';
 import { hashPassword } from '@/app/lib/session';
 import { seedUser } from '@/app/lib/ledger';
 
@@ -12,7 +12,8 @@ export async function POST(request: Request) {
         const name = text(body.name, 'Họ tên', 100);
         const account = accountInput(body.account);
         const password = passwordInput(body.password);
-        throttle(`register:${account}`);
+        assertNotThrottled(`register:${account}`);
+        recordFailure(`register:${account}`);
         const hash = await hashPassword(password);
         const id = randomUUID();
         await atomic(async (connection) => {

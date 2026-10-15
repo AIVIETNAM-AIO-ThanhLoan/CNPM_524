@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { Coins, Languages, User } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
+import AvatarUpload from '../components/AvatarUpload';
+import LogoutButton from '../components/LogoutButton';
 import { getCurrentUser } from '../lib/session';
 import { wallets } from '../lib/ledger';
-import LogoutButton from '../components/LogoutButton';
 import '../styles/profile.css';
 
 const settings = [
@@ -17,9 +18,12 @@ export default async function Profile() {
 
   return (
     <div className="app-page">
-      <header className="page-header">
-        <h1 className="page-title">Tôi</h1>
-      </header>
+      {user && (
+        <header className="profile-header">
+          <h1 className="profile-title">Ví của tôi</h1>
+          <LogoutButton className="profile-logout" />
+        </header>
+      )}
 
       {!user && (
         <>
@@ -44,16 +48,27 @@ export default async function Profile() {
         </>
       )}
 
-      {user && <section className="card settings-card">
-        <h2 className="settings-title">{user.name}</h2>
-        <p>{user.account}</p>
-        <h3 className="section-title">Ví của tôi</h3>
-        {accounts.map((wallet) => <div className="settings-row" key={wallet.id}>
-          <span>{wallet.name}</span><strong>{Number(wallet.balance).toLocaleString('vi-VN')}đ</strong>
-        </div>)}
-        <div className="profile-actions"><Link className="btn-primary" href="/transactions/new">Ghi giao dịch / thêm ví</Link></div>
-        <LogoutButton />
-      </section>}
+      {user && (
+        <section className="card profile-hero">
+          <AvatarUpload name={user.name} />
+        </section>
+      )}
+
+      {user && (
+        <section className="card settings-card">
+          {accounts.map((wallet) => (
+            <div className="settings-row" key={wallet.id}>
+              <span>{wallet.name}</span>
+              <strong>{Number(wallet.balance).toLocaleString('vi-VN')}đ</strong>
+            </div>
+          ))}
+          <div className="profile-actions">
+            <Link className="btn-primary" href="/transactions/new">
+              Ghi giao dịch / thêm ví
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="card settings-card">
         <h2 className="settings-title">Cài đặt chung</h2>

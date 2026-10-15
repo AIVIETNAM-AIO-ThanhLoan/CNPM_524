@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { requestJson } from '../lib/client-api';
 
-export default function LogoutButton() {
+export default function LogoutButton({ className = 'btn-secondary' }: { className?: string }) {
     const router = useRouter();
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
@@ -17,5 +17,10 @@ export default function LogoutButton() {
         } catch (error) { setError(error instanceof Error ? error.message : 'Không thể đăng xuất.'); }
         finally { setBusy(false); }
     }
-    return <div><button className="btn-secondary" onClick={logout} disabled={busy}>Đăng xuất</button>{error && <p role="alert">{error}</p>}</div>;
+    return (
+        <>
+            <button type="button" className={className} onClick={logout} disabled={busy}>Đăng xuất</button>
+            {error && <p role="alert" className="data-status">{error}</p>}
+        </>
+    );
 }

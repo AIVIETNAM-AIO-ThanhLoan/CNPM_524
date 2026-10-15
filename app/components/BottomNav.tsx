@@ -33,9 +33,9 @@ export default function BottomNav() {
   return (
     <nav className="bottom-nav">
       {leftItems.map(renderItem)}
-      <button type="button" className="nav-qr" aria-label="Quét QR">
+      <Link href="/scan" className="nav-qr" aria-label="Quét QR">
         <QrCode size={28} strokeWidth={1.8} />
-      </button>
+      </Link>
       {rightItems.map(renderItem)}
     </nav>
   );

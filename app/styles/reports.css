@@ -236,3 +236,13 @@
 .stat-income .stat-amount {
   color: var(--color-ink);
 }
+
+/* Dòng danh mục là link: bỏ gạch chân, giữ màu chữ */
+a.category-row {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.category-row:active {
+  background-color: var(--color-haze);
+}

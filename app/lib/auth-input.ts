@@ -13,15 +13,38 @@ export function passwordInput(value: unknown): string {
     return value;
 }
 
-// Local single-process throttle. Replace with a shared store when scaling out.
-const authGlobal = globalThis as typeof globalThis & { cnpmAttempts?: Map<string, { count: number; until: number }> };
-const attempts = authGlobal.cnpmAttempts ??= new Map();
-export function throttle(account: string): void {
+// Local single-process limiter. Replace with a shared store when scaling out.
+// Only failed attempts are counted; a successful login clears the record.
+const MAX_FAILURES = 15;
+const WINDOW_MS = 15 * 60 * 1000;
+const MAX_TRACKED = 10000;
+type Entry = { count: number; until: number };
+const authGlobal = globalThis as typeof globalThis & { cnpmAttempts?: Map<string, Entry> };
+const attempts = authGlobal.cnpmAttempts ??= new Map<string, Entry>();
+const keyOf = (key: string) => createHash('sha256').update(key).digest('hex');
+
+function prune(now: number): void {
+    for (const [id, entry] of attempts) if (entry.until <= now) attempts.delete(id);
+}
+
+export function assertNotThrottled(key: string): void {
+    prune(Date.now());
+    const id = keyOf(key);
+    const entry = attempts.get(id);
+    if (entry ? entry.count >= MAX_FAILURES : attempts.size >= MAX_TRACKED) {
+        throw new HttpError(429, 'Quá nhiều lần thử. Vui lòng thử lại sau 15 phút.');
+    }
+}
+
+export function recordFailure(key: string): void {
     const now = Date.now();
-    for (const [key, value] of attempts) if (value.until <= now) attempts.delete(key);
-    const key = createHash('sha256').update(account).digest('hex');
-    const entry = attempts.get(key) || { count: 0, until: now + 15 * 60 * 1000 };
-    if (entry.count >= 15 || (!attempts.has(key) && attempts.size >= 10000)) throw new HttpError(429, 'Quá nhiều yêu cầu. Vui lòng thử lại sau 15 phút.');
-    entry.count++;
-    attempts.set(key, entry);
+    prune(now);
+    const id = keyOf(key);
+    const entry = attempts.get(id);
+    if (entry) entry.count++;
+    else if (attempts.size < MAX_TRACKED) attempts.set(id, { count: 1, until: now + WINDOW_MS });
+}
+
+export function clearFailures(key: string): void {
+    attempts.delete(keyOf(key));
 }

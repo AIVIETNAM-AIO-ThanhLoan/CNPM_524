@@ -24,7 +24,8 @@
 
 Đã có Next.js 16 + React 19 và backend MySQL/MariaDB: đăng ký, đăng nhập/đăng xuất, phiên cookie, ví, danh mục, thu/chi/chuyển tiền sổ kép, lịch sử và báo cáo theo kỳ. Mỗi tài khoản mới có hai ví số dư 0 và sáu danh mục mặc định.
 
-Ngân sách, mục tiêu, khoản định kỳ và tỷ giá đã có bảng nền tảng, chưa có API/quy trình đầy đủ. Giao diện Ting Ting có các trang trợ lý AI và thông báo từ nhánh main; hai trang này vẫn dùng phản hồi/dữ liệu mẫu, chưa kết nối dịch vụ AI hoặc database. Đăng nhập Google, khôi phục mật khẩu, QR và trang quản trị vẫn là phần chưa triển khai/bản mẫu. Giao dịch hiện chỉ dùng VND.
+Ngân sách, mục tiêu, khoản định kỳ và tỷ giá đã có bảng nền tảng, chưa có API/quy trình đầy đủ. Giao diện Ting Ting có các trang trợ lý AI và thông báo từ nhánh main; hai trang này vẫn dùng phản hồi/dữ liệu mẫu, chưa kết nối dịch vụ AI hoặc database. Đăng nhập Google, khôi phục mật khẩu, "QR của tôi" và trang quản trị vẫn là phần chưa triển khai/bản mẫu. Giao dịch hiện chỉ dùng VND.
+
 
 ## Chạy ứng dụng với XAMPP trên Windows
 

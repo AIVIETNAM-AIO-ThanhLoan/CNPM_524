@@ -24,7 +24,8 @@ export async function atomic<T>(work: (connection: PoolConnection) => Promise<T>
         await connection.commit();
         return result;
     } catch (error) {
-        await connection.rollback();
+        // Keep the original error even if the rollback itself fails.
+        await connection.rollback().catch(() => undefined);
         throw error;
     } finally { connection.release(); }
 }

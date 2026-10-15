@@ -122,7 +122,7 @@ try {
         const response = await fetch(`${origin}${route}`, { headers: { Cookie: cookieB } });
         check(response.status === 200, `${route} renders for authenticated user`);
         const markup = await response.text();
-        check(markup.includes(route === '/profile' ? b.account : 'Lưu giao dịch'), `${route} displays database-backed content`);
+        check(markup.includes(route === '/profile' ? b.name : 'Lưu giao dịch'), `${route} displays database-backed content`);
     }
     const walletsB = (await api('/api/wallets', { cookie: cookieB })).json.wallets;
     check((await api(financeUrl, { cookie: cookieB })).json.transactions.length === 0, 'Other user cannot read transactions');
@@ -145,6 +145,29 @@ try {
     await admin.query('DROP TRIGGER test_fail_entry');
     const [failed] = await admin.execute('SELECT COUNT(*) AS n FROM transactions WHERE request_key = ?', [failedKey]);
     check(failed[0].n === 0, 'Failed posting rolls back entire transaction');
+    const budgetMonth = '2026-10';
+    await api('/api/budgets', { cookie, body: { categoryId: expense, month: budgetMonth, amount: '500000' }, status: 201 });
+    await api('/api/budgets', { cookie, body: { categoryId: income, month: budgetMonth, amount: '500000' }, status: 400 });
+    await api('/api/budgets', { cookie, body: { categoryId: expense, month: '2026-13', amount: '500000' }, status: 400 });
+    await api('/api/budgets', { cookie, body: { categoryId: expense, month: budgetMonth, amount: '0' }, status: 400 });
+    await api('/api/budgets', { cookie, body: { categoryId: expense, month: budgetMonth, amount: '750000' }, status: 201 });
+    const { json: budgetList } = await api(`/api/budgets?month=${budgetMonth}`, { cookie });
+    check(budgetList.budgets.length === 1 && Number(budgetList.budgets[0].amount) === 750000, 'Budget upsert replaces the amount for the month');
+    await api('/api/budgets?month=bad', { cookie, status: 400 });
+    const { json: budgetOther } = await api(`/api/budgets?month=${budgetMonth}`, { cookie: cookieB });
+    check(budgetOther.budgets.length === 0, 'Budgets are isolated per user');
+    await api('/api/goals', { cookie, body: { name: 'Mua xe', targetAmount: '20000000', dueOn: '2027-06-30' }, status: 201 });
+    await api('/api/goals', { cookie, body: { name: 'Quỹ dự phòng', targetAmount: '0' }, status: 400 });
+    const { json: goalList } = await api('/api/goals', { cookie });
+    check(goalList.goals.some((g) => g.name === 'Mua xe' && Number(g.targetAmount) === 20000000), 'Goals are saved and listed');
+    const limitAccount = 'limit@example.com';
+    await api('/api/auth/register', { body: { name: 'Limit', account: limitAccount, password }, status: 201 });
+    for (let i = 0; i < 14; i++) await api('/api/auth/login', { body: { account: limitAccount, password: 'wrong-password' }, status: 401 });
+    await api('/api/auth/login', { body: { account: limitAccount, password }, status: 200 });
+    for (let i = 0; i < 14; i++) await api('/api/auth/login', { body: { account: limitAccount, password: 'wrong-password' }, status: 401 });
+    await api('/api/auth/login', { body: { account: limitAccount, password: 'wrong-password' }, status: 401 });
+    await api('/api/auth/login', { body: { account: limitAccount, password }, status: 429 });
+    check(true, 'Login limiter counts only failures and locks after 15 failures');
     setup();
     const [countAfterSetup] = await admin.query('SELECT COUNT(*) AS n FROM transactions');
     check(countAfterSetup[0].n === 9, 'Setup rerun preserves transactions');

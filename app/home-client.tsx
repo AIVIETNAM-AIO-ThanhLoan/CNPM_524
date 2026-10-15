@@ -24,10 +24,10 @@ import { BUDGET_ON_BRAND, ON_BRAND, PALETTE } from './lib/colors';
 import './styles/home.css';
 
 // Đề xuất: mỗi chức năng một màu có nghĩa. Giá vàng dùng chữ "Au" đúng màu vàng
-const suggestions: { label: string; color: string; Icon?: typeof BellRing; mark?: string }[] = [
+const suggestions: { label: string; color: string; Icon?: typeof BellRing; mark?: string; href?: string }[] = [
   { Icon: ArrowRightLeft, label: 'Quy đổi tiền tệ', color: PALETTE.teal },
   { mark: 'Au', label: 'Giá vàng', color: PALETTE.gold },
-  { Icon: BellRing, label: 'Lời nhắc', color: PALETTE.indigo },
+  { Icon: BellRing, label: 'Lời nhắc', color: PALETTE.indigo, href: '/reminders' },
 ];
 
 const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
@@ -190,21 +190,21 @@ export default function Home({ initialDate }: { initialDate: string }) {
       <section className="suggestions-section">
         <h3 className="section-title">Đề xuất</h3>
         <div className="suggestion-grid">
-          {suggestions.map(({ Icon, mark, label, color }) => (
-            <button key={label} type="button" className="suggestion-card">
-              <span
-                className="suggestion-icon"
-                style={{ backgroundColor: `${color}24`, color }}
-              >
-                {Icon ? (
-                  <Icon size={22} strokeWidth={1.8} />
-                ) : (
-                  <span className="suggestion-mark">{mark}</span>
-                )}
-              </span>
-              <span className="suggestion-text">{label}</span>
-            </button>
-          ))}
+          {suggestions.map(({ Icon, mark, label, color, href }) => {
+            const content = (
+              <>
+                <span className="suggestion-icon" style={{ backgroundColor: `${color}24`, color }}>
+                  {Icon ? <Icon size={22} strokeWidth={1.8} /> : <span className="suggestion-mark">{mark}</span>}
+                </span>
+                <span className="suggestion-text">{label}</span>
+              </>
+            );
+            return href ? (
+              <Link key={label} href={href} className="suggestion-card">{content}</Link>
+            ) : (
+              <button key={label} type="button" className="suggestion-card">{content}</button>
+            );
+          })}
         </div>
       </section>
 
