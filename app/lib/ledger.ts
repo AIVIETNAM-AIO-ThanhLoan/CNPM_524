@@ -87,7 +87,8 @@ export async function finance(userId: string, start: string, end: string, search
         JOIN budgets b ON b.user_id = t.user_id AND b.category_id = t.category_id AND b.month_start = ?
         WHERE t.user_id = ? AND t.kind = 'expense' AND t.booked_on BETWEEN ? AND ?`, [`${start.slice(0, 7)}-01`, ...scope]);
     const budgetAmount = Number(budgetRows[0].amount);
+    const budgetSpent = Number(spentRows[0].amount);
     return { income: Number(totals[0].income), expense: Number(totals[0].expense),
-        budget: budgetAmount ? Math.round(Number(spentRows[0].amount) / budgetAmount * 100) : 0,
-        budgetAmount, transactions, breakdown };
+        budget: budgetAmount ? Math.round(budgetSpent / budgetAmount * 100) : 0,
+        budgetAmount, budgetSpent, transactions, breakdown };
 }

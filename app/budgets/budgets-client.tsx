@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Pencil, Plus, Wallet } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import { type Category, requestJson } from '../lib/client-api';
 import { formatBudgetMoney } from '../lib/budget-money';
+import { notifyFinanceUpdated } from '../lib/finance-updates';
 import '../styles/budgets.css';
 
 type Budget = { categoryId: string; name: string; amount: string };
@@ -54,6 +55,7 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
         setBusy(true); setError(''); setNotice('');
         try {
             await requestJson('/api/budgets', { categoryId: category.id, month, amount });
+            notifyFinanceUpdated();
             const budgets = await requestJson<BudgetResponse>(`/api/budgets?month=${month}`);
             setSnapshot((current) => current?.key === key ? { ...current, ...budgets } : current);
             setEditing(null);

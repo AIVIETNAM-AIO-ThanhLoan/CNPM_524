@@ -8,6 +8,7 @@ import { PALETTE } from '@/app/lib/colors';
 import { type Category, requestJson, today, type Wallet } from '@/app/lib/client-api';
 import BottomNav from '@/app/components/BottomNav';
 import AddCategoryButton from '@/app/components/AddCategoryButton';
+import { notifyFinanceUpdated } from '@/app/lib/finance-updates';
 import '../../styles/ledger.css';
 import '../../styles/transaction.css';
 
@@ -39,6 +40,7 @@ export default function TransactionForm({ initialWallets, initialCategories }: {
         setBusy(true); setError(''); setSuccess('');
         try {
             await requestJson('/api/transactions', { ...payload, requestKey: pending.current.key });
+            notifyFinanceUpdated();
             pending.current = null;
             router.push('/history'); router.refresh();
         } catch (error) { setError(error instanceof Error ? error.message : 'Không thể lưu giao dịch.'); }
