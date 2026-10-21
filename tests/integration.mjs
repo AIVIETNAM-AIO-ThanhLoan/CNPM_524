@@ -19,7 +19,7 @@ await new Promise((resolve) => socket.listen(0, '127.0.0.1', resolve));
 const port = socket.address().port;
 await new Promise((resolve) => socket.close(resolve));
 const origin = `http://127.0.0.1:${port}`;
-const env = { ...process.env, NODE_ENV: 'development', DB_NAME: dbName, DB_USER: dbUser,
+const env = { ...process.env, DEEPSEEK_API_KEY: '', TAVILY_API_KEY: '', NODE_ENV: 'development', DB_NAME: dbName, DB_USER: dbUser,
     DB_PASSWORD: randomBytes(32).toString('hex'), APP_ORIGIN: origin, COOKIE_SECURE: 'false', CNPM_TEST_BUILD_DIR: distDir,
     CNPM_TEST_TSCONFIG: testTsconfig, NEXT_TELEMETRY_DISABLED: '1' };
 if (!env.DB_SETUP_USER || env.DB_SETUP_PASSWORD === undefined) throw new Error('Configure DB_SETUP_USER and DB_SETUP_PASSWORD first.');
@@ -173,6 +173,13 @@ try {
     await api('/api/goals', { cookie, body: { name: 'Quỹ dự phòng', targetAmount: '0' }, status: 400 });
     const { json: goalList } = await api('/api/goals', { cookie });
     check(goalList.goals.some((g) => g.name === 'Mua xe' && Number(g.targetAmount) === 20000000), 'Goals are saved and listed');
+    // Server test chạy với DEEPSEEK_API_KEY và TAVILY_API_KEY rỗng nên không bao giờ gọi API thật
+    await api('/api/chat', { body: { messages: [{ role: 'user', content: 'Xin chào' }] }, status: 401 });
+    await api('/api/chat', { cookie, body: { messages: [] }, status: 400 });
+    await api('/api/chat', { cookie, body: { messages: [{ role: 'assistant', content: 'Chào bạn' }] }, status: 400 });
+    await api('/api/chat', { cookie, body: { messages: [{ role: 'user', content: 'x'.repeat(2001) }] }, status: 400 });
+    const { json: chatNoKey } = await api('/api/chat', { cookie, body: { messages: [{ role: 'user', content: 'Tháng này tôi chi bao nhiêu?' }] }, status: 503 });
+    check(chatNoKey.error.includes('Trợ lý AI đang tạm ngưng'), 'Chat builds finance context and reports missing AI configuration');
     const limitAccount = 'limit@example.com';
     await api('/api/auth/register', { body: { name: 'Limit', account: limitAccount, password }, status: 201 });
     for (let i = 0; i < 14; i++) await api('/api/auth/login', { body: { account: limitAccount, password: 'wrong-password' }, status: 401 });

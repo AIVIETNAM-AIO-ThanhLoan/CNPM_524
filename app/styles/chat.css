@@ -80,6 +80,8 @@
 }
 
 .bubble {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   max-width: 80%;
   padding: 10px 14px;
   border-radius: 16px;
@@ -174,18 +176,14 @@
   cursor: pointer;
 }
 
-.chat-voice {
-  height: 40px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 14px;
-  border: none;
-  border-radius: 20px;
-  background-color: #e4f1fc;
-  color: #0b5cad;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+/* Tin báo lỗi từ trợ lý */
+.bubble.ai.error {
+  background-color: #fdecea;
+  color: #b3261e;
+}
+
+.chat-send:disabled,
+.prompt-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
