@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import type { RowDataPacket } from 'mysql2/promise';
 import { database, rows } from '@/app/lib/db';
-import { api, HttpError, jsonBody, money, uuid } from '@/app/lib/http';
+import { api, date, HttpError, jsonBody, money, uuid } from '@/app/lib/http';
 import { requireUser } from '@/app/lib/session';
+import { sumBudgetAmounts } from '@/app/lib/budget-money';
 
 // Tháng dạng YYYY-MM, trả về ngày đầu tháng để lưu vào bảng budgets
 function monthStart(value: unknown): string {
     if (typeof value !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(value)) throw new HttpError(400, 'Tháng không hợp lệ (dạng YYYY-MM).');
-    return `${value}-01`;
+    return date(`${value}-01`);
 }
 
 export async function GET(request: Request) {
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
         const budgets = await rows<RowDataPacket>(`SELECT b.category_id AS categoryId, c.name, b.amount
             FROM budgets b JOIN categories c ON c.id = b.category_id AND c.user_id = b.user_id
             WHERE b.user_id = ? AND b.month_start = ? ORDER BY c.name`, [user.id, month]);
-        return Response.json({ budgets });
+        return Response.json({ budgets, totalAmount: sumBudgetAmounts(budgets.map((budget) => budget.amount)) });
     });
 }
 

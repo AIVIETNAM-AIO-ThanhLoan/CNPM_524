@@ -24,7 +24,9 @@
 
 Đã có Next.js 16 + React 19 và backend MySQL/MariaDB: đăng ký, đăng nhập/đăng xuất, phiên cookie, ví, danh mục, thu/chi/chuyển tiền sổ kép, lịch sử và báo cáo theo kỳ. Mỗi tài khoản mới có hai ví số dư 0 và sáu danh mục mặc định.
 
-Ngân sách, mục tiêu, khoản định kỳ và tỷ giá đã có bảng nền tảng, chưa có API/quy trình đầy đủ. Giao diện Ting Ting có các trang trợ lý AI và thông báo từ nhánh main; hai trang này vẫn dùng phản hồi/dữ liệu mẫu, chưa kết nối dịch vụ AI hoặc database. Đăng nhập Google, khôi phục mật khẩu, "QR của tôi" và trang quản trị vẫn là phần chưa triển khai/bản mẫu. Giao dịch hiện chỉ dùng VND.
+Tab **Ngân sách** cho phép đặt/sửa hạn mức theo danh mục chi tiêu và tháng. Tạo danh mục tại **Trang chủ → Ghi giao dịch → Thêm danh mục** (nút cạnh tiêu đề **Danh mục**); trang Ngân sách lấy các danh mục chi tiêu từ đó để đặt hạn mức. Tổng ngân sách tự cộng từ các hạn mức đã lưu, không nhập riêng. Lịch sử giao dịch truy cập từ Báo cáo.
+
+Mục tiêu, khoản định kỳ và tỷ giá chưa có quy trình đầy đủ. Giao diện Ting Ting có các trang trợ lý AI và thông báo từ nhánh main; hai trang này vẫn dùng phản hồi/dữ liệu mẫu, chưa kết nối dịch vụ AI hoặc database. Đăng nhập Google, khôi phục mật khẩu, "QR của tôi" và trang quản trị vẫn là phần chưa triển khai/bản mẫu. Giao dịch hiện chỉ dùng VND.
 
 
 ## Chạy ứng dụng với XAMPP trên Windows

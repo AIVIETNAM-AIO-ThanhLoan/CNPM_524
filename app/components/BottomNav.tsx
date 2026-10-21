@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChartColumn, CircleUserRound, House, QrCode, ReceiptText } from 'lucide-react';
+import { ChartColumn, CircleUserRound, House, QrCode, Wallet } from 'lucide-react';
 import '../styles/bottom-nav.css';
 
 const navItems = [
   { href: '/', label: 'Trang chủ', Icon: House },
+  { href: '/budgets', label: 'Ngân sách', Icon: Wallet },
   { href: '/reports', label: 'Báo cáo', Icon: ChartColumn },
-  { href: '/history', label: 'Lịch sử', Icon: ReceiptText },
   { href: '/profile', label: 'Tôi', Icon: CircleUserRound },
 ];
 
@@ -24,6 +24,7 @@ export default function BottomNav() {
       key={href}
       href={href}
       className={`nav-item ${pathname === href ? 'nav-active' : ''}`}
+      aria-current={pathname === href ? 'page' : undefined}
     >
       <Icon size={24} strokeWidth={1.8} />
       <span>{label}</span>
