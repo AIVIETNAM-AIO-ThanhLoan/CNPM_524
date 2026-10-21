@@ -155,6 +155,9 @@ try {
     const { json: budgetList } = await api(`/api/budgets?month=${budgetMonth}`, { cookie });
     check(budgetList.budgets.length === 1 && Number(budgetList.budgets[0].amount) === 750000, 'Budget upsert replaces the amount for the month');
     check(budgetList.totalAmount === '750000.00', 'Budget total comes from saved category limits');
+    const budgetSummary = (await api(financeUrl, { cookie })).json;
+    check(budgetSummary.budgetAmount === Number(budgetList.totalAmount), 'Home budget limit matches the total category budgets');
+    check(budgetSummary.budgetSpent === 100.05, 'Home budget usage counts expenses in budgeted categories and excludes transfers');
     await api('/api/budgets?month=bad', { cookie, status: 400 });
     await api('/api/budgets?month=0000-01', { cookie, status: 400 });
     await api('/api/budgets', { cookie: cookieB, body: { categoryId: expense, month: budgetMonth, amount: '1' }, status: 400 });
@@ -168,6 +171,8 @@ try {
     check((await api('/api/budgets?month=2027-01', { cookie })).json.totalAmount === '0.30', 'Sum of decimal budgets is exact');
     await api('/api/budgets', { cookie, body: { categoryId: expense, month: '2027-01', amount: '0.30' }, status: 201 });
     check((await api('/api/budgets?month=2027-01', { cookie })).json.totalAmount === '0.50', 'Editing a budget replaces the old amount in the total');
+    const emptyMonthSummary = (await api('/api/finance?start=2027-01-01&end=2027-01-31', { cookie })).json;
+    check(emptyMonthSummary.budgetAmount === 0.5 && emptyMonthSummary.budgetSpent === 0 && emptyMonthSummary.budget === 0, 'Home budget selects the requested month without carrying over expenses');
     check((await api(`/api/budgets?month=${budgetMonth}`, { cookie })).json.totalAmount === '750000.00', 'Budget months stay separate');
     await api('/api/goals', { cookie, body: { name: 'Mua xe', targetAmount: '20000000', dueOn: '2027-06-30' }, status: 201 });
     await api('/api/goals', { cookie, body: { name: 'Quỹ dự phòng', targetAmount: '0' }, status: 400 });
@@ -213,7 +218,8 @@ try {
         const browser = await chromium.launch({ headless: true,
             ...(process.platform === 'win32' ? { channel: 'msedge' } : {}) });
         try {
-            const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+            const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+            const page = await context.newPage();
             const pageErrors = [];
             page.on('pageerror', (error) => pageErrors.push(error.message));
             await page.goto(`${origin}/register`);
@@ -259,6 +265,7 @@ try {
             await page.goto(origin);
             await page.getByText('1.000.000đ', { exact: true }).waitFor();
             await page.getByText('50.000đ', { exact: true }).waitFor();
+            await page.getByText('Chưa đặt ngân sách cho tháng này.', { exact: true }).waitFor();
             checks += 2;
             const overflows = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
             check(!overflows, 'Home layout fits mobile width');
@@ -298,6 +305,28 @@ try {
             await totalIs('1.000.000đ');
             await setBudget('Ăn uống', '900000');
             await totalIs('1.100.000đ');
+            const homeTab = await page.context().newPage();
+            try {
+                await homeTab.goto(origin);
+                const homeTotalIs = async (value) => {
+                    await homeTab.waitForFunction((expected) => document.querySelector('[data-testid=home-budget-total]')?.textContent === expected, value);
+                    checks++;
+                };
+                await homeTotalIs('1.100.000đ');
+                check(await homeTab.getByTestId('home-budget-spent').textContent() === '50.000đ', 'Home shows expenses against the saved total budget');
+                check(await homeTab.getByRole('progressbar', { name: 'Mức sử dụng ngân sách' }).getAttribute('aria-valuenow') === '5', 'Budget bar uses expenses divided by total category budgets');
+                await setBudget('Ăn uống', '400000');
+                await homeTotalIs('600.000đ');
+                check(await homeTab.getByRole('progressbar').getAttribute('aria-valuenow') === '8', 'An already open homepage refreshes its budget bar after a budget edit in another tab');
+                await setBudget('Ăn uống', '900000');
+                await homeTotalIs('1.100.000đ');
+                await homeTab.getByRole('button', { name: 'Tháng sau', exact: true }).click();
+                await homeTab.getByText('Chưa đặt ngân sách cho tháng này.', { exact: true }).waitFor();
+                check(await homeTab.getByRole('progressbar').getAttribute('aria-valuenow') === '0', 'Month without budgets has an empty budget bar');
+                await homeTab.getByRole('button', { name: 'Tháng trước', exact: true }).click();
+                await homeTotalIs('1.100.000đ');
+                await homeTab.screenshot({ path: path.join(tmpdir(), 'cnpm-home-budget.png'), fullPage: true });
+            } finally { await homeTab.close(); }
             await page.getByRole('button', { name: 'Tháng sau', exact: true }).click();
             await totalIs('0đ');
             await page.getByRole('button', { name: 'Tháng trước', exact: true }).click();

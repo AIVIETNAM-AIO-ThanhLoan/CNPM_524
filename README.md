@@ -26,6 +26,8 @@
 
 Tab **Ngân sách** cho phép đặt/sửa hạn mức theo danh mục chi tiêu và tháng. Tạo danh mục tại **Trang chủ → Ghi giao dịch → Thêm danh mục** (nút cạnh tiêu đề **Danh mục**); trang Ngân sách lấy các danh mục chi tiêu từ đó để đặt hạn mức. Tổng ngân sách tự cộng từ các hạn mức đã lưu, không nhập riêng. Lịch sử giao dịch truy cập từ Báo cáo.
 
+Thanh Ngân sách ở **Trang chủ** hiển thị số đã chi trong các danh mục có ngân sách / tổng hạn mức theo tháng đang xem. Phần trăm và độ dài thanh tính từ hai số này; sau khi lưu hạn mức hoặc giao dịch, dữ liệu tự làm mới khi quay về trang chủ và trong các tab đang mở.
+
 Mục tiêu, khoản định kỳ và tỷ giá chưa có quy trình đầy đủ. Giao diện Ting Ting có các trang trợ lý AI và thông báo từ nhánh main; hai trang này vẫn dùng phản hồi/dữ liệu mẫu, chưa kết nối dịch vụ AI hoặc database. Đăng nhập Google, khôi phục mật khẩu, "QR của tôi" và trang quản trị vẫn là phần chưa triển khai/bản mẫu. Giao dịch hiện chỉ dùng VND.
 
 

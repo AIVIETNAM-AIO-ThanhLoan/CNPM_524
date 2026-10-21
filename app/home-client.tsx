@@ -152,12 +152,19 @@ export default function Home({ initialDate }: { initialDate: string }) {
         {isMonth ? (
           <div className="budget-section">
             <div className="budget-info">
-              <span>{totals.budgetAmount ? 'Ngân sách' : 'Chưa đặt ngân sách'}</span>
+              <Link href="/budgets" className="home-budget-link" aria-label="Quản lý ngân sách">Ngân sách</Link>
               <span className="budget-percent" style={{ color: budgetColor(totals.budget) }}>
                 {totals.budget}%
               </span>
             </div>
-            <div className="progress-bar">
+            <div className="home-budget-amounts" aria-live="polite">
+              {loading ? <span>Đang tải ngân sách…</span> : error ? <span>Chưa tải được ngân sách.</span> : totals.budgetAmount ? <>
+                <span>Đã dùng <strong data-testid="home-budget-spent">{formatMoney(totals.budgetSpent)}</strong></span>
+                <span>/ <strong data-testid="home-budget-total">{formatMoney(totals.budgetAmount)}</strong></span>
+              </> : <span>Chưa đặt ngân sách cho tháng này.</span>}
+            </div>
+            <div className="progress-bar" role="progressbar" aria-label="Mức sử dụng ngân sách" aria-valuemin={0} aria-valuemax={100}
+              aria-valuenow={Math.min(totals.budget, 100)} aria-valuetext={`${formatMoney(totals.budgetSpent)} / ${formatMoney(totals.budgetAmount)} (${totals.budget}%)`}>
               <div
                 className="progress-fill"
                 style={{
