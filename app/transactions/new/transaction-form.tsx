@@ -7,6 +7,7 @@ import { ArrowLeft, Banknote, Car, Gift, House, UtensilsCrossed, Wallet as Walle
 import { PALETTE } from '@/app/lib/colors';
 import { type Category, requestJson, today, type Wallet } from '@/app/lib/client-api';
 import BottomNav from '@/app/components/BottomNav';
+import AddCategoryButton from '@/app/components/AddCategoryButton';
 import '../../styles/ledger.css';
 import '../../styles/transaction.css';
 
@@ -67,7 +68,8 @@ export default function TransactionForm({ initialWallets, initialCategories }: {
             <label>Loại giao dịch<select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="expense">Chi tiền</option><option value="income">Thu tiền</option><option value="transfer">Chuyển giữa hai ví</option></select></label>
             <label>{kind === 'transfer' ? 'Ví nguồn' : 'Ví'}<select name="walletId" required>{wallets.map((w) => <option key={w.id} value={w.id}>{w.name} · {Number(w.balance).toLocaleString('vi-VN')}đ</option>)}</select></label>
             {kind === 'transfer' ? <label>Ví nhận<select name="targetId" required>{wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>
-                : <section className="tx-section"><h2 className="tx-section-title">Danh mục</h2>
+                : <section className="tx-section"><div className="tx-category-heading"><h2 className="tx-section-title">Danh mục</h2>
+                    <AddCategoryButton kind={kind} disabled={busy} onAdded={(category) => { setCategories((items) => [...items, category]); setSelectedCategory(category.id); setError(''); setSuccess('Đã thêm danh mục.'); }} /></div>
                     <input type="hidden" name="categoryId" value={categoryId} />
                     <div className="tx-categories">{visibleCategories.map((c) => {
                         const Icon = categoryIcons[c.name as keyof typeof categoryIcons] || WalletIcon;
@@ -85,9 +87,6 @@ export default function TransactionForm({ initialWallets, initialCategories }: {
         </form>
         <details className="card tx-extra"><summary>Thêm ví</summary><form className="ledger-form" onSubmit={(e) => addOption(e, 'wallets')}>
             <label>Tên ví<input name="name" maxLength={100} required /></label><p>Ví mới bắt đầu từ 0đ.</p><button className="btn-secondary" disabled={busy}>Thêm ví</button>
-        </form></details>
-        <details className="card tx-extra"><summary>Thêm danh mục</summary><form className="ledger-form" onSubmit={(e) => addOption(e, 'categories')}>
-            <label>Tên danh mục<input name="name" maxLength={80} required /></label><label>Loại<select name="kind"><option value="expense">Chi</option><option value="income">Thu</option></select></label><button className="btn-secondary" disabled={busy}>Thêm danh mục</button>
         </form></details>
         <BottomNav />
     </main>;
