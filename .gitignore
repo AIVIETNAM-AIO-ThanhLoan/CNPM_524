@@ -21,9 +21,14 @@ next-env.d.ts
 # Thư mục cũ, giữ trên máy, không đưa lên git
 /cnpm/
 
+# Bản sao lưu database (npm run db:backup)
+/backups/
+
 # Log
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
 .archify/
+AGENTS.md
+CLAUDE.md

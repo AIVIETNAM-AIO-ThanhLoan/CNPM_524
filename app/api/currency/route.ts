@@ -1,63 +1,62 @@
-import { NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import type { RowDataPacket } from 'mysql2/promise';
+import { database, rows } from '@/app/lib/db';
+import { api, HttpError, jsonBody } from '@/app/lib/http';
+import { requireUser } from '@/app/lib/session';
 
-// Hàm tạo kết nối trực tiếp đến MySQL
-async function getDbConnection() {
-  return await mysql.createConnection({
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: Number(process.env.DB_PORT) || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'cnpm_524',
-  });
+// Mã tiền tệ ISO 4217: ba chữ in hoa, dùng làm một phần URL nên phải kiểm tra trước khi gọi API tỷ giá
+function currency(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !/^[A-Z]{3}$/.test(value)) throw new HttpError(400, `${label} không hợp lệ.`);
+  return value;
+}
+
+function positive(value: unknown, label: string, max: number): number {
+  const number = typeof value === 'string' && value.trim() ? Number(value) : value;
+  if (typeof number !== 'number' || !Number.isFinite(number) || number <= 0 || number > max) {
+    throw new HttpError(400, `${label} phải lớn hơn 0 và không quá ${max.toLocaleString('vi-VN')}.`);
+  }
+  return number;
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const action = searchParams.get('action');
+  return api(async () => {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
 
-  try {
     if (action === 'rate') {
-      const from = searchParams.get('from') || 'USD';
-      const to = searchParams.get('to') || 'VND';
+      const from = currency(searchParams.get('from') || 'USD', 'Tiền tệ nguồn');
+      const to = currency(searchParams.get('to') || 'VND', 'Tiền tệ đích');
       const res = await fetch(`https://open.er-api.com/v6/latest/${from}`, { next: { revalidate: 3600 } });
       const data = await res.json();
-      
-      if (data.result === 'success') {
-        return NextResponse.json({ success: true, rate: data.rates[to] });
+      if (data.result === 'success' && typeof data.rates?.[to] === 'number') {
+        return Response.json({ success: true, rate: data.rates[to] });
       }
-      return NextResponse.json({ error: 'Lỗi lấy tỷ giá' }, { status: 400 });
-    } 
-    
-    if (action === 'history') {
-      const db = await getDbConnection();
-      const [rows] = await db.query('SELECT * FROM exchange_history ORDER BY created_at DESC LIMIT 5');
-      await db.end(); // Đóng kết nối
-      return NextResponse.json({ success: true, history: rows });
+      throw new HttpError(502, 'Không lấy được tỷ giá.');
     }
 
-    return NextResponse.json({ error: 'Yêu cầu không hợp lệ' }, { status: 400 });
-  } catch (error: any) {
-    console.error("LỖI BACKEND:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+    if (action === 'history') {
+      // Lịch sử chỉ thuộc về người đang đăng nhập; user_id lấy từ session, không nhận từ client
+      const user = await requireUser();
+      const history = await rows<RowDataPacket>(`SELECT id, from_currency, to_currency, amount, result, rate_used, created_at
+        FROM exchange_history WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 5`, [user.id]);
+      return Response.json({ success: true, history });
+    }
+
+    throw new HttpError(400, 'Yêu cầu không hợp lệ.');
+  });
 }
 
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { from, to, amount, result, rate } = body;
-
-    const db = await getDbConnection();
-    await db.query(
-      'INSERT INTO exchange_history (from_currency, to_currency, amount, result, rate_used) VALUES (?, ?, ?, ?, ?)',
-      [from, to, amount, result, rate]
-    );
-    await db.end(); // Đóng kết nối
-
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error("LỖI LƯU DB:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  return api(async () => {
+    const body = await jsonBody(request);
+    const user = await requireUser();
+    const from = currency(body.from, 'Tiền tệ nguồn');
+    const to = currency(body.to, 'Tiền tệ đích');
+    const amount = positive(body.amount, 'Số tiền', 1e12);
+    const rate = positive(body.rate, 'Tỷ giá', 1e9);
+    // Kết quả tính lại ở server từ số tiền và tỷ giá áp dụng, không tin giá trị client gửi lên
+    const result = (amount * rate).toFixed(4);
+    await database().execute(`INSERT INTO exchange_history (user_id, from_currency, to_currency, amount, result, rate_used)
+      VALUES (?, ?, ?, ?, ?, ?)`, [user.id, from, to, amount.toFixed(4), result, rate.toFixed(8)]);
+    return Response.json({ success: true }, { status: 201 });
+  });
 }

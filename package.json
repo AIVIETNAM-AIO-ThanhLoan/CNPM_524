@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:setup": "node scripts/setup-database.mjs",
+    "db:backup": "node scripts/backup-database.mjs",
+    "db:restore": "node scripts/restore-database.mjs",
     "test:integration": "node tests/integration.mjs",
     "test:browser": "node tests/integration.mjs --browser",
     "test:ai-keys": "node scripts/test-ai-keys.mjs"

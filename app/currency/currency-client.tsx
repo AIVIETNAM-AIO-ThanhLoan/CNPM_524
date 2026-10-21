@@ -6,50 +6,82 @@ import BottomNav from '../components/BottomNav';
 
 const CURRENCIES = ['VND', 'USD', 'EUR', 'JPY', 'GBP', 'AUD', 'KRW'];
 
+// Một dòng trong bảng exchange_history (MySQL trả số thập phân dạng chuỗi)
+type HistoryItem = {
+  id: number;
+  from_currency: string;
+  to_currency: string;
+  amount: string | number;
+  result: string | number;
+  rate_used: string | number;
+  created_at: string;
+};
+
 export default function CurrencyClient() {
   const [amount, setAmount] = useState<number | ''>(1);
   const [from, setFrom] = useState('USD');
   const [to, setTo] = useState('VND');
   const [rate, setRate] = useState<number | null>(null);
-  
+
   const [customRate, setCustomRate] = useState<number | null>(null);
   const [isEditingRate, setIsEditingRate] = useState(false);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  // Tăng các số này để tải lại tỷ giá (nút làm mới) hoặc lịch sử (sau khi lưu)
+  const [rateReload, setRateReload] = useState(0);
+  const [historyReload, setHistoryReload] = useState(0);
 
-  const fetchRate = async () => {
+  // Chỉ cập nhật state trong callback của fetch, không gọi setState ngay trong effect
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/currency?action=rate&from=${from}&to=${to}`, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setRate(data.rate);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [from, to, rateReload]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/currency?action=history', { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setHistory(data.history);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [historyReload]);
+
+  // Đổi cặp tiền hoặc làm mới: bỏ tỷ giá tự nhập và hiện trạng thái đang tải
+  const resetRate = () => {
     setLoading(true);
     setCustomRate(null);
     setIsEditingRate(false);
-    try {
-      // Gọi API currency mới
-      const res = await fetch(`/api/currency?action=rate&from=${from}&to=${to}`);
-      const data = await res.json();
-      if (data.success) setRate(data.rate);
-    } catch (error) {
-      console.error(error);
-    }
-    setLoading(false);
   };
 
-  const fetchHistory = async () => {
-    try {
-      const res = await fetch('/api/currency?action=history');
-      const data = await res.json();
-      if (data.success) setHistory(data.history);
-    } catch (error) {}
+  const fetchRate = () => {
+    resetRate();
+    setRateReload((n) => n + 1);
   };
 
-  useEffect(() => {
-    fetchRate();
-  }, [from, to]);
+  const changeFrom = (value: string) => {
+    resetRate();
+    setFrom(value);
+  };
 
-  useEffect(() => {
-    fetchHistory();
-  }, []);
+  const changeTo = (value: string) => {
+    resetRate();
+    setTo(value);
+  };
 
   const handleSwap = () => {
+    resetRate();
     setFrom(to);
     setTo(from);
   };
@@ -61,18 +93,20 @@ export default function CurrencyClient() {
     if (!convertedAmount || !activeRate) return;
     try {
       // Gọi API POST để lưu
-      await fetch('/api/currency', {
+      const res = await fetch('/api/currency', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from, to, amount, result: convertedAmount, rate: activeRate
         })
       });
+      // API trả { error } khi chưa đăng nhập hoặc dữ liệu sai; hiện đúng lý do thay vì báo đã lưu
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error || 'Lỗi khi lưu!');
       setSaved(true);
-      fetchHistory();
+      setHistoryReload((n) => n + 1);
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
-      alert('Lỗi khi lưu!');
+      alert(error instanceof Error ? error.message : 'Lỗi khi lưu!');
     }
   };
 
@@ -99,7 +133,7 @@ export default function CurrencyClient() {
           </div>
 
           <div className="flex items-center justify-between gap-2 mt-6 bg-gray-50 p-2 rounded-xl">
-            <select value={from} onChange={e => setFrom(e.target.value)} className="w-full bg-transparent font-semibold text-gray-700 p-2 outline-none cursor-pointer text-center">
+            <select value={from} onChange={e => changeFrom(e.target.value)} className="w-full bg-transparent font-semibold text-gray-700 p-2 outline-none cursor-pointer text-center">
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
@@ -107,7 +141,7 @@ export default function CurrencyClient() {
               <ArrowRightLeft size={20} />
             </button>
 
-            <select value={to} onChange={e => setTo(e.target.value)} className="w-full bg-transparent font-semibold text-gray-700 p-2 outline-none cursor-pointer text-center">
+            <select value={to} onChange={e => changeTo(e.target.value)} className="w-full bg-transparent font-semibold text-gray-700 p-2 outline-none cursor-pointer text-center">
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>

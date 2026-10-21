@@ -16,24 +16,31 @@ export default function GoldClient() {
   const [prices, setPrices] = useState<GoldPrice[]>([]);
   const [updatedAt, setUpdatedAt] = useState('');
   const [loading, setLoading] = useState(true);
+  // Tăng số này để tải lại giá vàng (nút làm mới)
+  const [reload, setReload] = useState(0);
 
-  const fetchGoldPrices = () => {
-    setLoading(true);
-    fetch('/api/market?type=gold')
+  // Chỉ cập nhật state trong callback của fetch, không gọi setState ngay trong effect
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/market?type=gold', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
           setPrices(data.prices);
           setUpdatedAt(data.updatedAt);
         }
-        setLoading(false);
       })
-      .catch(() => setLoading(false));
-  };
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [reload]);
 
-  useEffect(() => {
-    fetchGoldPrices();
-  }, []);
+  const fetchGoldPrices = () => {
+    setLoading(true);
+    setReload((n) => n + 1);
+  };
 
   const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 

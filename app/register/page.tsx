@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Lock, Phone, User, Wallet } from 'lucide-react';
 import GoogleIcon from '../components/GoogleIcon';
 import { requestJson } from '../lib/client-api';
+import RecoveryCode from '../components/RecoveryCode';
 import '../styles/auth.css';
 
 export default function RegisterPage() {
@@ -17,6 +18,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,12 +38,34 @@ export default function RegisterPage() {
     setErrorMsg('');
     setBusy(true);
     try {
-      await requestJson('/api/auth/register', { name: fullName, account, password });
-      router.push('/login');
+      const data = await requestJson<{ recoveryCode: string }>('/api/auth/register', { name: fullName, account, password });
+      // Hiện mã khôi phục trước khi chuyển sang đăng nhập vì mã chỉ trả về một lần
+      setRecoveryCode(data.recoveryCode);
     } catch (error) {
       setErrorMsg(error instanceof Error ? error.message : 'Đăng ký thất bại.');
     } finally { setBusy(false); }
   };
+
+  if (recoveryCode) {
+    return (
+      <div className="auth-container">
+        <div className="auth-content">
+          <Wallet className="auth-logo" strokeWidth={1.8} />
+          <p className="auth-brand">Chi Tiêu</p>
+
+          <h1 className="auth-title">Lưu mã khôi phục</h1>
+          <p className="auth-subtitle">Dùng mã này để đặt lại mật khẩu khi bạn quên. Mã chỉ hiện một lần.</p>
+
+          <div className="auth-form">
+            <RecoveryCode code={recoveryCode} />
+            <button type="button" className="auth-submit" onClick={() => router.push('/login')}>
+              Tôi đã lưu mã, đăng nhập
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-container">
