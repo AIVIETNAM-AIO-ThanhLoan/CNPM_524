@@ -25,8 +25,11 @@ import './styles/home.css';
 
 // Đề xuất: mỗi chức năng một màu có nghĩa. Giá vàng dùng chữ "Au" đúng màu vàng
 const suggestions: { label: string; color: string; Icon?: typeof BellRing; mark?: string; href?: string }[] = [
-  { Icon: ArrowRightLeft, label: 'Quy đổi tiền tệ', color: PALETTE.teal },
-  { mark: 'Au', label: 'Giá vàng', color: PALETTE.gold },
+  // Nút Quy đổi tiền tệ trỏ đến /currency
+  { Icon: ArrowRightLeft, label: 'Quy đổi tiền tệ', color: PALETTE.teal, href: '/currency' },
+  // Nút Giá vàng trỏ đến /gold
+  { mark: 'Au', label: 'Giá vàng', color: PALETTE.gold, href: '/gold' },
+  // Nút Lời nhắc trỏ về /reminders (hoặc bạn có thể xóa dòng này nếu không dùng)
   { Icon: BellRing, label: 'Lời nhắc', color: PALETTE.indigo, href: '/reminders' },
 ];
 
