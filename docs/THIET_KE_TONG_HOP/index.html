@@ -1,50 +1,33 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>UC · UML · ERD của nhóm</title><style>
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Thiết kế hệ thống Ting Ting</title><style>
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:85px}body{margin:0;color:#20384a;background:#f4f7fa;font:16px/1.65 system-ui,Segoe UI,Arial}header{background:#153d56;color:white;padding:36px max(20px,calc((100% - 1180px)/2))}h1{font-size:clamp(27px,4vw,38px);line-height:1.25;margin:0 0 12px}header p{margin:0;color:#d6e7f0}nav{position:sticky;top:0;background:white;border-bottom:1px solid #d5e2eb;padding:14px 20px;display:flex;justify-content:center;gap:22px;z-index:1}a{color:#12688c;text-underline-offset:3px}nav a{font-weight:650;text-decoration:none}main{max-width:1220px;margin:auto;padding:24px 20px}section{padding:26px;background:white;border:1px solid #d8e3eb;border-radius:10px;margin-bottom:28px;min-width:0}h2{font-size:25px;margin-top:0}h3{font-size:21px;border-top:1px solid #d8e3eb;padding-top:22px;margin-top:28px}h4{font-size:17px}p,li{overflow-wrap:anywhere}.table-scroll{max-width:100%;overflow-x:auto;margin:20px 0}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:11px 13px;border:1px solid #d8e3eb;text-align:left;vertical-align:top;min-width:110px}th{background:#edf4f8}#uc table{min-width:1300px}#uc td:first-child{min-width:75px;white-space:nowrap}img{display:block;max-width:100%;height:auto;margin:20px auto}code{background:#eef3f7;padding:2px 5px;border-radius:4px}pre{max-width:100%;overflow:auto;padding:18px;background:#eef3f7;font-size:13px}pre code{padding:0}summary{cursor:pointer}a:focus-visible,summary:focus-visible{outline:3px solid #e4a329;outline-offset:4px}.back{text-align:right;font-size:14px}.intro{color:#526c7f}footer{max-width:1180px;margin:0 auto 30px;padding:0 20px;color:#526c7f;font-size:13px}@media(max-width:600px){main{padding:14px 10px}section{padding:18px}nav{gap:18px;font-size:14px}header{padding:26px 20px}}
 
 .erd-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;margin:30px 0 20px}.erd-heading h3{border:0;padding:0;margin:6px 0;font-size:27px}.erd-heading p{margin:0;color:#64748b}.erd-eyebrow{font-size:11px;letter-spacing:2px;font-weight:750;color:#0f766e}.erd-open{white-space:nowrap;background:#153d56;color:white;padding:10px 16px;border-radius:7px;text-decoration:none;font-size:14px}.erd-legend{display:flex;flex-wrap:wrap;gap:9px 20px;font-size:12px;color:#526c7f;padding:14px;background:#f0f5f9;border-radius:8px}.erd-legend b{color:#153d56}.erd-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:14px 0;font-size:13px}.erd-toolbar input{max-width:160px;accent-color:#0f766e}.erd-canvas{overflow:auto;background:#f8fafc;border:1px solid #d8e3eb;border-radius:10px;max-height:85vh}.erd-canvas:focus-visible{outline:3px solid #e4a329;outline-offset:3px}.erd-canvas #erd-image{width:100%;max-width:none;height:auto;margin:0}.erd-note{font-size:13px;color:#526c7f;line-height:1.7}@media(max-width:600px){.erd-heading{align-items:flex-start;flex-direction:column}.erd-heading h3{font-size:23px}.erd-toolbar{justify-content:flex-start}.erd-canvas{max-height:70vh}}
-</style></head><body><header id="top"><h1>Use Case · UML · ERD</h1><p>Tài liệu của nhóm và ảnh gốc có sẵn · main 7e47d99</p></header><nav aria-label="Mục lục"><a href="#uc">Use Case</a><a href="#uml">UML gốc</a><a href="#erd">ERD và dữ liệu</a><a href="README.md">Tài liệu</a></nav><main><p class="intro">Bấm vào ảnh để mở lớn. Các ảnh UC, Activity và Sequence đều lấy từ sources/design.</p><section id="uc"><h2>Danh mục Use Case và liên kết thiết kế</h2>
-<p>Nguồn yêu cầu: UC.docx của nhóm. Trạng thái mã: main / HEAD 7e47d99, đã fetch và đối chiếu với GitHub ngày 21/10/2026. Chưa chạy ứng dụng để xác nhận nghiệp vụ. Giữ 19 mã UC01, UC03–UC20; không tự tạo UC02.</p>
-<div class="table-scroll"><table><thead><tr><th>UC</th><th>Tác nhân</th><th>Mục tiêu</th><th>UR/SR theo bảng gốc</th><th>Dữ liệu cần đọc/ghi</th><th>API có trong mã</th><th>Trạng thái và phần còn thiếu</th></tr></thead><tbody>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC01.png">UC01</a></td><td>Người dùng</td><td>Đăng ký/Đăng nhập</td><td>UR-F10, SR-F01, SR-F02</td><td>users, sessions</td><td>POST /api/auth/register; POST /api/auth/login; POST /api/auth/logout; GET /api/auth/me</td><td>Một phần: Đã có xác thực/phiên; chưa có 2FA.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC03.png">UC03</a></td><td>Người dùng</td><td>Quản lý tài khoản tiền</td><td>UR-F02, SR-F03</td><td>accounts (kind=wallet)</td><td>GET/POST /api/wallets</td><td>Một phần: Có tạo và xem ví/số dư; chưa có sửa, ngừng sử dụng.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC04.png">UC04</a></td><td>Người dùng</td><td>Quản lý danh mục thu/chi</td><td>UR-F02, SR-F03</td><td>categories, accounts</td><td>GET/POST /api/categories</td><td>Một phần: Có tạo và xem; chưa có sửa, ngừng sử dụng.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC05.png">UC05</a></td><td>Người dùng</td><td>Ghi nhận giao dịch thu/chi</td><td>UR-F01, SR-F04</td><td>transactions, transaction_entries, accounts, categories</td><td>POST /api/transactions</td><td>Đã có mã luồng chính: Thu/chi/chuyển tiền VND, hai dòng đối ứng, chống gửi trùng. Chưa có đa tiền tệ.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC06.png">UC06</a></td><td>Người dùng</td><td>Tra cứu lịch sử giao dịch</td><td>UR-F01, UR-F09, SR-F07</td><td>transactions, transaction_entries, categories, accounts</td><td>GET /api/finance</td><td>Một phần: Có kỳ và tìm kiếm; lịch sử tối đa 200 dòng, chưa có phân trang đầy đủ.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC07.png">UC07</a></td><td>Người dùng</td><td>Hủy hoặc điều chỉnh giao dịch</td><td>UR-F01, SR-F08</td><td>transactions, transaction_entries; còn thiếu liên kết đảo/thay thế</td><td>Chưa có API</td><td>Cần bổ sung: Chưa có liên kết reversal/correction trong schema, chưa có chức năng đảo/thay thế.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC08-09.png">UC08</a></td><td>Người dùng</td><td>Quản lý ngân sách</td><td>UR-F04, SR-F13–14</td><td>budgets, categories</td><td>GET/POST /api/budgets</td><td>Một phần: Có xem/đặt/cập nhật ngân sách theo danh mục chi và tháng; chưa có ngưỡng cấu hình.</td></tr>
+nav{flex-wrap:wrap;gap:10px 22px}@media(max-width:600px){nav{position:static}}
+</style></head><body><header id="top"><h1>Use Case · UML · ERD · UI</h1></header><nav aria-label="Mục lục"><a href="#uc">Use Case</a><a href="#uml">UML gốc</a><a href="#erd">ERD và dữ liệu</a><a href="#ui">Thiết kế giao diện</a><a href="README.md">Tài liệu</a></nav><main><section id="uc"><h2>Use Case</h2>
+<p>Nguồn: <a href="sources/design/Usecase&amp;UML/UC.docx">UC.docx</a> · 19 Use Case (UC01, UC03–UC20).</p>
+<div class="table-scroll"><table><thead><tr><th>UC</th><th>Tác nhân</th><th>Mục tiêu</th><th>UR/SR</th><th>Dữ liệu</th><th>API</th><th>Trạng thái</th></tr></thead><tbody>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC01.png">UC01</a></td><td>Người dùng</td><td>Đăng ký/Đăng nhập</td><td>UR-F10, SR-F01, SR-F02</td><td>users, sessions</td><td>POST /api/auth/register; POST /api/auth/login; POST /api/auth/logout; GET /api/auth/me</td><td>Có xác thực/phiên; chưa có 2FA.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC03.png">UC03</a></td><td>Người dùng</td><td>Quản lý tài khoản tiền</td><td>UR-F02, SR-F03</td><td>accounts (kind=wallet)</td><td>GET/POST /api/wallets</td><td>Có tạo và xem ví/số dư; chưa có sửa, ngừng sử dụng.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC04.png">UC04</a></td><td>Người dùng</td><td>Quản lý danh mục thu/chi</td><td>UR-F02, SR-F03</td><td>categories, accounts</td><td>GET/POST /api/categories</td><td>Có tạo và xem; chưa có sửa, ngừng sử dụng.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC05.png">UC05</a></td><td>Người dùng</td><td>Ghi nhận giao dịch thu/chi</td><td>UR-F01, SR-F04</td><td>transactions, transaction_entries, accounts, categories</td><td>POST /api/transactions</td><td>Thu/chi/chuyển tiền VND, hai dòng đối ứng, chống gửi trùng. Chưa có đa tiền tệ.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC06.png">UC06</a></td><td>Người dùng</td><td>Tra cứu lịch sử giao dịch</td><td>UR-F01, UR-F09, SR-F07</td><td>transactions, transaction_entries, categories, accounts</td><td>GET /api/finance</td><td>Có kỳ và tìm kiếm; lịch sử tối đa 200 dòng, chưa có phân trang đầy đủ.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC07.png">UC07</a></td><td>Người dùng</td><td>Hủy hoặc điều chỉnh giao dịch</td><td>UR-F01, SR-F08</td><td>transactions, transaction_entries; còn thiếu liên kết đảo/thay thế</td><td>Chưa có API</td><td>Chưa có liên kết reversal/correction trong schema, chưa có chức năng đảo/thay thế.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC08-09.png">UC08</a></td><td>Người dùng</td><td>Quản lý ngân sách</td><td>UR-F04, SR-F13–14</td><td>budgets, categories</td><td>GET/POST /api/budgets</td><td>Có xem/đặt/cập nhật ngân sách theo danh mục chi và tháng; chưa có ngưỡng cấu hình.</td></tr>
 <tr><td><a href="sources/design/Usecase&amp;UML/UC08-09.png">UC09</a></td><td>Người dùng</td><td>Nhận cảnh báo ngân sách</td><td>UR-F04, SR-F14–15</td><td>budgets; chưa có lưu thông báo/cảnh báo</td><td>Chưa có API cảnh báo</td><td>Cần bổ sung: Trang thông báo có dữ liệu mẫu; chưa có lịch sử cảnh báo thật.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC10-11.png">UC10</a></td><td>Người dùng</td><td>Quản lý khoản đăng ký định kỳ</td><td>UR-F05, SR-F16</td><td>recurring_transactions</td><td>Chưa có API trong cây đã kiểm tra</td><td>Có bảng nền: Có cấu trúc quy tắc; chưa có scheduler/quy trình CRUD hoàn chỉnh.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC11.png">UC11</a></td><td>Người dùng</td><td>Nhận nhắc nhở thanh toán</td><td>UR-F05, SR-F17</td><td>recurring_transactions; chưa có lịch sử gửi</td><td>Chưa có API/scheduler</td><td>Cần bổ sung: Chưa có nơi lưu kết quả gửi để chống nhắc trùng.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC12.png">UC12</a></td><td>Người dùng</td><td>Xem đề xuất khoản đăng ký định kỳ</td><td>UR-F05, SR-F18</td><td>transactions + đề xuất định kỳ chưa có bảng</td><td>Chưa có API</td><td>Cần bổ sung: Chưa có thuật toán, tiêu chí phát hiện hoặc dữ liệu đề xuất.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC.docx">UC13</a></td><td>Người dùng</td><td>Xem giá trị quy đổi ngoại tệ</td><td>UR-F06, SR-F11–12</td><td>exchange_rates</td><td>Chưa có API quy đổi</td><td>Có bảng nền: Ghi sổ hiện khóa VND; chưa lưu snapshot tỷ giá giao dịch.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC.docx">UC14</a></td><td>Người dùng</td><td>Xem dashboard</td><td>UR-F07, SR-F20</td><td>accounts, transaction_entries, transactions, budgets</td><td>GET /api/finance; GET /api/wallets</td><td>Một phần: Có tổng hợp và số dư; chưa có mô hình nợ để khẳng định tài sản ròng đầy đủ.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC15.png">UC15</a></td><td>Người dùng</td><td>Quản lý mục tiêu tài chính</td><td>UR-F08, SR-F19, SR-F21</td><td>goals</td><td>GET/POST /api/goals</td><td>Một phần: Có tạo/xem tên, số tiền đích và hạn; chưa có tích lũy, phân bổ, kết thúc.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC15-UC20.png">UC16</a></td><td>Người dùng</td><td>Xem báo cáo thu/chi</td><td>UR-F09, SR-F22</td><td>transactions, categories, transaction_entries</td><td>GET /api/finance</td><td>Đã có mã luồng chính: Có tổng/breakdown theo kỳ; kiểm tra tối đa 366 ngày; chưa xác nhận chạy trong lượt này.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC10-11.png">UC10</a></td><td>Người dùng</td><td>Quản lý khoản đăng ký định kỳ</td><td>UR-F05, SR-F16</td><td>recurring_transactions</td><td>Chưa có API</td><td>Có bảng quy tắc; chưa có scheduler/quy trình CRUD hoàn chỉnh.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC11.png">UC11</a></td><td>Người dùng</td><td>Nhận nhắc nhở thanh toán</td><td>UR-F05, SR-F17</td><td>recurring_transactions; chưa có lịch sử gửi</td><td>Chưa có API/scheduler</td><td>Chưa có nơi lưu kết quả gửi để chống nhắc trùng.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC12.png">UC12</a></td><td>Người dùng</td><td>Xem đề xuất khoản đăng ký định kỳ</td><td>UR-F05, SR-F18</td><td>transactions + đề xuất định kỳ chưa có bảng</td><td>Chưa có API</td><td>Chưa có thuật toán, tiêu chí phát hiện hoặc dữ liệu đề xuất.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC.docx">UC13</a></td><td>Người dùng</td><td>Xem giá trị quy đổi ngoại tệ</td><td>UR-F06, SR-F11–12</td><td>exchange_rates</td><td>Chưa có API quy đổi</td><td>Ghi sổ hiện khóa VND; chưa lưu snapshot tỷ giá giao dịch.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC.docx">UC14</a></td><td>Người dùng</td><td>Xem dashboard</td><td>UR-F07, SR-F20</td><td>accounts, transaction_entries, transactions, budgets</td><td>GET /api/finance; GET /api/wallets</td><td>Có tổng hợp và số dư; chưa có mô hình nợ để khẳng định tài sản ròng đầy đủ.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC15.png">UC15</a></td><td>Người dùng</td><td>Quản lý mục tiêu tài chính</td><td>UR-F08, SR-F19, SR-F21</td><td>goals</td><td>GET/POST /api/goals</td><td>Có tạo/xem tên, số tiền đích và hạn; chưa có tích lũy, phân bổ, kết thúc.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC15-UC20.png">UC16</a></td><td>Người dùng</td><td>Xem báo cáo thu/chi</td><td>UR-F09, SR-F22</td><td>transactions, categories, transaction_entries</td><td>GET /api/finance</td><td>Có tổng/breakdown theo kỳ; kiểm tra tối đa 366 ngày.</td></tr>
 <tr><td><a href="sources/design/Usecase&amp;UML/UC15-UC20.png">UC17</a></td><td>Người dùng</td><td>So sánh tài chính giữa các kỳ</td><td>UR-F03 — chưa có SR tương ứng</td><td>Truy vấn tổng hợp transactions, không bắt buộc bảng mới</td><td>Chưa có luồng so sánh riêng</td><td>Cần bổ sung: UR-F03 còn thiếu SR tương ứng; đổi kỳ chưa đồng nghĩa so sánh kỳ.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC15-UC20.png">UC18</a></td><td>Người vận hành / Nhà cung cấp tỷ giá</td><td>Đồng bộ tỷ giá</td><td>SR-F10</td><td>exchange_rates</td><td>Chưa có đồng bộ thật</td><td>Có bảng nền: Bảng tỷ giá dự phòng; thao tác quản trị vẫn mô phỏng.</td></tr>
-<tr><td><a href="sources/design/Usecase&amp;UML/UC15-UC20.png">UC19</a></td><td>Bộ lập lịch / Người vận hành</td><td>Sao lưu dữ liệu</td><td>SR-F24</td><td>Chưa có dữ liệu sao lưu; schema_migrations chỉ ghi phiên bản schema</td><td>Chưa có backup thật</td><td>Cần bổ sung: Chưa có tác vụ tạo file/lưu trạng thái sao lưu.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC15-UC20.png">UC18</a></td><td>Người vận hành / Nhà cung cấp tỷ giá</td><td>Đồng bộ tỷ giá</td><td>SR-F10</td><td>exchange_rates</td><td>Chưa có đồng bộ thật</td><td>Bảng tỷ giá dự phòng; thao tác quản trị vẫn mô phỏng.</td></tr>
+<tr><td><a href="sources/design/Usecase&amp;UML/UC15-UC20.png">UC19</a></td><td>Bộ lập lịch / Người vận hành</td><td>Sao lưu dữ liệu</td><td>SR-F24</td><td>Chưa có dữ liệu sao lưu; schema_migrations chỉ ghi phiên bản schema</td><td>Chưa có backup thật</td><td>Chưa có tác vụ tạo file/lưu trạng thái sao lưu.</td></tr>
 <tr><td><a href="sources/design/Usecase&amp;UML/UC15-UC20.png">UC20</a></td><td>Người vận hành được cấp quyền</td><td>Khôi phục dữ liệu</td><td>SR-F25</td><td>Chưa có dữ liệu phục vụ quy trình khôi phục</td><td>Chưa có restore thật</td><td>Cần bổ sung: Cần quyền vận hành, xác nhận và kiểm tra phục hồi riêng.</td></tr>
 </tbody></table></div>
-<h3>Cách dùng khi thiết kế một màn hình</h3>
-<ol>
-<li>Chọn mã UC từ bảng này; xác định mục tiêu và actor.</li>
-<li>Đọc luồng chính, điều kiện và lỗi trong tài liệu UML.</li>
-<li>Đối chiếu bảng/cột trong ERD và từ điển dữ liệu; không suy ra quyền sở hữu từ tên trường đơn thuần.</li>
-<li>Xác định API đã có và phần thiếu; chỉ mở rộng dữ liệu sau khi chốt nghiệp vụ.</li>
-<li>Kiểm tra đủ nhánh bằng ví dụ và kết quả dữ liệu mong đợi.</li>
-</ol>
-<h3>Lưu ý khi đọc ảnh gốc</h3>
-<ul>
-<li>Actor ngân sách/định kỳ trong bảng UC là Người dùng; một số ảnh gốc còn ghi Tour Guide. Ảnh được giữ nguyên để nhóm đối chiếu.</li>
-<li>UC13 là quy đổi ngoại tệ; ảnh UC13 gốc trùng UC12. UC14 là dashboard; ảnh UC14 gốc đang ghi nhắc định kỳ.</li>
-<li>Tên nhóm ghi chi–cảnh báo chuẩn hóa là UC05 + UC08/UC09; tên file gốc UC6-9 vẫn được giữ trong sources để đối chiếu.</li>
-<li>Dùng ngừng sử dụng cho ví/danh mục theo bảng UC; không tự suy ra xóa vật lý.</li>
-<li>Không vẽ tạo/xem/sửa/xóa bằng include như thể một lần quản lý phải luôn chạy đủ bốn thao tác.</li>
-<li>UC09 chỉ mở rộng sau ghi chi thành công khi đạt/vượt ngưỡng. UC08 là cấu hình dùng trước, không bắt buộc gọi lại mỗi lần ghi chi.</li>
-<li>UC13 đọc tỷ giá đã có; UC18 đồng bộ là tác vụ riêng.</li>
-<li>Vai trò Người vận hành cho UC18–UC20 được chuẩn hóa đề xuất; chính sách quyền chi tiết cần nhóm chốt.</li>
-</ul><p class="back"><a href="#top">Về đầu trang ↑</a></p></section><section id="uml"><h2>UML gốc của nhóm</h2>
-<p>Ảnh dưới đây lấy trực tiếp từ <code>sources/design/Diagram</code>, không vẽ lại. Mô tả giúp đọc và đối chiếu thiết kế gốc với mã hiện tại.</p>
+<p>Lưu ý ảnh gốc: UC13 trùng UC12; UC14 sai nội dung; actor “Tour Guide” cần đổi thành Người dùng. UC09 dùng cấu hình UC08 và phát sinh sau ghi chi thành công.</p><p class="back"><a href="#top">Về đầu trang ↑</a></p></section><section id="uml"><h2>UML</h2>
+
 <p><a href="sources/design/Usecase&amp;UML/UC.docx">Bảng Use Case gốc</a> · <a href="#uc">Danh mục UC và API</a> · <a href="#erd">ERD và dữ liệu</a></p>
 <h3>Tra cứu nhanh</h3>
 <div class="table-scroll"><table><thead><tr><th>Nghiệp vụ</th><th>Activity gốc</th><th>Sequence gốc</th></tr></thead><tbody>
@@ -54,52 +37,43 @@
 <tr><td>UC16</td><td><a href="sources/design/Diagram/UC16_Activity Diagram.png">Mở ảnh</a></td><td><a href="sources/design/Diagram/UC16_Sequent Diagram.png">Mở ảnh</a></td></tr>
 </tbody></table></div>
 <h3>1. Ghi khoản chi và cảnh báo ngân sách</h3>
-<p><strong>Phạm vi:</strong> UC05 kết hợp UC08/UC09.</p>
-<p><strong>Luồng nghiệp vụ:</strong> Nhập khoản chi → kiểm tra dữ liệu → lưu → cập nhật mức sử dụng ngân sách → xét ngưỡng → thông báo hoặc hiển thị thành công.</p>
-<p><strong>Các thành phần phối hợp:</strong> Client gửi khoản chi tới phần giao dịch; phần giao dịch lưu dữ liệu rồi yêu cầu phần ngân sách kiểm tra. Phần ngân sách đọc cấu hình, gửi và lưu lịch sử cảnh báo khi thỏa điều kiện.</p>
-<p><strong>Điểm cần đối chiếu:</strong> Tên file gốc ghi UC6-9, nhưng Main UC trong UC.docx mô tả UC05 + UC09, dùng cấu hình UC08. Activity ghi vượt ngưỡng, còn bảng UC và Sequence ghi đạt/vượt; nhóm cần chốt điều kiện bằng đúng ngưỡng. Mã hiện có luồng ghi sổ, chưa có gửi cảnh báo thật.</p>
+<p>Nhập khoản chi → kiểm tra dữ liệu → lưu → cập nhật mức sử dụng ngân sách → xét ngưỡng → thông báo hoặc hiển thị thành công.</p>
+<p>Cảnh báo ngân sách chưa có trong mã; cần thống nhất điều kiện đạt/vượt ngưỡng.</p>
 <h4>Activity</h4>
 <p><a href="sources/design/Diagram/UC6-9_Activity_Diagram.png" target="_blank"><img loading="lazy" src="sources/design/Diagram/UC6-9_Activity_Diagram.png" alt="Activity gốc UC05 kết hợp UC08/UC09"></a></p>
 <h4>Sequence</h4>
 <p><a href="sources/design/Diagram/UC6-9_sequenceDiagram.png" target="_blank"><img loading="lazy" src="sources/design/Diagram/UC6-9_sequenceDiagram.png" alt="Sequence gốc UC05 kết hợp UC08/UC09"></a></p>
 <h3>2. Hủy hoặc điều chỉnh giao dịch</h3>
-<p><strong>Phạm vi:</strong> UC07.</p>
-<p><strong>Luồng nghiệp vụ:</strong> Chọn giao dịch → kiểm tra quyền/hiệu lực → chọn hủy hoặc nhập nội dung sửa → kiểm tra dữ liệu → xác nhận → ghi bút toán đảo → nếu sửa thì ghi giao dịch thay thế → liên kết và lưu đồng thời → trả kết quả; lưu lỗi thì hoàn tác.</p>
-<p><strong>Các thành phần phối hợp:</strong> Người dùng → Giao diện → Bộ xử lý giao dịch → Database. Bộ xử lý lấy giao dịch gốc, kiểm tra quyền/dữ liệu rồi ghi bản đảo và phần thay thế nếu có.</p>
-<p><strong>Điểm cần đối chiếu:</strong> Activity có nhánh không xác nhận và lỗi lưu/hoàn tác, còn Sequence chưa thể hiện riêng đầy đủ các nhánh này. Schema và API hiện chưa có nghiệp vụ đảo/thay thế; ảnh thể hiện thiết kế đích của nhóm.</p>
+<p>Chọn giao dịch → kiểm tra quyền/hiệu lực → chọn hủy hoặc nhập nội dung sửa → kiểm tra dữ liệu → xác nhận → ghi bút toán đảo → nếu sửa thì ghi giao dịch thay thế → liên kết và lưu đồng thời → trả kết quả; lưu lỗi thì hoàn tác.</p>
+<p>Chưa có API và liên kết đảo/thay thế giao dịch.</p>
 <h4>Activity</h4>
 <p><a href="sources/design/Diagram/UC07_Activity Diagram.png" target="_blank"><img loading="lazy" src="sources/design/Diagram/UC07_Activity Diagram.png" alt="Activity gốc UC07"></a></p>
 <h4>Sequence</h4>
 <p><a href="sources/design/Diagram/UC07_Sequence Diagram.png" target="_blank"><img loading="lazy" src="sources/design/Diagram/UC07_Sequence Diagram.png" alt="Sequence gốc UC07"></a></p>
 <h3>3. Nhắc khoản thanh toán đến hạn</h3>
-<p><strong>Phạm vi:</strong> UC11, sử dụng dữ liệu UC10.</p>
-<p><strong>Luồng nghiệp vụ:</strong> Đến thời điểm kiểm tra → lấy khoản còn hoạt động và lịch nhắc → lọc khoản đến hạn, chưa gửi thành công → tạo nội dung → gửi → ghi nhận kết quả.</p>
-<p><strong>Các thành phần phối hợp:</strong> NhacNhoController lấy danh sách từ Database, tạo nội dung gửi Client và lưu kết quả/thời gian; ảnh cũng có phần ghi nhận lỗi.</p>
-<p><strong>Điểm cần đối chiếu:</strong> Bảng Main UC nêu bộ lập lịch và dịch vụ thông báo, nhưng Sequence gốc chưa tách rõ hai thành phần này hoặc các nhánh thành công/thất bại. Mã mới có bảng recurring_transactions, chưa có scheduler/lịch sử gửi đầy đủ.</p>
+<p>Đến thời điểm kiểm tra → lấy khoản còn hoạt động và lịch nhắc → lọc khoản đến hạn, chưa gửi thành công → tạo nội dung → gửi → ghi nhận kết quả.</p>
+<p>Chưa có bộ lập lịch và lịch sử gửi nhắc nhở.</p>
 <h4>Activity</h4>
 <p><a href="sources/design/Diagram/UC11_ActivityDiagram.png" target="_blank"><img loading="lazy" src="sources/design/Diagram/UC11_ActivityDiagram.png" alt="Activity gốc UC11, sử dụng dữ liệu UC10"></a></p>
 <h4>Sequence</h4>
 <p><a href="sources/design/Diagram/UC11_SequenceDiagram.png" target="_blank"><img loading="lazy" src="sources/design/Diagram/UC11_SequenceDiagram.png" alt="Sequence gốc UC11, sử dụng dữ liệu UC10"></a></p>
 <h3>4. Xem báo cáo thu chi theo kỳ</h3>
-<p><strong>Phạm vi:</strong> UC16.</p>
-<p><strong>Luồng nghiệp vụ:</strong> Chọn kỳ → kiểm tra khoảng thời gian → lấy giao dịch → nếu rỗng thì thông báo; nếu có thì tính tổng thu, tổng chi và chênh lệch → hiển thị.</p>
-<p><strong>Các thành phần phối hợp:</strong> Người dùng → Giao diện → Báo cáo Controller → Database. Controller kiểm tra khoảng thời gian/bộ lọc, lấy dữ liệu, xử lý rỗng và trả kết quả tổng hợp.</p>
-<p><strong>Điểm cần đối chiếu:</strong> Mã hiện có GET /api/finance và hàm finance. Transfer được loại khỏi tổng thu/chi. Từ khóa q lọc danh sách lịch sử, còn tổng/breakdown vẫn tính toàn kỳ; lịch sử hiện tối đa 200 dòng.</p>
+<p>Chọn kỳ → kiểm tra khoảng thời gian → lấy giao dịch → nếu rỗng thì thông báo; nếu có thì tính tổng thu, tổng chi và chênh lệch → hiển thị.</p>
+<p>GET /api/finance: tổng thu/chi không gồm chuyển ví; tìm kiếm chỉ lọc lịch sử, tối đa 200 dòng.</p>
 <h4>Activity</h4>
 <p><a href="sources/design/Diagram/UC16_Activity Diagram.png" target="_blank"><img loading="lazy" src="sources/design/Diagram/UC16_Activity Diagram.png" alt="Activity gốc UC16"></a></p>
 <h4>Sequence</h4>
 <p><a href="sources/design/Diagram/UC16_Sequent Diagram.png" target="_blank"><img loading="lazy" src="sources/design/Diagram/UC16_Sequent Diagram.png" alt="Sequence gốc UC16"></a></p>
-<h3>Phần đăng nhập 2FA</h3>
-<p>UC.docx có đề cập thiết kế đăng nhập 2FA trong Main UC, nhưng bộ Diagram hiện chưa có cặp Activity–Sequence tương ứng. Đăng nhập/phiên đã có mã; 2FA chưa được hiện thực. Không bổ sung một sơ đồ tự tạo vào bộ ảnh gốc.</p><p class="back"><a href="#top">Về đầu trang ↑</a></p></section><section id="erd"><h2>Từ điển dữ liệu và ERD hiện có</h2>
-<p>Nguồn: origin/main <code>7e47d999411209f165e803d0addf3346e357917a</code> đã được kéo về main; cùng phiên bản với HEAD đang mở. Đây là đối chiếu mã, chưa kết nối cơ sở dữ liệu để xác nhận các bảng đã được tạo.</p>
-<p>ERD thể hiện 10 bảng nghiệp vụ trong schema.sql và bảng kỹ thuật schema_migrations trong script setup. Không có khóa ngoại cho exchange_rates hoặc schema_migrations.</p>
+<p>2FA: chưa triển khai, chưa có sơ đồ.</p><p class="back"><a href="#top">Về đầu trang ↑</a></p></section><section id="erd"><h2>ERD và dữ liệu</h2>
+<p>Nguồn: <a href="../../database/schema.sql">schema.sql</a> và <a href="../../scripts/setup-database.mjs">script setup</a>.</p>
+
 <div class="erd-heading"><div><span class="erd-eyebrow">CẤU TRÚC CƠ SỞ DỮ LIỆU</span><h3>ERD · Quản lý thu chi cá nhân</h3><p>11 bảng · 11 khóa ngoại · MySQL / MariaDB</p></div><a class="erd-open" href="erd.svg" target="_blank" rel="noopener">Mở sơ đồ lớn ↗</a></div>
 <div class="erd-legend"><span><b>PK</b> Khóa chính</span><span><b>FK</b> Thành phần khóa ngoại</span><span><b>UQ</b> Duy nhất</span><span><b>?</b> Có thể NULL</span><span><b>1 / 0..1 / 0..N</b> Số bản ghi liên quan</span></div>
 <div class="erd-toolbar"><label for="erd-zoom">Kích thước</label><input id="erd-zoom" type="range" min="100" max="400" step="20" value="100"><output id="erd-scale" for="erd-zoom">100%</output></div>
 <div class="erd-canvas" tabindex="0" role="region" aria-label="Sơ đồ ERD; có thể cuộn khi phóng to"><img id="erd-image" src="erd.svg" alt="ERD gồm 11 bảng với các cột, khóa và 11 quan hệ. Bảng mô tả quan hệ đầy đủ ngay bên dưới." width="1147" height="990"></div>
-<p class="erd-note">Khóa ghép giữ dữ liệu cùng chủ sở hữu. <strong>categories.account_id</strong> là duy nhất nên một account chỉ gắn tối đa một category. Hai bảng màu xám không có khóa ngoại; exchange_rates dành cho mở rộng sau này.</p>
+<p class="erd-note">Khóa ghép ràng buộc cùng chủ sở hữu; mỗi account gắn tối đa một category. exchange_rates và schema_migrations không có FK.</p>
 <h3>Quan hệ bảng từ schema hiện tại</h3>
-<p>ERD dưới đây được vẽ theo schema của dự án. Xem bảng quan hệ bên dưới để đọc đầy đủ các cặp khóa ngoại ghép; từ điển dữ liệu giữ chi tiết kiểu ENUM và ràng buộc.</p>
+
 <div class="table-scroll"><table><thead><tr><th>Bảng cha</th><th>Bảng con</th><th>Khóa liên kết</th><th>Quan hệ</th></tr></thead><tbody>
 <tr><td>users</td><td>sessions</td><td>user_id</td><td>1 → 0..N</td></tr>
 <tr><td>users</td><td>accounts</td><td>user_id</td><td>1 → 0..N</td></tr>
@@ -152,7 +126,6 @@
 <li>Không sửa schema gốc đã áp dụng; thay đổi thiết kế cơ sở dữ liệu cần migration mới.</li>
 </ul>
 <h3>users — Người dùng</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>id</td><td><code>CHAR(36)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>name</td><td><code>VARCHAR(100)</code></td><td>NOT NULL</td></tr>
@@ -163,7 +136,6 @@
 <tr><td>created_at</td><td><code>TIMESTAMP</code></td><td>NOT NULL</td></tr>
 </tbody></table></div>
 <h3>sessions — Phiên đăng nhập</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>token_hash</td><td><code>CHAR(64)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>user_id</td><td><code>CHAR(36)</code></td><td>tham gia FK, NOT NULL</td></tr>
@@ -172,7 +144,6 @@
 </tbody></table></div>
 <p>FK <code>(user_id)</code> → <code>users(id)</code> ON DELETE CASCADE.</p>
 <h3>accounts — Ví và tài khoản sổ cái</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>id</td><td><code>CHAR(36)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>user_id</td><td><code>CHAR(36)</code></td><td>tham gia FK, NOT NULL</td></tr>
@@ -185,7 +156,6 @@
 <p>UNIQUE ghép hoặc đơn: <code>(user_id, name)</code>.</p>
 <p>FK <code>(user_id)</code> → <code>users(id)</code> ON DELETE CASCADE.</p>
 <h3>categories — Danh mục thu/chi</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>id</td><td><code>CHAR(36)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>user_id</td><td><code>CHAR(36)</code></td><td>tham gia FK, NOT NULL</td></tr>
@@ -198,7 +168,6 @@
 <p>UNIQUE ghép hoặc đơn: <code>(account_id)</code>.</p>
 <p>FK <code>(user_id, account_id)</code> → <code>accounts(user_id, id)</code> ON DELETE CASCADE.</p>
 <h3>transactions — Đầu giao dịch</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>id</td><td><code>CHAR(36)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>user_id</td><td><code>CHAR(36)</code></td><td>tham gia FK, NOT NULL</td></tr>
@@ -216,7 +185,6 @@
 <p>FK <code>(user_id)</code> → <code>users(id)</code> ON DELETE CASCADE.</p>
 <p>FK <code>(user_id, category_id)</code> → <code>categories(user_id, id)</code>; không khai báo CASCADE.</p>
 <h3>transaction_entries — Dòng sổ kép có dấu</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>id</td><td><code>BIGINT</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>user_id</td><td><code>CHAR(36)</code></td><td>tham gia FK, NOT NULL</td></tr>
@@ -228,7 +196,6 @@
 <p>FK <code>(user_id, transaction_id)</code> → <code>transactions(user_id, id)</code> ON DELETE CASCADE.</p>
 <p>FK <code>(user_id, account_id)</code> → <code>accounts(user_id, id)</code>; không khai báo CASCADE.</p>
 <h3>budgets — Ngân sách tháng</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>id</td><td><code>CHAR(36)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>user_id</td><td><code>CHAR(36)</code></td><td>tham gia FK, NOT NULL</td></tr>
@@ -239,7 +206,6 @@
 <p>UNIQUE ghép hoặc đơn: <code>(user_id, category_id, month_start)</code>.</p>
 <p>FK <code>(user_id, category_id)</code> → <code>categories(user_id, id)</code>; không khai báo CASCADE.</p>
 <h3>goals — Mục tiêu tài chính</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>id</td><td><code>CHAR(36)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>user_id</td><td><code>CHAR(36)</code></td><td>tham gia FK, NOT NULL</td></tr>
@@ -249,7 +215,6 @@
 </tbody></table></div>
 <p>FK <code>(user_id)</code> → <code>users(id)</code> ON DELETE CASCADE.</p>
 <h3>recurring_transactions — Quy tắc định kỳ</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>id</td><td><code>CHAR(36)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>user_id</td><td><code>CHAR(36)</code></td><td>tham gia FK, NOT NULL</td></tr>
@@ -263,7 +228,6 @@
 <p>FK <code>(user_id, account_id)</code> → <code>accounts(user_id, id)</code>; không khai báo CASCADE.</p>
 <p>FK <code>(user_id, category_id)</code> → <code>categories(user_id, id)</code>; không khai báo CASCADE.</p>
 <h3>exchange_rates — Tỷ giá dự phòng</h3>
-<p>Nguồn: <a href="../../database/schema.sql">schema của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>base_currency</td><td><code>CHAR(3)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>quote_currency</td><td><code>CHAR(3)</code></td><td>PK, NOT NULL</td></tr>
@@ -271,12 +235,29 @@
 <tr><td>rate</td><td><code>DECIMAL(20,8)</code></td><td>NOT NULL</td></tr>
 </tbody></table></div>
 <h3>schema_migrations — Theo dõi migration</h3>
-<p>Nguồn: <a href="../../scripts/setup-database.mjs">script setup của dự án</a>.</p>
 <div class="table-scroll"><table><thead><tr><th>Cột</th><th>Kiểu SQL</th><th>Khóa và NULL</th></tr></thead><tbody>
 <tr><td>version</td><td><code>VARCHAR(100)</code></td><td>PK, NOT NULL</td></tr>
 <tr><td>checksum</td><td><code>CHAR(64)</code></td><td>NOT NULL</td></tr>
 <tr><td>applied_at</td><td><code>TIMESTAMP</code></td><td>NOT NULL</td></tr>
-</tbody></table></div><p class="back"><a href="#top">Về đầu trang ↑</a></p></section></main><footer>Ảnh gốc được giữ nguyên. Phần dữ liệu đối chiếu schema hiện tại; chưa kiểm thử database/API trong lần tổng hợp.</footer><script>
+</tbody></table></div><p class="back"><a href="#top">Về đầu trang ↑</a></p></section><section id="ui">
+<h2>Thiết kế giao diện</h2>
+<h3>1. Wireframe</h3>
+<p>Phác thảo bố cục và chức năng chính của 6 màn hình, khung 390 × 844 px.</p>
+<figure style="margin:24px 0"><a href="sources/UIUX/wireframes-mobile/00-overview.svg" aria-label="Mở lớn wireframe mobile"><img src="sources/UIUX/wireframes-mobile/00-overview.svg" alt="Wireframe Đăng nhập, Đăng ký, Trang chủ, Báo cáo, Lịch sử và Ví của tôi" width="1330" height="1884" loading="lazy"></a></figure>
+<h3>2. UI Design</h3>
+<p>Thống nhất màu sắc, font, icon và thành phần dùng chung.</p>
+<div class="table-scroll"><table><thead><tr><th>Thành phần</th><th>Quy ước</th></tr></thead><tbody>
+<tr><td>Màu sắc</td><td>Chủ đạo <code>#3c98e6</code> · Chữ <code>#0b2f4f</code> · Nền <code>#ffffff</code> · Lỗi <code>#c62828</code></td></tr>
+<tr><td>Font</td><td>Geist Sans · Tiêu đề 28px · Nội dung khối 16px · Nút 14px</td></tr>
+<tr><td>Icon</td><td>Lucide · 24px · QR 28px</td></tr>
+<tr><td>Khoảng cách</td><td>Form 16px · Card padding 20px · Bo góc card 16px, nút 12px</td></tr>
+<tr><td>Design System</td><td>Nút, ô nhập, bộ chọn, card, điều hướng; trạng thái chọn, lỗi và đang gửi.</td></tr>
+</tbody></table></div>
+<h3>3. Prototype</h3>
+<p>Nối màn hình trên Figma để mô phỏng: Đăng nhập → Trang chủ → Ghi giao dịch → Lịch sử; kiểm tra điều hướng và nhánh lỗi.</p>
+<p>Chưa có liên kết Prototype Figma.</p>
+</section>
+</main><footer>Đối chiếu mã nguồn; chưa kiểm thử database/API.</footer><script>
 const erdZoom = document.getElementById('erd-zoom');
 erdZoom.addEventListener('input', () => {
   document.getElementById('erd-image').style.width = erdZoom.value + '%';
