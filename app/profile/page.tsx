@@ -3,6 +3,7 @@ import { Coins, Languages, User } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import AvatarUpload from '../components/AvatarUpload';
 import LogoutButton from '../components/LogoutButton';
+import RecoveryCodeButton from '../components/RecoveryCodeButton';
 import { getCurrentUser } from '../lib/session';
 import { wallets } from '../lib/ledger';
 import '../styles/profile.css';
@@ -67,6 +68,13 @@ export default async function Profile() {
               Ghi giao dịch / thêm ví
             </Link>
           </div>
+        </section>
+      )}
+
+      {user && (
+        <section className="card settings-card">
+          <h2 className="settings-title">Bảo mật</h2>
+          <RecoveryCodeButton />
         </section>
       )}
 

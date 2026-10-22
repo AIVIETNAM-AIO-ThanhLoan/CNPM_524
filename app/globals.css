@@ -144,3 +144,20 @@ body {
 .icon-btn:hover {
   background-color: var(--color-haze);
 }
+
+/* Mã khôi phục mật khẩu: chữ đơn cách, dễ chép lại */
+.recovery-code {
+  display: block;
+  padding: 14px 12px;
+  border: 1px dashed var(--color-brand);
+  border-radius: 12px;
+  background-color: #ffffff;
+  color: var(--color-ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  user-select: all;
+}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -42,7 +42,23 @@ async function api(route, { body, cookie, status = 200, requestOrigin = origin, 
     const json = await response.json();
     assert.equal(response.status, status, `${route}: ${JSON.stringify(json)}`);
     checks++;
-    return { json, cookie: response.headers.get('set-cookie')?.split(';')[0] };
+    // Ưu tiên cookie phiên đăng nhập; bỏ qua cookie bị xóa (giá trị rỗng)
+    const cookies = response.headers.getSetCookie().map((item) => item.split(';')[0]).filter((item) => !item.endsWith('='));
+    return { json, cookie: cookies.find((item) => item.startsWith('cnpm_session=')) ?? cookies[0] };
+}
+
+// Mã TOTP 6 số giống ứng dụng xác thực (RFC 6238), để kiểm thử 2FA
+function totp(secret, offset = 0) {
+    let bits = 0; let value = 0; const bytes = [];
+    for (const char of secret) {
+        value = ((value << 5) | 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(char)) & 0xffff; bits += 5;
+        if (bits >= 8) { bytes.push((value >>> (bits - 8)) & 255); bits -= 8; }
+    }
+    const counter = Buffer.alloc(8);
+    counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000) + offset));
+    const digest = createHmac('sha1', Buffer.from(bytes)).update(counter).digest();
+    const index = digest[digest.length - 1] & 15;
+    return String((digest.readUInt32BE(index) & 0x7fffffff) % 1000000).padStart(6, '0');
 }
 
 try {
@@ -178,6 +194,110 @@ try {
     await api('/api/goals', { cookie, body: { name: 'Quỹ dự phòng', targetAmount: '0' }, status: 400 });
     const { json: goalList } = await api('/api/goals', { cookie });
     check(goalList.goals.some((g) => g.name === 'Mua xe' && Number(g.targetAmount) === 20000000), 'Goals are saved and listed');
+    const savedGoal = goalList.goals.find((g) => g.name === 'Mua xe');
+    check(savedGoal.savedAmount === '0.00' && savedGoal.status === 'active', 'New goal starts active with nothing saved');
+    const [goalAccount] = await admin.execute('SELECT a.kind FROM goals g JOIN accounts a ON a.id = g.account_id AND a.user_id = g.user_id WHERE g.id = ?', [savedGoal.id]);
+    check(goalAccount[0]?.kind === 'goal', 'Each goal owns a ledger account');
+    check((await api('/api/wallets', { cookie })).json.wallets.every((w) => w.name !== `Mục tiêu: ${savedGoal.id}`), 'Goal accounts are not listed as wallets');
+
+    // UC13: lịch sử quy đổi cần đăng nhập và tách theo người dùng
+    const conversion = { from: 'USD', to: 'VND', amount: 10, rate: 25000.5, result: 1 };
+    await api('/api/currency?action=history', { status: 401 });
+    await api('/api/currency', { body: conversion, status: 401 });
+    await api('/api/currency', { cookie, body: conversion, status: 403, requestOrigin: 'https://other.example' });
+    await api('/api/currency', { cookie, body: { ...conversion, from: 'usd' }, status: 400 });
+    await api('/api/currency', { cookie, body: { ...conversion, to: '../x' }, status: 400 });
+    for (const amount of [0, -5, 'abc', 1e13]) await api('/api/currency', { cookie, body: { ...conversion, amount }, status: 400 });
+    await api('/api/currency', { cookie, body: { ...conversion, rate: 0 }, status: 400 });
+    await api('/api/currency', { cookie, body: conversion, status: 201 });
+    await api('/api/currency?action=rate&from=US$&to=VND', { status: 400 });
+    const historyA = (await api('/api/currency?action=history', { cookie })).json.history;
+    check(historyA.length === 1 && historyA[0].result === '250005.0000' && historyA[0].rate_used === '25000.50000000', 'Conversion result is recomputed on the server');
+    check((await api('/api/currency?action=history', { cookie: cookieB })).json.history.length === 0, 'Conversion history is isolated per user');
+
+    // Khôi phục mật khẩu bằng mã khôi phục dùng một lần
+    const recoverUser = { name: 'Quên mật khẩu', account: 'recover@example.com', password };
+    const { json: registered } = await api('/api/auth/register', { body: recoverUser, status: 201 });
+    check(/^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/.test(registered.recoveryCode), 'Registration returns a recovery code once');
+    const [recoverRow] = await admin.execute('SELECT recovery_code_hash FROM users WHERE account = ?', [recoverUser.account]);
+    check(/^[a-f0-9]{64}$/.test(recoverRow[0].recovery_code_hash), 'Only the recovery code hash is stored');
+    const { cookie: oldSession } = await api('/api/auth/login', { body: recoverUser });
+    const newPassword = 'Recovered-Password-2026';
+    const { json: wrongCode } = await api('/api/auth/recover', { body: { account: recoverUser.account, recoveryCode: 'AAAA-BBBB-CCCC-DDDD', password: newPassword }, status: 400 });
+    const { json: unknownAccount } = await api('/api/auth/recover', { body: { account: 'nobody@example.com', recoveryCode: registered.recoveryCode, password: newPassword }, status: 400 });
+    check(wrongCode.error === unknownAccount.error, 'Recovery does not reveal whether an account exists');
+    await api('/api/auth/recover', { body: { account: recoverUser.account, recoveryCode: registered.recoveryCode, password: newPassword }, status: 403, requestOrigin: 'https://other.example' });
+    const { json: recovered } = await api('/api/auth/recover', { body: { account: recoverUser.account, recoveryCode: registered.recoveryCode.toLowerCase(), password: newPassword } });
+    check(recovered.recoveryCode && recovered.recoveryCode !== registered.recoveryCode, 'Recovery rotates the code');
+    await api('/api/wallets', { cookie: oldSession, status: 401 });
+    await api('/api/auth/login', { body: recoverUser, status: 401 });
+    const { cookie: recoveredSession } = await api('/api/auth/login', { body: { ...recoverUser, password: newPassword } });
+    await api('/api/auth/recover', { body: { account: recoverUser.account, recoveryCode: registered.recoveryCode, password }, status: 400 });
+    await api('/api/auth/recovery-code', { cookie: recoveredSession, body: { password: 'Wrong-Password-1' }, status: 403 });
+    await api('/api/auth/recovery-code', { body: { password: newPassword }, status: 401 });
+    const { json: regenerated } = await api('/api/auth/recovery-code', { cookie: recoveredSession, body: { password: newPassword } });
+    await api('/api/auth/recover', { body: { account: recoverUser.account, recoveryCode: recovered.recoveryCode, password }, status: 400 });
+    await api('/api/auth/recover', { body: { account: recoverUser.account, recoveryCode: regenerated.recoveryCode, password } });
+
+    // UC01: xác thực hai bước TOTP
+    const tfa = { name: 'Hai bước', account: 'totp@example.com', password };
+    await api('/api/auth/register', { body: tfa, status: 201 });
+    const { cookie: tfaSession } = await api('/api/auth/login', { body: tfa });
+    check((await api('/api/auth/2fa', { cookie: tfaSession })).json.enabled === false, '2FA starts disabled');
+    await api('/api/auth/2fa/setup', { cookie: tfaSession, body: { password: 'Wrong-Password-1' }, status: 403 });
+    const { json: setupInfo } = await api('/api/auth/2fa/setup', { cookie: tfaSession, body: { password } });
+    check(/^[A-Z2-7]{32}$/.test(setupInfo.secret) && setupInfo.otpauthUrl.startsWith('otpauth://totp/'), 'Setup returns a base32 secret and otpauth URL');
+    const enableCode = totp(setupInfo.secret);
+    await api('/api/auth/2fa/enable', { cookie: tfaSession, body: { code: enableCode === '000000' ? '111111' : '000000' }, status: 400 });
+    const { json: enabled } = await api('/api/auth/2fa/enable', { cookie: tfaSession, body: { code: enableCode } });
+    check(enabled.backupCodes.length === 8, 'Enabling 2FA returns backup codes');
+    await api('/api/auth/2fa/setup', { cookie: tfaSession, body: { password }, status: 409 });
+    const { json: challenge, cookie: challengeCookie } = await api('/api/auth/login', { body: tfa });
+    check(challenge.twoFactorRequired === true && challengeCookie.startsWith('cnpm_2fa='), 'Correct password only starts a 2FA challenge');
+    await api('/api/wallets', { cookie: challengeCookie, status: 401 });
+    await api('/api/auth/2fa/verify', { body: { code: totp(setupInfo.secret) }, status: 401 });
+    await api('/api/auth/2fa/verify', { cookie: challengeCookie, body: { code: '12345' }, status: 401 });
+    // Mã vừa dùng để bật 2FA không dùng lại được; mã của bước kế tiếp thì hợp lệ
+    await api('/api/auth/2fa/verify', { cookie: challengeCookie, body: { code: enableCode }, status: 401 });
+    const { cookie: tfaFull } = await api('/api/auth/2fa/verify', { cookie: challengeCookie, body: { code: totp(setupInfo.secret, 1) } });
+    check(tfaFull?.startsWith('cnpm_session='), 'Second step issues the session');
+    await api('/api/wallets', { cookie: tfaFull });
+    await api('/api/auth/2fa/verify', { cookie: challengeCookie, body: { code: totp(setupInfo.secret, 1) }, status: 401 });
+    const { cookie: backupChallenge } = await api('/api/auth/login', { body: tfa });
+    await api('/api/auth/2fa/verify', { cookie: backupChallenge, body: { code: enabled.backupCodes[0].toLowerCase() } });
+    const { cookie: reuseChallenge } = await api('/api/auth/login', { body: tfa });
+    await api('/api/auth/2fa/verify', { cookie: reuseChallenge, body: { code: enabled.backupCodes[0] }, status: 401 });
+    for (let i = 1; i < 5; i++) await api('/api/auth/2fa/verify', { cookie: reuseChallenge, body: { code: 'ZZZZ-ZZZZ' }, status: 401 });
+    await api('/api/auth/2fa/verify', { cookie: reuseChallenge, body: { code: enabled.backupCodes[1] }, status: 401 });
+    check((await api('/api/auth/2fa', { cookie: tfaFull })).json.backupCodesLeft === 7, 'Locked challenge did not consume a backup code');
+    await api('/api/auth/2fa/disable', { cookie: tfaFull, body: { password, code: 'ZZZZ-ZZZZ' }, status: 400 });
+    await api('/api/auth/2fa/disable', { cookie: tfaFull, body: { password, code: enabled.backupCodes[1] } });
+    const { cookie: plainLogin } = await api('/api/auth/login', { body: tfa });
+    check(plainLogin?.startsWith('cnpm_session='), 'Disabling 2FA restores single-step login');
+
+    // API quản trị: kiểm tra vai trò ở từng API, không chỉ ở layout trang
+    await api('/api/admin/stats', { status: 401 });
+    await api('/api/admin/stats', { cookie: cookieB, status: 403 });
+    await api('/api/admin/users', { cookie: cookieB, status: 403 });
+    await admin.execute("UPDATE users SET role = 'admin' WHERE id = ?", [me.id]);
+    const { json: stats } = await api('/api/admin/stats', { cookie });
+    const [userCount] = await admin.query('SELECT COUNT(*) AS n FROM users');
+    check(stats.users.total === userCount[0].n && stats.users.admins === 1 && stats.transactions.total > 0, 'Admin stats come from the database');
+    const { json: userList } = await api(`/api/admin/users?q=${encodeURIComponent('totp@')}`, { cookie });
+    check(userList.users.length === 1 && !('password_hash' in userList.users[0]) && !('totp_secret' in userList.users[0]), 'Admin user list hides secrets');
+    const target = userList.users[0];
+    await api('/api/admin/users', { cookie: cookieB, body: { userId: target.id, blocked: true }, status: 403 });
+    await api('/api/admin/users', { cookie, body: { userId: target.id, blocked: true }, status: 403, requestOrigin: 'https://other.example' });
+    await api('/api/admin/users', { cookie, body: { userId: me.id, blocked: true }, status: 400 });
+    await api('/api/admin/users', { cookie, body: { userId: target.id, blocked: 'yes' }, status: 400 });
+    await api('/api/admin/users', { cookie, body: { userId: randomUUID(), blocked: true }, status: 404 });
+    await api('/api/admin/users', { cookie, body: { userId: target.id, blocked: true } });
+    await api('/api/wallets', { cookie: plainLogin, status: 401 });
+    await api('/api/auth/login', { body: tfa, status: 401 });
+    await api('/api/admin/users', { cookie, body: { userId: target.id, blocked: false } });
+    await api('/api/auth/login', { body: tfa });
+    await admin.execute("UPDATE users SET role = 'user' WHERE id = ?", [me.id]);
+    await api('/api/admin/stats', { cookie, status: 403 });
     // Server test chạy với DEEPSEEK_API_KEY và TAVILY_API_KEY rỗng nên không bao giờ gọi API thật
     await api('/api/chat', { body: { messages: [{ role: 'user', content: 'Xin chào' }] }, status: 401 });
     await api('/api/chat', { cookie, body: { messages: [] }, status: 400 });
@@ -205,7 +325,7 @@ try {
     const { cookie: newCookie } = await api('/api/auth/login', { body: a });
     await admin.execute('UPDATE sessions SET expires_at = UTC_TIMESTAMP() - INTERVAL 1 DAY WHERE user_id = ?', [me.id]);
     await api('/api/wallets', { cookie: newCookie, status: 401 });
-    for (const route of ['/', '/login', '/register', '/history', '/reports', '/profile', '/chat', '/notifications', '/budgets']) {
+    for (const route of ['/', '/login', '/register', '/recover', '/history', '/reports', '/profile', '/chat', '/notifications', '/budgets']) {
         const response = await fetch(`${origin}${route}`);
         check(response.status === 200, `${route} renders`);
     }
@@ -228,6 +348,8 @@ try {
             await page.getByPlaceholder('Mật khẩu', { exact: true }).fill(password);
             await page.getByPlaceholder('Xác nhận mật khẩu').fill(password);
             await page.getByRole('button', { name: 'Đăng ký', exact: true }).click();
+            await page.getByTestId('recovery-code').waitFor();
+            await page.getByRole('button', { name: 'Tôi đã lưu mã, đăng nhập', exact: true }).click();
             await page.waitForURL('**/login');
             await page.getByPlaceholder('Số điện thoại hoặc email').fill('browser@example.com');
             await page.getByPlaceholder('Mật khẩu', { exact: true }).fill(password);
@@ -398,7 +520,7 @@ try {
             check(pageErrors.length === 0, `No browser exceptions: ${pageErrors.join(', ')}`);
         } finally { await browser.close(); }
     }
-    console.log(`PASS: ${checks} integration checks (auth, CSRF, isolation, ledger, exact amounts, rollback, reports, setup, pages).`);
+    console.log(`PASS: ${checks} integration checks (auth, 2FA, recovery, CSRF, isolation, ledger, exact amounts, rollback, reports, currency, admin, setup, pages).`);
 } catch (error) {
     console.error(error);
     console.error(serverLog);

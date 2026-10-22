@@ -4,6 +4,19 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { databaseConfig } from '../database/config.mjs';
 
+const MIGRATIONS = [
+    ['001_initial', '../database/schema.sql'],
+    ['002_block_sessions', '../database/migrations/002-block-sessions.sql'],
+    ['003_exchange_history', '../database/migrations/003-exchange-history.sql'],
+    ['004_two_factor', '../database/migrations/004-two-factor.sql'],
+    ['005_password_recovery', '../database/migrations/005-password-recovery.sql'],
+    ['006_transaction_reversal', '../database/migrations/006-transaction-reversal.sql'],
+    ['007_goal_accounts', '../database/migrations/007-goal-accounts.sql'],
+    ['008_budget_alerts', '../database/migrations/008-budget-alerts.sql'],
+    ['009_reminder_deliveries', '../database/migrations/009-reminder-deliveries.sql'],
+    ['010_backup_runs', '../database/migrations/010-backup-runs.sql'],
+];
+
 async function main() {
     nextEnv.loadEnvConfig(process.cwd());
     const config = databaseConfig();
@@ -21,7 +34,7 @@ async function main() {
             version VARCHAR(100) PRIMARY KEY, checksum CHAR(64) NOT NULL,
             applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB`);
-        for (const [version, file] of [['001_initial', '../database/schema.sql'], ['002_block_sessions', '../database/migrations/002-block-sessions.sql']]) {
+        for (const [version, file] of MIGRATIONS) {
             const sql = await readFile(new URL(file, import.meta.url), 'utf8');
             const checksum = createHash('sha256').update(sql).digest('hex');
             const [rows] = await connection.execute('SELECT checksum FROM schema_migrations WHERE version = ?', [version]);
@@ -32,6 +45,14 @@ async function main() {
                 if (version === '001_initial') {
                     const [existing] = await connection.query("SHOW TABLES LIKE 'users'");
                     if (existing.length) throw new Error('Database có bảng users nhưng thiếu migration. Không ghi đè; kiểm tra database hoặc dùng DB_NAME mới.');
+                }
+                if (version === '003_exchange_history') {
+                    // Bảng tạo tay trước khi có migration không có user_id: giữ lại dữ liệu dưới tên khác, không xóa.
+                    const [legacy] = await connection.query("SHOW TABLES LIKE 'exchange_history'");
+                    if (legacy.length) {
+                        await connection.query('RENAME TABLE exchange_history TO exchange_history_legacy');
+                        console.log('Đã đổi tên bảng exchange_history cũ (không có user_id) thành exchange_history_legacy.');
+                    }
                 }
                 for (const statement of sql.replace(/^\s*--.*$/gm, '').split(';').filter((part) => part.trim())) {
                     await connection.query(statement);

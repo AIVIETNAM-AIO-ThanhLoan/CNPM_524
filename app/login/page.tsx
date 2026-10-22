@@ -74,7 +74,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <p className="auth-forgot">Khôi phục mật khẩu chưa được hỗ trợ.</p>
+          <Link href="/recover" className="auth-forgot">Quên mật khẩu?</Link>
 
           {errorMsg && <div className="auth-error">{errorMsg}</div>}
 

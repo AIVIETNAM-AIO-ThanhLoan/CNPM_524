@@ -5,12 +5,14 @@ import { promisify } from 'node:util';
 import type { RowDataPacket } from 'mysql2/promise';
 import { atomic, database, rows } from './db';
 import { HttpError } from './http';
+import { assertNotThrottled, recordFailure } from './auth-input';
 
 const scrypt = promisify(nodeScrypt);
 const COOKIE = 'cnpm_session';
 const MAX_AGE = 60 * 60 * 24 * 7;
 export type CurrentUser = { id: string; name: string; account: string; role: 'user' | 'admin' };
-const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
+export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
+export const cookieSecure = () => process.env.COOKIE_SECURE === 'true' || (process.env.COOKIE_SECURE !== 'false' && process.env.NODE_ENV === 'production');
 
 export async function hashPassword(password: string): Promise<string> {
     const salt = randomBytes(16).toString('hex');
@@ -40,6 +42,22 @@ export async function requireUser(): Promise<CurrentUser> {
     return user;
 }
 
+export async function requireAdmin(): Promise<CurrentUser> {
+    const user = await requireUser();
+    if (user.role !== 'admin') throw new HttpError(403, 'Chỉ quản trị viên được dùng chức năng này.');
+    return user;
+}
+
+// Xác nhận lại mật khẩu trước thao tác nhạy cảm (bật/tắt 2FA, tạo mã khôi phục)
+export async function assertPassword(userId: string, password: unknown): Promise<void> {
+    assertNotThrottled(`password:${userId}`);
+    const users = await rows<RowDataPacket>('SELECT password_hash FROM users WHERE id = ?', [userId]);
+    if (typeof password !== 'string' || !users[0] || !await verifyPassword(password, users[0].password_hash)) {
+        recordFailure(`password:${userId}`);
+        throw new HttpError(403, 'Mật khẩu không đúng.');
+    }
+}
+
 export async function createSession(userId: string): Promise<void> {
     await destroySession();
     const token = randomBytes(32).toString('hex');
@@ -51,8 +69,7 @@ export async function createSession(userId: string): Promise<void> {
         await connection.execute('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)',
             [hashToken(token), userId, new Date(Date.now() + MAX_AGE * 1000)]);
     });
-    (await cookies()).set(COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: MAX_AGE,
-        secure: process.env.COOKIE_SECURE === 'true' || (process.env.COOKIE_SECURE !== 'false' && process.env.NODE_ENV === 'production') });
+    (await cookies()).set(COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: MAX_AGE, secure: cookieSecure() });
 }
 
 export async function destroySession(): Promise<void> {
