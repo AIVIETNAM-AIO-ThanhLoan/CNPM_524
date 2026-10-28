@@ -7,6 +7,7 @@ export function database(): Pool {
     if (!globalDatabase.cnpmPool) {
         globalDatabase.cnpmPool = mysql.createPool({ ...databaseConfig(), connectionLimit: 10,
             waitForConnections: true, queueLimit: 50 });
+        globalDatabase.cnpmPool.on('connection', (connection) => { connection.query("SET time_zone = '+00:00'"); });
     }
     return globalDatabase.cnpmPool;
 }

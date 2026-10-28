@@ -18,6 +18,8 @@ Yêu cầu Node.js 20.9+, MySQL 8+ hoặc MariaDB 10.4+. XAMPP đã kèm MariaDB
 | 008 | `budget_alerts` cảnh báo ngân sách theo người dùng, chống trùng theo danh mục/tháng/ngưỡng (UC09) |
 | 009 | `reminder_deliveries` lịch sử nhắc khoản định kỳ, chống gửi trùng (UC11) |
 | 010 | `backup_runs` kết quả mỗi lần sao lưu (UC19) |
+| 011 | `goal_contributions` ghi khoản góp thủ công theo người dùng, không thay đổi ví |
+| 012 | Archive flags, recurring confirmations, account notifications, Web Push subscriptions and retry deliveries |
 
 Chạy lại `npm.cmd run db:setup` sau khi lấy code mới để áp dụng migration còn thiếu. MySQL DDL tự commit: nếu lần đầu bị lỗi giữa chừng, kiểm tra nguyên nhân và các bảng đã tạo trước khi tiếp tục; script chủ động dừng khi phát hiện bảng `users` không có migration, không xóa bảng để thử lại. Thay đổi schema đã áp dụng cần migration mới.
 
@@ -48,7 +50,11 @@ erDiagram
 | `transaction_entries` | Hai dòng tiền có dấu đối ứng của mỗi giao dịch |
 | `budgets` | Hạn mức theo danh mục/tháng; schema nền tảng |
 | `goals` | Tên, số tiền đích, hạn, trạng thái; mỗi mục tiêu có một tài khoản sổ cái `kind='goal'` |
-| `recurring_transactions` | Quy tắc định kỳ; chưa có scheduler phát sinh giao dịch |
+| `goal_contributions` | Các khoản góp thủ công cho mục tiêu, tách biệt với số dư ví |
+| `recurring_transactions` | Recurring rules; only explicit payment confirmation records an expense |
+| `recurring_payments` | Unique confirmation per recurring rule and due period |
+| `notifications` | Account-scoped notification events and read status |
+| `push_subscriptions`, `push_deliveries` | Browser subscriptions and durable, deduplicated delivery retries |
 | `exchange_rates` | Tỷ giá theo ngày; chưa áp dụng quy đổi đa tiền tệ |
 | `exchange_history` | Lịch sử quy đổi tiền tệ của từng người: số tiền, kết quả, tỷ giá áp dụng, thời điểm |
 | `login_challenges`, `totp_recovery_codes` | Phiên chờ nhập mã 2FA (5 phút, tối đa 5 lần sai) và mã dự phòng 2FA (chỉ lưu SHA-256) |
@@ -69,11 +75,11 @@ Số tiền lưu bằng `DECIMAL(14,2)`, nhập dưới dạng chuỗi thập ph
 | Chi 50.000đ | Ví -50.000 | Tài khoản chi +50.000 |
 | Chuyển 200.000đ | Ví nguồn -200.000 | Ví nhận +200.000 |
 
-Backend ghi header và hai dòng trong cùng database transaction, khóa ví theo thứ tự ổn định và rollback nếu có lỗi. Tổng dòng của mỗi giao dịch bằng 0. Chuyển tiền bị loại khỏi tổng thu/chi và biểu đồ danh mục. Không sửa/xóa giao dịch qua API hiện tại. Số dư âm được cho phép vì đây là sổ ghi chép, không phải hệ thống chi trả.
+Backend ghi header và hai dòng trong cùng database transaction, khóa theo tài khoản người dùng và ví, rollback nếu có lỗi. Tổng dòng của mỗi giao dịch bằng 0. Chuyển tiền bị loại khỏi tổng thu/chi và biểu đồ danh mục. Hủy/điều chỉnh dùng bút toán đối ứng; không sửa số tiền hay xóa giao dịch gốc. Số dư âm được cho phép vì đây là sổ ghi chép, không phải hệ thống chi trả.
 
 Hủy hoặc điều chỉnh giao dịch (UC07, migration 006) không sửa/xóa giao dịch gốc: giao dịch đảo có `reverses_id` trỏ tới giao dịch gốc, cùng `kind` và `amount`, các dòng sổ đổi dấu; điều chỉnh = đảo giao dịch gốc rồi ghi giao dịch mới có `replaces_id`. Khóa duy nhất bảo đảm mỗi giao dịch chỉ bị đảo/thay thế một lần; `reason` bắt buộc với giao dịch đảo/thay thế, `created_by` lưu người thực hiện. Báo cáo cần trừ giao dịch đảo khỏi tổng thu/chi.
 
-Mục tiêu tiết kiệm (UC15, migration 007) dùng tiền thật: góp tiền là chuyển từ ví sang tài khoản `goal` của mục tiêu, rút là chuyển ngược lại. Đây là chuyển tiền nên không tính vào thu/chi; số đã tích lũy là số dư tài khoản mục tiêu và số dư ví giảm tương ứng, không bị đếm hai lần. `/api/transactions` chỉ nhận ví nên không chuyển nhầm vào tài khoản mục tiêu.
+New savings contributions use `goal_contributions` and do not change wallet balances or create ledger entries. Legacy `goal` account balances from migration 007 are preserved and included in progress. `/api/transactions` accepts wallets only. Goal status and contribution history are account scoped.
 
 Ràng buộc tổng nhiều dòng được bảo đảm ở hàm ghi sổ và kiểm thử tích hợp; không ghi SQL thủ công vào sổ cái để bỏ qua nghiệp vụ này. Số tiền đầu vào và lưu trữ là decimal chính xác; biểu đồ hiển thị dùng JavaScript Number, không dùng để ghi sổ. Chưa có nghiệp vụ số dư đầu kỳ độc lập; ví mới bắt đầu từ 0.
 
@@ -87,11 +93,17 @@ API ghi chỉ nhận JSON, yêu cầu header `Origin` khớp `APP_ORIGIN`. Cooki
 | POST | `/api/auth/login` | `{account, password}`; tạo session cookie |
 | POST | `/api/auth/logout` | `{}`; xóa session phía server và cookie |
 | GET | `/api/auth/me` | Người dùng hiện tại hoặc `null` |
-| GET/POST | `/api/wallets` | Danh sách và số dư / thêm ví `{name}` số dư 0 |
-| GET/POST | `/api/categories` | Danh sách / thêm `{name, kind: income\|expense}` |
+| GET/POST | `/api/wallets` | Active wallets and balances (`?all=1` includes archived) / create `{name}`, rename `{id, name}`, archive/restore `{id, archived}` |
+| GET/POST | `/api/categories` | Active categories (`?all=1` includes archived) / create `{name, kind: income\|expense}`, rename `{id, name}`, archive/restore `{id, archived}` |
 | POST | `/api/transactions` | Ghi sổ kép |
+| POST | `/api/transactions/reverse` | `{id, action: cancel\|correct, reason, requestKey, replacement?}`; atomic reversal and optional replacement |
+| GET/POST | `/api/recurring` | List/create/edit rules, toggle enabled, or explicitly confirm one due period |
+| GET/POST | `/api/notifications` | Latest account notifications / mark `{id}` or `{id: "all"}` read |
+| GET/POST | `/api/push` | Public VAPID key / validated subscription or unsubscribe |
+| GET | `/api/offline` | Current account wallet/category snapshot for local storage |
+| GET/POST | `/api/vietqr` | Live bank/app directory / validated QR review-to-deep-link conversion; no ledger posting |
 | GET | `/api/finance?start=YYYY-MM-DD&end=YYYY-MM-DD&q=...` | Tổng thu/chi, lịch sử, thống kê danh mục và ngân sách đã có dữ liệu |
-| GET/POST | `/api/goals` | Danh sách kèm `savedAmount`, `status` / tạo `{name, targetAmount, dueOn?}` cùng tài khoản sổ cái |
+| GET/POST | `/api/goals` | Progress/status / create `{name, targetAmount, dueOn?}` or set `{id, status: active\|achieved\|closed}` |
 | GET | `/api/currency?action=rate&from=USD&to=VND` | Tỷ giá từ open.er-api.com (không cần đăng nhập) |
 | GET | `/api/currency?action=history` | 5 lần quy đổi gần nhất của người đang đăng nhập |
 | POST | `/api/currency` | `{from, to, amount, rate}`; server tự tính `result`, lưu theo người dùng |
@@ -121,7 +133,7 @@ Ví dụ body ghi giao dịch:
 }
 ```
 
-Chuyển tiền dùng `kind=transfer`, `targetId` là ví nhận, không cần `categoryId`. Khóa `requestKey` trùng trả HTTP 409 và không ghi lần hai. Form giữ khóa khi chưa rõ kết quả do lỗi mạng; gặp 409 thì kiểm tra lịch sử trước khi ghi lại. Lịch sử trả tối đa 200 giao dịch gần nhất trong kỳ; tổng và thống kê vẫn tính toàn kỳ. Khoảng truy vấn tối đa 366 ngày. Ngày nghiệp vụ là `DATE`, ngày mặc định theo múi giờ Việt Nam; session hết hạn theo UTC.
+Chuyển tiền dùng `kind=transfer`, `targetId` là ví nhận, không cần `categoryId`. Gửi lại cùng `requestKey` và nội dung trả về giao dịch cũ; dùng cùng khóa với nội dung khác trả HTTP 409. Form giữ khóa khi chưa rõ kết quả do lỗi mạng. Lịch sử chia trang 200 giao dịch; tổng và thống kê vẫn tính toàn kỳ. Khoảng truy vấn tối đa 366 ngày. Ngày nghiệp vụ là `DATE`, ngày mặc định theo múi giờ Việt Nam; session hết hạn theo UTC.
 
 Đăng nhập, khôi phục mật khẩu và nhập mã 2FA có giới hạn 15 lần sai/15 phút trong một tiến trình. Khi triển khai nhiều instance cần kho giới hạn dùng chung; chưa có xác minh email/điện thoại hoặc Google OAuth. Khôi phục mật khẩu dùng mã khôi phục 16 ký tự cấp khi đăng ký (hoặc tạo lại ở trang Tôi): mã dùng một lần, bị thay ngay sau khi dùng, và thông báo lỗi không cho biết tài khoản có tồn tại hay không. Secret TOTP lưu dạng văn bản trong database; bảo vệ database và file sao lưu như dữ liệu nhạy cảm. `/admin` yêu cầu vai trò admin; giao diện vẫn là bản mẫu, API thật ở `/api/admin/*`.
 
@@ -151,6 +163,6 @@ npm.cmd run test:browser
 
 Integration runner cần MySQL đang chạy và credentials `DB_SETUP_*`. Nó tạo database/user có tên ngẫu nhiên `cnpm_test_*`/`cnpm_t_*`, chạy server riêng trên cổng trống, kiểm tra auth/CSRF/quyền sở hữu, tiền thập phân, chống trùng, chuyển tiền, ghi đồng thời, rollback khi dòng thứ hai lỗi, báo cáo, setup chạy lại và các trang. Sau cùng chỉ dọn đúng tài nguyên thử nghiệm đã tạo. Không dùng database `cnpm_524` để ghi dữ liệu test.
 
-`test:browser` chạy thêm quy trình đăng ký, đăng nhập, ghi thu/chi/chuyển tiền, xem số dư/báo cáo và đăng xuất bằng Playwright. Trên Windows dùng Microsoft Edge đã cài sẵn; trên Linux cần chạy `npx playwright install chromium` một lần. Kiểm tra cả form rỗng và chiều rộng màn hình điện thoại 390px.
+`test:browser` uses a production build and adds PWA/offline, expired-session/account-switching, pending logout, simulated push subscriptions and camera-stream QR checks. See [deployment and PWA verification](../docs/PWA_DEPLOYMENT.md) for configuration, worker supervision, external-service fixtures and the required physical-device checklist. On Windows it uses installed Edge; on Linux run `npx playwright install chromium` once.
 
 Có thể kiểm tra thủ công sau đăng nhập: thu 1.000.000đ vào Tiền mặt, chi 50.000đ, chuyển 200.000đ sang Ngân hàng. Số dư phải là 750.000đ và 200.000đ; tổng thu 1.000.000đ và tổng chi 50.000đ. Đăng xuất rồi đăng nhập lại để xác nhận dữ liệu vẫn còn.

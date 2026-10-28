@@ -6,6 +6,7 @@ import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronLeft, ChevronRight,
 import { dateKey, type Transaction } from '../lib/client-api';
 import { useFinance } from '../lib/use-finance';
 import BottomNav from '../components/BottomNav';
+import TransactionRevision from '../components/TransactionRevision';
 import '../styles/history.css';
 
 const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
@@ -23,9 +24,11 @@ const dayLabel = (bookedOn: string) => {
 export default function History({ initialMonth, initialSearch }: { initialMonth: string; initialSearch: string }) {
     const [month, setMonth] = useState(initialMonth);
     const [search, setSearch] = useState(initialSearch);
+    const [page, setPage] = useState(1);
+    const [editing, setEditing] = useState<Transaction | null>(null);
 
     const end = dateKey(new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0));
-    const { data, error, loading } = useFinance(`${month}-01`, end, search);
+    const { data, error, loading } = useFinance(`${month}-01`, end, search, page);
 
     const visible = data.transactions;
     const groups = useMemo(() => {
@@ -41,7 +44,7 @@ export default function History({ initialMonth, initialSearch }: { initialMonth:
             </header>
 
             <div className="history-month">
-                <button type="button" className="history-month-btn" aria-label="Tháng trước" onClick={() => setMonth(shiftMonth(month, -1))}>
+                <button type="button" className="history-month-btn" aria-label="Tháng trước" onClick={() => { setPage(1); setMonth(shiftMonth(month, -1)); }}>
                     <ChevronLeft size={20} />
                 </button>
                 <label className="history-month-label">
@@ -52,10 +55,10 @@ export default function History({ initialMonth, initialSearch }: { initialMonth:
                         value={month}
                         min="1000-01"
                         max="9999-12"
-                        onChange={(e) => { if (e.target.value) setMonth(e.target.value); }}
+                        onChange={(e) => { if (e.target.value) { setPage(1); setMonth(e.target.value); } }}
                     />
                 </label>
-                <button type="button" className="history-month-btn" aria-label="Tháng sau" onClick={() => setMonth(shiftMonth(month, 1))}>
+                <button type="button" className="history-month-btn" aria-label="Tháng sau" onClick={() => { setPage(1); setMonth(shiftMonth(month, 1)); }}>
                     <ChevronRight size={20} />
                 </button>
             </div>
@@ -68,7 +71,7 @@ export default function History({ initialMonth, initialSearch }: { initialMonth:
                     placeholder="Tìm theo ghi chú, danh mục hoặc ví"
                     value={search}
                     maxLength={100}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => { setPage(1); setSearch(e.target.value); }}
                 />
             </label>
 
@@ -87,10 +90,11 @@ export default function History({ initialMonth, initialSearch }: { initialMonth:
             </section>
 
             <p className="data-status">
-                <Link href="/transactions/new">+ Ghi giao dịch</Link> · {visible.length} giao dịch. Hiển thị tối đa 200 giao dịch gần nhất trong tháng.
+                <Link href="/transactions/new">+ Ghi giao dịch</Link> · {visible.length} giao dịch trên trang {page}.
             </p>
             {loading && <p className="data-status" role="status">Đang tải dữ liệu…</p>}
             {error && <p className="data-status" role="alert">{error} <Link href="/login">Đăng nhập</Link></p>}
+            {editing && <TransactionRevision key={editing.id} transaction={editing} close={() => setEditing(null)} />}
 
             {!loading && !error && (visible.length === 0 ? (
                 <div className="empty-state">
@@ -107,7 +111,7 @@ export default function History({ initialMonth, initialSearch }: { initialMonth:
                         <div className="tx-list">
                             {items.map((t) => {
                                 const Icon = t.kind === 'income' ? ArrowDownLeft : t.kind === 'expense' ? ArrowUpRight : ArrowLeftRight;
-                                const sign = t.kind === 'income' ? '+' : t.kind === 'expense' ? '-' : '';
+                                const sign = t.kind === 'transfer' ? '' : (t.kind === 'income') !== Boolean(t.reversesId) ? '+' : '-';
                                 return (
                                     <div key={t.id} className="tx-item">
                                         <div className="tx-info">
@@ -119,10 +123,13 @@ export default function History({ initialMonth, initialSearch }: { initialMonth:
                                                 <p className="tx-time">
                                                     {t.category && t.note ? `${t.category} · ` : ''}
                                                     {t.wallet}{t.target ? ` → ${t.target}` : ''}
+                                                    {t.reversesId ? ' · Bút toán đối ứng' : t.reversed ? ' · Đã hủy/điều chỉnh' : t.replacesId ? ' · Giao dịch thay thế' : ''}
+                                                    {t.reason && ` · ${t.reason}`}
                                                 </p>
+                                                {!t.reversesId && !t.reversed && <button type="button" className="btn-secondary" onClick={() => setEditing(t)}>Hủy / điều chỉnh</button>}
                                             </div>
                                         </div>
-                                        <span className={`tx-amount ${t.kind === 'income' ? 'text-income' : t.kind === 'expense' ? 'text-expense' : ''}`}>
+                                        <span className={`tx-amount ${sign === '+' ? 'text-income' : sign === '-' ? 'text-expense' : ''}`}>
                                             {sign}{formatMoney(Number(t.amount))}
                                         </span>
                                     </div>
@@ -133,6 +140,11 @@ export default function History({ initialMonth, initialSearch }: { initialMonth:
                 ))
             ))}
 
+            <div className="history-month" aria-label="Phân trang lịch sử">
+                <button type="button" className="history-month-btn" disabled={page === 1 || loading} onClick={() => setPage(page - 1)}>Trang trước</button>
+                <span>Trang {page}</span>
+                <button type="button" className="history-month-btn" disabled={!data.hasMore || loading} onClick={() => setPage(page + 1)}>Trang sau</button>
+            </div>
             <BottomNav />
         </div>
     );

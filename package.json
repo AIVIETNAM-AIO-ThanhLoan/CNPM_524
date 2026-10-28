@@ -10,25 +10,29 @@
     "db:setup": "node scripts/setup-database.mjs",
     "db:backup": "node scripts/backup-database.mjs",
     "db:restore": "node scripts/restore-database.mjs",
+    "worker": "node scripts/push-worker.mjs",
     "test:integration": "node tests/integration.mjs",
     "test:browser": "node tests/integration.mjs --browser",
     "test:ai-keys": "node scripts/test-ai-keys.mjs"
   },
   "dependencies": {
+    "jsqr": "^1.4.0",
     "lucide-react": "^1.52.0",
     "mysql2": "^3.24.6",
-    "next": "16.3.8",
+    "next": "16.4.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.3",
     "playwright": "^1.64.1",
     "tailwindcss": "^4",
     "typescript": "^5"

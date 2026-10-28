@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { emptyFinance, type Finance, requestJson } from './client-api';
 import { FINANCE_UPDATED } from './finance-updates';
 
-export function useFinance(start: string, end: string, search = '') {
-    const url = `/api/finance?${new URLSearchParams({ start, end, q: search })}`;
+export function useFinance(start: string, end: string, search = '', page = 1) {
+    const url = `/api/finance?${new URLSearchParams({ start, end, q: search, page: String(page) })}`;
     const [result, setResult] = useState<{ url: string; data: Finance; error: string } | null>(null);
     useEffect(() => {
         let controller: AbortController | undefined;

@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, BellRing, ArrowDownLeft, Wallet } from 'lucide-react';
-import { KIND_COLOR, NOTIFICATIONS, unreadCount, type NotificationKind } from '../lib/notifications';
+import { KIND_COLOR, type NotificationKind } from '../lib/notifications';
+import { useNotifications } from '../lib/use-notifications';
+import PushSettings from '../components/PushSettings';
 import '../styles/notifications.css';
 
 const KIND_ICON: Record<NotificationKind, typeof Wallet> = {
@@ -13,14 +15,7 @@ const KIND_ICON: Record<NotificationKind, typeof Wallet> = {
 };
 
 export default function NotificationsPage() {
-  const [items, setItems] = useState(NOTIFICATIONS);
-
-  const markRead = (id: number) =>
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-
-  const markAllRead = () => setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-
-  const unread = unreadCount(items);
+  const { items, unread, error, markRead } = useNotifications();
 
   return (
     <div className="notif-page">
@@ -29,12 +24,15 @@ export default function NotificationsPage() {
           <ArrowLeft size={20} strokeWidth={1.8} />
         </Link>
         <h1 className="notif-title">Thông báo</h1>
-        {unread > 0 && (
-          <button type="button" className="notif-mark-all" onClick={markAllRead}>
+        {(
+          <button type="button" className="notif-mark-all" disabled={!unread} onClick={() => markRead('all')}>
             Đọc tất cả
           </button>
         )}
       </header>
+      <PushSettings />
+      <p className="data-status"><Link href="/reminders">Quản lý khoản định kỳ</Link></p>
+      {error && <p role="alert" className="ledger-error">{error}</p>}
 
       {items.length === 0 ? (
         <div className="notif-empty">

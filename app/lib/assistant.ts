@@ -34,9 +34,11 @@ Các màn hình hiện có trong ứng dụng (chỉ hướng dẫn những gì 
 - Ghi giao dịch: chọn Chi tiêu hoặc Thu nhập, số tiền, ví, danh mục, ngày, ghi chú; có thể thêm ví và danh mục mới.
 - Báo cáo: thu chi theo tuần hoặc tháng, biểu đồ theo danh mục; bấm một danh mục để xem các giao dịch của nó.
 - Lịch sử: danh sách giao dịch theo tháng. Mở bằng cách gõ vào ô tìm giao dịch ở Trang chủ rồi nhấn Enter, hoặc bấm danh mục trong Báo cáo.
-- Lời nhắc: tạo lời nhắc có ngày và giờ, mở từ mục Lời nhắc ở Trang chủ.
+- Lời nhắc: quản lý khoản thanh toán hàng tuần, tháng hoặc năm; nhắc ngày đến hạn theo giờ Việt Nam và chỉ ghi chi sau khi xác nhận đã thanh toán.
 - Tôi: ảnh đại diện, danh sách ví và số dư, đăng xuất.
-- Chưa có màn hình mục tiêu tiết kiệm. Nếu người dùng hỏi về chức năng chưa có, trả lời ngắn gọn và lịch sự, ví dụ: "Hiện ứng dụng chưa hỗ trợ mục tiêu tiết kiệm bạn nhé. Bạn có thể đặt hạn mức chi cho từng danh mục ở mục Ngân sách."`;
+- Mục tiêu tiết kiệm: mở từ Trang chủ, tạo mục tiêu và ghi khoản góp thủ công; khoản góp không thay đổi số dư ví.
+- Quản lý ví và danh mục: mở từ Tôi; thêm, đổi tên, lưu trữ hoặc khôi phục. Lịch sử vẫn được giữ.
+- Lịch sử cho phép hủy hoặc điều chỉnh bằng bút toán đối ứng; không xóa giao dịch gốc.`;
 
 const money = (value: number | string) => `${Math.round(Number(value)).toLocaleString('vi-VN')}đ`;
 const pad = (n: number) => String(n).padStart(2, '0');

@@ -15,6 +15,8 @@ const MIGRATIONS = [
     ['008_budget_alerts', '../database/migrations/008-budget-alerts.sql'],
     ['009_reminder_deliveries', '../database/migrations/009-reminder-deliveries.sql'],
     ['010_backup_runs', '../database/migrations/010-backup-runs.sql'],
+    ['011_goal_contributions', '../database/migrations/011-goal-contributions.sql'],
+    ['012_core_pwa', '../database/migrations/012-core-pwa.sql'],
 ];
 
 async function main() {

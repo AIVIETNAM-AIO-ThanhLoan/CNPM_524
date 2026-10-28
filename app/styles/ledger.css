@@ -2,12 +2,19 @@
 .ledger-page .page-header { padding-left: 0; padding-right: 0; }
 .ledger-form { display: flex; flex-direction: column; gap: 16px; }
 .ledger-form label { display: flex; flex-direction: column; gap: 6px; font-weight: 500; }
-.ledger-form input, .ledger-form select { width: 100%; padding: 12px; border: 1px solid var(--color-line); background: white; border-radius: 8px; color: var(--color-ink); }
+.ledger-form input, .ledger-form select, .ledger-form textarea { width: 100%; max-width: 100%; padding: 12px; border: 1px solid var(--color-line); background: white; border-radius: 8px; color: var(--color-ink); }
+.ledger-form textarea { min-height: 96px; resize: vertical; }
+.ledger-form .review-check { flex-direction: row; align-items: flex-start; }
+.ledger-form .review-check input { width: 20px; min-width: 20px; height: 20px; }
 .ledger-form p { font-size: 13px; color: var(--color-muted); }
 .ledger-error { color: var(--color-danger); padding: 12px 16px; }
 .data-status { padding: 12px 16px; color: var(--color-muted); }
 button:disabled { opacity: 0.55; cursor: wait; }
 details summary { cursor: pointer; }
+.action-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.management-item { border-top: 1px solid var(--color-line); margin-top: 16px; padding-top: 16px; }
+.offline-status { margin: 8px 16px; padding: 12px; border-radius: 8px; background: #fff4d6; }
+.pending-list { overflow-wrap: anywhere; }
 details[open] summary { margin-bottom: 16px; }
 .tx-extra { margin: 0 16px 16px; }
 .tx-form .tx-amount-input { padding: 0; border: none; background: transparent; border-radius: 0; }

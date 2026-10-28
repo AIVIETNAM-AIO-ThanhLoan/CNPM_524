@@ -10,6 +10,8 @@ export async function GET(request: Request) {
         const end = date(params.get('end'));
         if (start > end || Date.parse(end) - Date.parse(start) > 366 * 86400000) throw new HttpError(400, 'Khoảng thời gian tối đa 366 ngày.');
         const search = text(params.get('q') || '', 'Từ khóa', 100, false);
-        return Response.json(await finance(user.id, start, end, search));
+        const rawPage = params.get('page') ?? '1';
+        if (!/^[1-9]\d{0,4}$/.test(rawPage)) throw new HttpError(400, 'Trang không hợp lệ.');
+        return Response.json(await finance(user.id, start, end, search, Number(rawPage)));
     });
 }
