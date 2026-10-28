@@ -67,6 +67,7 @@ export default async function Profile() {
             <Link className="btn-primary" href="/transactions/new">
               Ghi giao dịch / thêm ví
             </Link>
+            <Link className="btn-secondary" href="/manage">Quản lý ví và danh mục</Link>
           </div>
         </section>
       )}

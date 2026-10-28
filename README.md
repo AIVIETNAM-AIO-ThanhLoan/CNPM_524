@@ -2,7 +2,7 @@
 
 Ứng dụng quản lý tài chính cá nhân, hỗ trợ theo dõi thu chi, ngân sách và mục tiêu tiết kiệm theo mô hình sổ cái kép (double-entry ledger).
 
-## Chức năng dự kiến của dự án
+## Chức năng chính
 
 - Quản lý tài khoản, ví tiền và danh mục thu chi.
 - Ghi nhận giao dịch và xem báo cáo theo kỳ.
@@ -28,7 +28,9 @@ Tab **Ngân sách** cho phép đặt/sửa hạn mức theo danh mục chi tiêu
 
 Thanh Ngân sách ở **Trang chủ** hiển thị số đã chi trong các danh mục có ngân sách / tổng hạn mức theo tháng đang xem. Phần trăm và độ dài thanh tính từ hai số này; sau khi lưu hạn mức hoặc giao dịch, dữ liệu tự làm mới khi quay về trang chủ và trong các tab đang mở.
 
-Mục tiêu, khoản định kỳ và tỷ giá chưa có quy trình đầy đủ. Giao diện Ting Ting có các trang trợ lý AI và thông báo từ nhánh main; hai trang này vẫn dùng phản hồi/dữ liệu mẫu, chưa kết nối dịch vụ AI hoặc database. Đăng nhập Google, khôi phục mật khẩu, "QR của tôi" và trang quản trị vẫn là phần chưa triển khai/bản mẫu. Giao dịch hiện chỉ dùng VND.
+Core features now include wallet/category archiving, transaction reversal/correction, paginated history, monthly budget alerts, manual savings contributions, confirmed recurring payments, account notifications, currency history and an offline PWA transaction form. VietQR scans require recipient review before opening a selected bank app; they never automatically record a transaction. Ledger entries remain VND. Google login, multicurrency ledger entries, new administrative features and live gold prices are outside this change.
+
+See [PWA setup, deployment and testing](docs/PWA_DEPLOYMENT.md), including HTTPS, Web Push keys, the separate always-running worker, offline limits and the physical-device acceptance checklist.
 
 
 ## Chạy ứng dụng với XAMPP trên Windows
@@ -66,3 +68,5 @@ Scripts:
 - `npm run lint`: kiểm tra ESLint
 - `npm run db:setup`: tạo database, áp dụng schema một lần và tạo user ứng dụng mới
 - `npm run test:integration`: kiểm thử HTTP trên database và server tạm, tự dọn tài nguyên
+- `npm run test:browser`: production build and browser checks, including offline navigation and account switching
+- `npm run worker`: persistent reminder/Web Push worker; run alongside the web server

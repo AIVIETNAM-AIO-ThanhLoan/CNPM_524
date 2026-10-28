@@ -1,128 +1,59 @@
 'use client';
-
-import React, { useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Trash2 } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
-import '../styles/reminders.css';
+import { requestJson, today, type Wallet, type Category } from '../lib/client-api';
+import { notifyFinanceUpdated } from '../lib/finance-updates';
 
-type Reminder = { id: string; title: string; date: string; time?: string };
-
-// Lời nhắc lưu trong trình duyệt. TODO: chuyển sang database khi có bảng lời nhắc.
-const STORAGE_KEY = 'cnpm.reminders';
-const DEFAULT_TIME = '08:00';
-
-const subscribe = (notify: () => void) => {
-    window.addEventListener('storage', notify);
-    return () => window.removeEventListener('storage', notify);
-};
-const readRaw = () => {
-    try {
-        return localStorage.getItem(STORAGE_KEY) ?? '';
-    } catch {
-        return '';
-    }
-};
-const serverRaw = () => '';
-
-function parseReminders(raw: string): Reminder[] {
-    if (!raw) return [];
-    try {
-        return JSON.parse(raw) as Reminder[];
-    } catch {
-        return [];
-    }
-}
-
-function writeReminders(items: Reminder[]): void {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {
-        // Trình duyệt chặn lưu trữ thì lời nhắc chỉ còn trong phiên hiện tại.
-    }
-    window.dispatchEvent(new Event('storage'));
-}
-
-// Sắp theo ngày, rồi theo giờ; lời nhắc cũ không có giờ đứng sau cùng trong ngày
-const byDateTime = (a: Reminder, b: Reminder) =>
-    a.date.localeCompare(b.date) || (a.time ?? '99:99').localeCompare(b.time ?? '99:99');
-
-const formatWhen = (r: Reminder) => {
-    const [y, m, d] = r.date.split('-');
-    return r.time ? `${d}/${m}/${y} · ${r.time}` : `${d}/${m}/${y}`;
-};
-
+type Recurring = { id: string; name: string; amount: string; walletId: string; categoryId: string; nextDueOn: string; frequency: string; enabled: boolean; wallet: string; category: string };
 export default function RemindersPage() {
-    const raw = useSyncExternalStore(subscribe, readRaw, serverRaw);
-    const items = useMemo(() => parseReminders(raw), [raw]);
-    const [title, setTitle] = useState('');
-    const [date, setDate] = useState('');
-    const [time, setTime] = useState(DEFAULT_TIME);
-
-    const update = (next: Reminder[]) => {
-        writeReminders([...next].sort(byDateTime));
-    };
-
-    const add = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!title.trim() || !date || !time) return;
-        update([...items, { id: crypto.randomUUID(), title: title.trim(), date, time }]);
-        setTitle('');
-        setDate('');
-        setTime(DEFAULT_TIME);
-    };
-
-    return (
-        <div className="app-page">
-            <header className="page-header reminders-header">
-                <Link href="/" className="reminders-back" aria-label="Quay lại">
-                    <ArrowLeft size={20} strokeWidth={1.8} />
-                </Link>
-                <h1 className="page-title">Lời nhắc</h1>
-            </header>
-
-            <form className="card reminder-form" onSubmit={add}>
-                <input
-                    type="text"
-                    placeholder="Nội dung nhắc, ví dụ: Trả tiền nhà"
-                    aria-label="Nội dung nhắc"
-                    maxLength={100}
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                />
-                <div className="reminder-row">
-                    <input type="date" aria-label="Ngày nhắc" value={date} onChange={(e) => setDate(e.target.value)} />
-                    <input type="time" aria-label="Giờ nhắc" value={time} onChange={(e) => setTime(e.target.value)} />
-                </div>
-                <button type="submit" className="btn-primary" disabled={!title.trim() || !date || !time}>
-                    Thêm lời nhắc
-                </button>
-            </form>
-
-            <section className="reminder-list">
-                {items.length === 0 ? (
-                    <p className="data-status">Chưa có lời nhắc nào.</p>
-                ) : (
-                    [...items].sort(byDateTime).map((r) => (
-                        <div key={r.id} className="card reminder-item">
-                            <div>
-                                <p className="reminder-title">{r.title}</p>
-                                <p className="reminder-date">{formatWhen(r)}</p>
-                            </div>
-                            <button
-                                type="button"
-                                className="reminder-delete"
-                                aria-label={`Xóa lời nhắc ${r.title}`}
-                                onClick={() => update(items.filter((x) => x.id !== r.id))}
-                            >
-                                <Trash2 size={18} strokeWidth={1.8} />
-                            </button>
-                        </div>
-                    ))
-                )}
-            </section>
-
-            <BottomNav />
-        </div>
-    );
+    const [items, setItems] = useState<Recurring[]>([]);
+    const [wallets, setWallets] = useState<Wallet[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [editing, setEditing] = useState<Recurring | null>(null);
+    const [error, setError] = useState('');
+    const [busy, setBusy] = useState(false);
+    const pending = useRef(new Map<string, string>());
+    const load = useCallback(async () => {
+        const [list, wallets, categories] = await Promise.all([requestJson<{ recurring: Recurring[] }>('/api/recurring'), requestJson<{ wallets: Wallet[] }>('/api/wallets'), requestJson<{ categories: Category[] }>('/api/categories')]);
+        setItems(list.recurring); setWallets(wallets.wallets); setCategories(categories.categories.filter((c) => c.kind === 'expense'));
+    }, []);
+    useEffect(() => { Promise.resolve().then(load).catch((error) => setError(error.message)); }, [load]);
+    async function save(body: unknown) {
+        if (busy) return;
+        setBusy(true); setError('');
+        try { await requestJson('/api/recurring', body); await load(); setEditing(null); notifyFinanceUpdated(); }
+        catch (error) { setError(error instanceof Error ? error.message : 'Không lưu được.'); }
+        finally { setBusy(false); }
+    }
+    function confirm(item: Recurring) {
+        if (!window.confirm(`Bạn đã thanh toán ${item.name}, ${Number(item.amount).toLocaleString('vi-VN')}đ? Chỉ xác nhận sau khi đã trả tiền.`)) return;
+        const key = `${item.id}:${item.nextDueOn}`;
+        if (!pending.current.has(key)) pending.current.set(key, crypto.randomUUID());
+        void save({ id: item.id, action: 'confirm', dueOn: item.nextDueOn, requestKey: pending.current.get(key) });
+    }
+    return <main className="app-page ledger-page">
+        <header className="page-header"><Link href="/">← Trang chủ</Link><h1>Lời nhắc thanh toán</h1></header>
+        <p>Nhắc từ ngày đến hạn theo giờ Việt Nam (UTC+7). Chỉ ghi chi sau khi bạn xác nhận đã thanh toán. Cần mạng để quản lý.</p>
+        {error && <p role="alert" className="ledger-error">{error}</p>}
+        <form className="card ledger-form" key={editing?.id || 'new'} onSubmit={(event) => { event.preventDefault(); void save({ ...Object.fromEntries(new FormData(event.currentTarget)), ...(editing ? { id: editing.id } : {}) }); }}>
+            <h2>{editing ? 'Sửa khoản định kỳ' : 'Thêm khoản định kỳ'}</h2>
+            <label>Tên khoản thanh toán<input name="name" maxLength={100} required defaultValue={editing?.name} /></label>
+            <label>Ví<select name="walletId" required defaultValue={editing?.walletId}>{wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>
+            <label>Danh mục<select name="categoryId" required defaultValue={editing?.categoryId}>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+            <label>Số tiền (VND)<input name="amount" type="number" min="0.01" max="999999999999.99" step="0.01" required defaultValue={editing?.amount} /></label>
+            <label>Ngày đến hạn<input name="nextDueOn" type="date" min="1000-01-01" max="9999-12-31" required defaultValue={editing?.nextDueOn || today()} /></label>
+            <label>Chu kỳ<select name="frequency" defaultValue={editing?.frequency || 'monthly'}><option value="weekly">Hàng tuần</option><option value="monthly">Hàng tháng</option><option value="yearly">Hàng năm</option></select></label>
+            <button className="btn-primary" disabled={busy}>Lưu khoản định kỳ</button>
+            {editing && <button type="button" className="btn-secondary" onClick={() => setEditing(null)}>Hủy sửa</button>}
+        </form>
+        {items.map((item) => <article className="card ledger-form" key={item.id}>
+            <h2>{item.name}</h2><p>{Number(item.amount).toLocaleString('vi-VN')}đ · {item.wallet} · {item.category}</p>
+            <p>Hạn {item.nextDueOn} · {item.enabled ? 'Đang nhắc' : 'Đã tạm dừng'}</p>
+            <div className="action-row"><button className="btn-secondary" disabled={busy} onClick={() => setEditing(item)}>Sửa</button>
+                <button className="btn-secondary" disabled={busy} onClick={() => save({ id: item.id, action: 'toggle', enabled: !item.enabled })}>{item.enabled ? 'Tạm dừng' : 'Bật lại'}</button>
+                {Boolean(item.enabled) && item.nextDueOn <= today() && <button className="btn-primary" disabled={busy} onClick={() => confirm(item)}>Xác nhận đã thanh toán</button>}</div>
+        </article>)}
+        <BottomNav />
+    </main>;
 }

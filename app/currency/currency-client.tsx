@@ -28,6 +28,8 @@ export default function CurrencyClient() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [rateError, setRateError] = useState('');
+  const [historyError, setHistoryError] = useState('');
   // Tăng các số này để tải lại tỷ giá (nút làm mới) hoặc lịch sử (sau khi lưu)
   const [rateReload, setRateReload] = useState(0);
   const [historyReload, setHistoryReload] = useState(0);
@@ -36,11 +38,11 @@ export default function CurrencyClient() {
   useEffect(() => {
     const controller = new AbortController();
     fetch(`/api/currency?action=rate&from=${from}&to=${to}`, { signal: controller.signal })
-      .then((res) => res.json())
+      .then(async (res) => { const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Không lấy được tỷ giá.'); return data; })
       .then((data) => {
-        if (data.success) setRate(data.rate);
+        if (!controller.signal.aborted && data.success) { setRate(data.rate); setRateError(''); }
       })
-      .catch(() => {})
+      .catch((error) => { if (!controller.signal.aborted) { setRate(null); setRateError(error instanceof Error ? error.message : 'Không lấy được tỷ giá.'); } })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
@@ -50,17 +52,19 @@ export default function CurrencyClient() {
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/currency?action=history', { signal: controller.signal })
-      .then((res) => res.json())
+      .then(async (res) => { const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Không tải được lịch sử.'); return data; })
       .then((data) => {
-        if (data.success) setHistory(data.history);
+        if (!controller.signal.aborted && data.success) { setHistory(data.history); setHistoryError(''); }
       })
-      .catch(() => {});
+      .catch((error) => { if (!controller.signal.aborted) { setHistory([]); setHistoryError(error instanceof Error ? error.message : 'Không tải được lịch sử.'); } });
     return () => controller.abort();
   }, [historyReload]);
 
   // Đổi cặp tiền hoặc làm mới: bỏ tỷ giá tự nhập và hiện trạng thái đang tải
   const resetRate = () => {
     setLoading(true);
+    setRate(null);
+    setRateError('');
     setCustomRate(null);
     setIsEditingRate(false);
   };
@@ -71,16 +75,19 @@ export default function CurrencyClient() {
   };
 
   const changeFrom = (value: string) => {
+    if (value === from) return;
     resetRate();
     setFrom(value);
   };
 
   const changeTo = (value: string) => {
+    if (value === to) return;
     resetRate();
     setTo(value);
   };
 
   const handleSwap = () => {
+    if (from === to) return;
     resetRate();
     setFrom(to);
     setTo(from);
@@ -90,7 +97,7 @@ export default function CurrencyClient() {
   const convertedAmount = activeRate && amount ? (Number(amount) * activeRate) : 0;
 
   const handleSaveHistory = async () => {
-    if (!convertedAmount || !activeRate) return;
+    if (!Number.isFinite(convertedAmount) || convertedAmount <= 0 || !activeRate || activeRate <= 0) return;
     try {
       // Gọi API POST để lưu
       const res = await fetch('/api/currency', {
@@ -158,6 +165,7 @@ export default function CurrencyClient() {
               
               <button 
                 onClick={handleSaveHistory}
+                disabled={loading || !Number.isFinite(convertedAmount) || convertedAmount <= 0 || !activeRate || activeRate <= 0}
                 className="w-full py-2 bg-white text-blue-600 font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition"
               >
                 {saved ? <CheckCircle2 size={18} /> : <Save size={18} />} 
@@ -202,6 +210,7 @@ export default function CurrencyClient() {
               </p>
             )}
           </div>
+          {rateError && <p role="alert">{rateError} Vui lòng thử lại hoặc nhập tỷ giá thủ công.</p>}
         </div>
 
         <div className="mt-6">
@@ -209,7 +218,7 @@ export default function CurrencyClient() {
             <Clock size={16} /> Lịch sử gần đây
           </h2>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
-            {history.length === 0 ? (
+            {historyError ? <p role="alert" className="p-4">{historyError}</p> : history.length === 0 ? (
               <p className="p-4 text-center text-sm text-gray-500">Chưa có lịch sử quy đổi.</p>
             ) : (
               history.map((item) => (

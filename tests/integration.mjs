@@ -7,6 +7,11 @@ import path from 'node:path';
 import { tmpdir } from 'node:os';
 import mysql from 'mysql2/promise';
 import nextEnv from '@next/env';
+import webpush from 'web-push';
+import { pathToFileURL } from 'node:url';
+import { coreChecks } from './core-features.mjs';
+import { migrationUpgrade } from './migrations.mjs';
+import { browserCoreChecks } from './browser-core.mjs';
 
 nextEnv.loadEnvConfig(process.cwd());
 const suffix = randomBytes(6).toString('hex');
@@ -19,19 +24,24 @@ await new Promise((resolve) => socket.listen(0, '127.0.0.1', resolve));
 const port = socket.address().port;
 await new Promise((resolve) => socket.close(resolve));
 const origin = `http://127.0.0.1:${port}`;
+const vapid = webpush.generateVAPIDKeys();
 const env = { ...process.env, DEEPSEEK_API_KEY: '', TAVILY_API_KEY: '', NODE_ENV: 'development', DB_NAME: dbName, DB_USER: dbUser,
     DB_PASSWORD: randomBytes(32).toString('hex'), APP_ORIGIN: origin, COOKIE_SECURE: 'false', CNPM_TEST_BUILD_DIR: distDir,
     CNPM_TEST_TSCONFIG: testTsconfig, NEXT_TELEMETRY_DISABLED: '1' };
+env.CNPM_TEST_UPSTREAM = 'true';
+env.NODE_OPTIONS = `${process.env.NODE_OPTIONS || ''} --import=${pathToFileURL(path.resolve('tests/upstream.mjs')).href}`.trim();
+env.VAPID_PUBLIC_KEY = vapid.publicKey; env.VAPID_PRIVATE_KEY = vapid.privateKey; env.VAPID_SUBJECT = 'mailto:test@example.com';
 if (!env.DB_SETUP_USER || env.DB_SETUP_PASSWORD === undefined) throw new Error('Configure DB_SETUP_USER and DB_SETUP_PASSWORD first.');
 const admin = await mysql.createConnection({ host: env.DB_HOST || '127.0.0.1', port: Number(env.DB_PORT || 3306),
     user: env.DB_SETUP_USER, password: env.DB_SETUP_PASSWORD, dateStrings: true });
+await admin.query("SET time_zone = '+00:00'");
 let server;
 let serverLog = '';
 let checks = 0;
 function check(condition, message) { assert.ok(condition, message); checks++; }
 
-function setup() {
-    const result = spawnSync(process.execPath, ['scripts/setup-database.mjs'], { env, encoding: 'utf8', timeout: 30000 });
+function setup(overrides = {}) {
+    const result = spawnSync(process.execPath, ['scripts/setup-database.mjs'], { env: { ...env, ...overrides }, encoding: 'utf8', timeout: 30000 });
     assert.equal(result.status, 0, result.stderr);
 }
 
@@ -68,7 +78,13 @@ try {
     await writeFile(testTsconfig, JSON.stringify(typescript, null, 2));
     setup();
     await admin.changeUser({ database: dbName });
-    server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--hostname', '127.0.0.1', '--port', String(port)],
+    if (process.argv.includes('--browser')) {
+        env.NODE_ENV = 'production';
+        const build = spawnSync(process.execPath, ['node_modules/next/dist/bin/next', 'build'], { env, encoding: 'utf8', timeout: 180000, windowsHide: true });
+        assert.equal(build.status, 0, `${build.stdout}\n${build.stderr}`);
+        checks++;
+    }
+    server = spawn(process.execPath, ['node_modules/next/dist/bin/next', process.argv.includes('--browser') ? 'start' : 'dev', '--hostname', '127.0.0.1', '--port', String(port)],
         { env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
     const capture = (chunk) => { serverLog = (serverLog + chunk.toString()).slice(-6000); };
     server.stdout.on('data', capture); server.stderr.on('data', capture);
@@ -111,8 +127,10 @@ try {
     const income = categories.find((c) => c.kind === 'income').id;
     const expense = categories.find((c) => c.kind === 'expense').id;
     const base = { walletId, amount: '1000.10', kind: 'income', categoryId: income, bookedOn: '2026-10-14', note: 'Lương tháng 10', requestKey: randomUUID() };
-    await api('/api/transactions', { cookie, body: base, status: 201 });
-    await api('/api/transactions', { cookie, body: base, status: 409 });
+    const posted = await api('/api/transactions', { cookie, body: base, status: 201 });
+    const replayed = await api('/api/transactions', { cookie, body: base, status: 201 });
+    check(posted.json.id === replayed.json.id, 'A retried request returns the original transaction');
+    await api('/api/transactions', { cookie, body: { ...base, amount: '10' }, status: 409 });
     await api('/api/transactions', { cookie, body: { ...base, kind: 'expense', categoryId: expense, amount: '100.05', requestKey: randomUUID() }, status: 201 });
     await api('/api/transactions', { cookie, body: { ...base, kind: 'transfer', targetId, amount: '200.02', requestKey: randomUUID() }, status: 201 });
     const financeUrl = '/api/finance?start=2026-10-01&end=2026-10-31';
@@ -134,6 +152,22 @@ try {
     check((await api(`${financeUrl}&q=${encodeURIComponent('Lương')}`, { cookie })).json.transactions.length === 3, 'Search finds matching notes');
     check((await api(`${financeUrl}&q=${encodeURIComponent("' OR 1=1 --")}`, { cookie })).json.transactions.length === 0, 'Search treats SQL as text');
     check((await api(`${financeUrl}&q=%25`, { cookie })).json.transactions.length === 0, 'Search escapes wildcard');
+    await api(`${financeUrl}&page=0`, { cookie, status: 400 });
+    await api(`${financeUrl}&page=1.5`, { cookie, status: 400 });
+    const pageKeys = Array.from({ length: 201 }, () => [randomUUID(), randomUUID()]);
+    for (const [id, key] of pageKeys) {
+        await admin.execute(`INSERT INTO transactions (id, user_id, kind, amount, booked_on, note, category_id, request_key)
+            VALUES (?, ?, 'income', '1.00', '2025-01-01', 'pagination fixture', ?, ?)`, [id, me.id, income, key]);
+        await admin.execute(`INSERT INTO transaction_entries (user_id, transaction_id, account_id, amount)
+            SELECT ?, ?, ?, 1 UNION ALL SELECT ?, ?, account_id, -1 FROM categories WHERE user_id = ? AND id = ?`,
+        [me.id, id, walletId, me.id, id, me.id, income]);
+    }
+    const pageUrl = '/api/finance?start=2025-01-01&end=2025-01-31';
+    const pageOne = (await api(`${pageUrl}&page=1`, { cookie })).json;
+    const pageTwo = (await api(`${pageUrl}&page=2`, { cookie })).json;
+    check(pageOne.transactions.length === 200 && pageOne.hasMore && pageTwo.transactions.length === 1 && !pageTwo.hasMore, 'History returns every page');
+    check(new Set([...pageOne.transactions, ...pageTwo.transactions].map((t) => t.id)).size === 201, 'History pages do not overlap');
+    check(pageOne.income === 201 && pageTwo.income === 201, 'Pagination does not change report totals');
     const { cookie: cookieB } = await api('/api/auth/login', { body: b });
     for (const route of ['/profile', '/transactions/new']) {
         const response = await fetch(`${origin}${route}`, { headers: { Cookie: cookieB } });
@@ -199,6 +233,15 @@ try {
     const [goalAccount] = await admin.execute('SELECT a.kind FROM goals g JOIN accounts a ON a.id = g.account_id AND a.user_id = g.user_id WHERE g.id = ?', [savedGoal.id]);
     check(goalAccount[0]?.kind === 'goal', 'Each goal owns a ledger account');
     check((await api('/api/wallets', { cookie })).json.wallets.every((w) => w.name !== `Mục tiêu: ${savedGoal.id}`), 'Goal accounts are not listed as wallets');
+    const balancesBeforeContribution = (await api('/api/wallets', { cookie })).json.wallets;
+    const contribution = { goalId: savedGoal.id, amount: '120.50', requestKey: randomUUID() };
+    const firstContribution = await api('/api/goals/contributions', { cookie, body: contribution, status: 201 });
+    const repeatedContribution = await api('/api/goals/contributions', { cookie, body: contribution, status: 201 });
+    check(firstContribution.json.id === repeatedContribution.json.id, 'Contribution retry is idempotent');
+    await api('/api/goals/contributions', { cookie, body: { ...contribution, amount: '2' }, status: 409 });
+    await api('/api/goals/contributions', { cookie: cookieB, body: { ...contribution, requestKey: randomUUID() }, status: 404 });
+    check((await api('/api/goals', { cookie })).json.goals.find((g) => g.id === savedGoal.id).savedAmount === '120.50', 'Contribution updates the goal');
+    check(JSON.stringify((await api('/api/wallets', { cookie })).json.wallets) === JSON.stringify(balancesBeforeContribution), 'Manual contributions do not change wallet balances');
 
     // UC13: lịch sử quy đổi cần đăng nhập và tách theo người dùng
     const conversion = { from: 'USD', to: 'VND', amount: 10, rate: 25000.5, result: 1 };
@@ -209,8 +252,12 @@ try {
     await api('/api/currency', { cookie, body: { ...conversion, to: '../x' }, status: 400 });
     for (const amount of [0, -5, 'abc', 1e13]) await api('/api/currency', { cookie, body: { ...conversion, amount }, status: 400 });
     await api('/api/currency', { cookie, body: { ...conversion, rate: 0 }, status: 400 });
+    await api('/api/currency', { cookie, body: { ...conversion, amount: 0.000001 }, status: 400 });
+    await api('/api/currency', { cookie, body: { ...conversion, rate: 0.000000001 }, status: 400 });
+    await api('/api/currency', { cookie, body: { ...conversion, amount: 1e12, rate: 1e9 }, status: 400 });
     await api('/api/currency', { cookie, body: conversion, status: 201 });
     await api('/api/currency?action=rate&from=US$&to=VND', { status: 400 });
+    check((await api('/api/currency?action=rate&from=VND&to=VND')).json.rate === 1, 'Same-currency rate is one');
     const historyA = (await api('/api/currency?action=history', { cookie })).json.history;
     check(historyA.length === 1 && historyA[0].result === '250005.0000' && historyA[0].rate_used === '25000.50000000', 'Conversion result is recomputed on the server');
     check((await api('/api/currency?action=history', { cookie: cookieB })).json.history.length === 0, 'Conversion history is isolated per user');
@@ -313,9 +360,12 @@ try {
     await api('/api/auth/login', { body: { account: limitAccount, password: 'wrong-password' }, status: 401 });
     await api('/api/auth/login', { body: { account: limitAccount, password }, status: 429 });
     check(true, 'Login limiter counts only failures and locks after 15 failures');
+    await coreChecks({ api, admin, check });
+    await migrationUpgrade({ admin, env, suffix, setup, check });
+    const [countBeforeSetup] = await admin.query('SELECT COUNT(*) AS n FROM transactions');
     setup();
     const [countAfterSetup] = await admin.query('SELECT COUNT(*) AS n FROM transactions');
-    check(countAfterSetup[0].n === 9, 'Setup rerun preserves transactions');
+    check(countAfterSetup[0].n === countBeforeSetup[0].n, 'Setup rerun preserves transactions');
     await admin.execute('UPDATE users SET blocked = TRUE WHERE id = ?', [me.id]);
     await api('/api/wallets', { cookie, status: 401 });
     await admin.execute('UPDATE users SET blocked = FALSE WHERE id = ?', [me.id]);
@@ -395,12 +445,12 @@ try {
             await page.waitForURL('**/chat');
             await page.getByRole('heading', { name: 'Trợ lý AI - Ting Ting' }).waitFor();
             await page.getByRole('button', { name: 'Gợi ý cách tiết kiệm', exact: true }).click();
-            await page.getByText('Tính năng trợ lý AI đang được phát triển. Hiện mình chỉ trả lời mẫu.', { exact: true }).waitFor();
+            await page.getByText(/Trợ lý AI đang tạm ngưng/).waitFor();
             checks++;
             await page.goto(origin);
             await page.getByRole('link', { name: 'Thông báo', exact: true }).click();
             await page.waitForURL('**/notifications');
-            await page.getByRole('button', { name: 'Đọc tất cả', exact: true }).click();
+            check(await page.getByRole('button', { name: 'Đọc tất cả', exact: true }).isDisabled(), 'No fabricated notifications on a fresh account');
             check(await page.getByLabel('Chưa đọc', { exact: true }).count() === 0, 'Upstream notifications interaction preserved');
             await page.getByRole('link', { name: 'Quay lại', exact: true }).click();
             await page.getByRole('link', { name: 'Ngân sách', exact: true }).click();
@@ -518,6 +568,7 @@ try {
             await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
             await page.getByText('Bạn chưa đăng nhập', { exact: true }).waitFor();
             check(pageErrors.length === 0, `No browser exceptions: ${pageErrors.join(', ')}`);
+            await browserCoreChecks({ origin, admin, check });
         } finally { await browser.close(); }
     }
     console.log(`PASS: ${checks} integration checks (auth, 2FA, recovery, CSRF, isolation, ledger, exact amounts, rollback, reports, currency, admin, setup, pages).`);

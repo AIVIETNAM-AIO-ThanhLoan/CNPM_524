@@ -17,9 +17,10 @@ import {
   QrCode,
   Search,
   BellRing,
+  Target,
 } from 'lucide-react';
 import BottomNav from './components/BottomNav';
-import { NOTIFICATIONS, unreadCount } from './lib/notifications';
+import { useNotifications } from './lib/use-notifications';
 import { BUDGET_ON_BRAND, ON_BRAND, PALETTE } from './lib/colors';
 import './styles/home.css';
 
@@ -31,11 +32,11 @@ const suggestions: { label: string; color: string; Icon?: typeof BellRing; mark?
   { mark: 'Au', label: 'Giá vàng', color: PALETTE.gold, href: '/gold' },
   // Nút Lời nhắc trỏ về /reminders (hoặc bạn có thể xóa dòng này nếu không dùng)
   { Icon: BellRing, label: 'Lời nhắc', color: PALETTE.indigo, href: '/reminders' },
+  { Icon: Target, label: 'Mục tiêu tiết kiệm', color: PALETTE.teal, href: '/goals' },
 ];
 
 const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
-const UNREAD_NOTIFICATIONS = unreadCount(NOTIFICATIONS);
 
 const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -49,6 +50,7 @@ const budgetColor = (percent: number) =>
   percent > 90 ? BUDGET_ON_BRAND.alert : percent > 70 ? BUDGET_ON_BRAND.warning : BUDGET_ON_BRAND.ok;
 
 export default function Home({ initialDate }: { initialDate: string }) {
+  const { unread } = useNotifications();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'month' | 'day'>('month');
@@ -76,8 +78,8 @@ export default function Home({ initialDate }: { initialDate: string }) {
           </label>
           <Link href="/notifications" className="icon-btn chat-entry" aria-label="Thông báo">
             <Bell size={22} strokeWidth={1.8} />
-            {UNREAD_NOTIFICATIONS > 0 && (
-              <span className="notif-badge">{UNREAD_NOTIFICATIONS}</span>
+            {unread > 0 && (
+              <span className="notif-badge">{unread}</span>
             )}
           </Link>
           <Link href="/chat" className="icon-btn chat-entry" aria-label="Trợ lý AI">

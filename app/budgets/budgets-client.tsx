@@ -9,7 +9,7 @@ import { formatBudgetMoney } from '../lib/budget-money';
 import { notifyFinanceUpdated } from '../lib/finance-updates';
 import '../styles/budgets.css';
 
-type Budget = { categoryId: string; name: string; amount: string };
+type Budget = { categoryId: string; name: string; amount: string; spent: string };
 type BudgetResponse = { budgets: Budget[]; totalAmount: string };
 type Snapshot = BudgetResponse & { key: string; categories: Category[]; error: string };
 
@@ -29,10 +29,10 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
     useEffect(() => {
         const controller = new AbortController();
         Promise.all([
-            requestJson<{ categories: Category[] }>('/api/categories', undefined, controller.signal),
+            requestJson<{ categories: Category[] }>('/api/categories?all=1', undefined, controller.signal),
             requestJson<BudgetResponse>(`/api/budgets?month=${month}`, undefined, controller.signal),
         ]).then(([options, budgets]) => {
-            if (!controller.signal.aborted) setSnapshot({ key, ...budgets, categories: options.categories.filter((c) => c.kind === 'expense'), error: '' });
+            if (!controller.signal.aborted) setSnapshot({ key, ...budgets, categories: options.categories.filter((c) => c.kind === 'expense' && (!c.archived || budgets.budgets.some((b) => b.categoryId === c.id))), error: '' });
         }).catch((error) => {
             if (!controller.signal.aborted) setSnapshot({ key, budgets: [], totalAmount: '0.00', categories: [], error: error instanceof Error ? error.message : 'Không thể tải ngân sách.' });
         });
@@ -89,7 +89,11 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
                 const budget = data.budgets.find((item) => item.categoryId === category.id);
                 return <article key={category.id} className="budget-category-card" aria-label={category.name}>
                     <div className="budget-category-title"><span className="budget-category-icon"><Wallet size={20} aria-hidden="true" /></span><h3>{category.name}</h3></div>
+                    {Boolean(category.archived) && <p>Danh mục đã lưu trữ; vẫn giữ ngân sách và lịch sử.</p>}
                     <p className={`budget-category-amount ${budget ? '' : 'is-unset'}`}>{budget ? formatBudgetMoney(budget.amount) : 'Chưa đặt ngân sách'}</p>
+                    {budget && <><p>Đã chi: {formatBudgetMoney(budget.spent)} · {Math.round(Number(budget.spent) / Number(budget.amount) * 100)}%</p>
+                        <progress aria-label={`Mức sử dụng ngân sách ${category.name}`} max={Number(budget.amount)} value={Math.max(0, Number(budget.spent))} />
+                        {Number(budget.spent) >= Number(budget.amount) * 0.8 && <p role="status">{Number(budget.spent) >= Number(budget.amount) ? 'Đã chạm ngưỡng 100% ngân sách.' : 'Đã chạm ngưỡng 80% ngân sách.'}</p>}</>}
                     {editing === category.id ? <form className="ledger-form budget-editor" onSubmit={(event) => save(event, category)}>
                         <label>Số tiền (VND)<input name="amount" aria-label={`Ngân sách cho ${category.name}`} type="number" inputMode="decimal" min="0.01" max="999999999999.99" step="0.01" required autoFocus value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} /></label>
                         <div className="budget-editor-actions"><button type="button" className="btn-secondary" disabled={busy} onClick={() => { setEditing(null); setError(''); }}>Hủy</button><button type="submit" className="btn-primary" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu ngân sách'}</button></div>
