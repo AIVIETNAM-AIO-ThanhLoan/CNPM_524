@@ -1,5 +1,5 @@
 /* global self, caches, indexedDB */
-const CACHE = 'tingting-static-v1';
+const CACHE = 'tingting-static-v2';
 self.addEventListener('install', (event) => {
     event.waitUntil((async () => {
         const cache = await caches.open(CACHE);
@@ -25,13 +25,18 @@ self.addEventListener('fetch', (event) => {
     if (event.request.mode === 'navigate') {
         event.respondWith(fetch(event.request).catch(async () => (await caches.match('/offline')) || Response.error()));
     } else if (url.pathname.startsWith('/_next/static/')) {
+        // Ưu tiên mạng: bản dev giữ nguyên tên file khi code đổi, nên chỉ dùng cache khi mất mạng.
         event.respondWith((async () => {
             const cache = await caches.open(CACHE);
-            const cached = await cache.match(event.request);
-            if (cached) return cached;
-            const response = await fetch(event.request);
-            if (response.ok) await cache.put(event.request, response.clone());
-            return response;
+            try {
+                const response = await fetch(event.request);
+                if (response.ok) await cache.put(event.request, response.clone());
+                return response;
+            } catch (error) {
+                const cached = await cache.match(event.request);
+                if (cached) return cached;
+                throw error;
+            }
         })());
     }
 });
