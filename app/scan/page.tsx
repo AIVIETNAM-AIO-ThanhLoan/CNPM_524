@@ -59,20 +59,23 @@ export default function Scan() {
             if (!video.current) { stop(); return; }
             video.current.srcObject = camera;
             await video.current.play(); setScanning(true);
+            // jsQR chạy trên luồng chính: chỉ giải mã ô vuông giữa khung hình, thu nhỏ còn tối đa 480px
+            // và thử ảnh đảo màu xen kẽ thay vì mỗi khung hình hai lần, để camera không bị giật trên điện thoại.
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d', { willReadFrequently: true });
+            let attempt = 0;
             const scan = () => {
                 if (current !== generation.current || !navigator.onLine || !video.current || !context) return;
-                if (video.current.readyState >= 2) {
-                    canvas.width = Math.min(video.current.videoWidth, 800); canvas.height = Math.round(video.current.videoHeight * canvas.width / video.current.videoWidth);
-                    if (canvas.width && canvas.height) {
-                        context.drawImage(video.current, 0, 0, canvas.width, canvas.height);
-                        const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-                        const result = jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' });
-                        if (result) { decode(result.data); stop(); return; }
-                    }
+                const { videoWidth, videoHeight } = video.current;
+                if (video.current.readyState >= 2 && videoWidth && videoHeight) {
+                    const side = Math.min(videoWidth, videoHeight), size = Math.min(side, 480);
+                    if (canvas.width !== size) { canvas.width = size; canvas.height = size; }
+                    context.drawImage(video.current, (videoWidth - side) / 2, (videoHeight - side) / 2, side, side, 0, 0, size, size);
+                    const pixels = context.getImageData(0, 0, size, size);
+                    const result = jsQR(pixels.data, size, size, { inversionAttempts: attempt++ % 4 === 3 ? 'onlyInvert' : 'dontInvert' });
+                    if (result) { decode(result.data); stop(); return; }
                 }
-                setTimeout(scan, 200);
+                setTimeout(scan, 150);
             };
             scan();
         } catch { stop(); setError('Không mở được camera. Hãy cho phép quyền camera và thử lại.'); }
