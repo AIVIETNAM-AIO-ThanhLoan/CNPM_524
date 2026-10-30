@@ -16,8 +16,11 @@ export async function coreChecks({ api, admin, check }) {
     check(crc16('123456789') === '29B1', 'CRC16 matches the published check vector');
     const qr = qrFixture();
     check(parseVietQR(qr).account === '0123456789' && parseVietQR(qr).bankBin === '970422', 'VietQR preserves leading zeroes');
+    const lowercaseCrc = qr.slice(0, -4) + qr.slice(-4).toLowerCase();
+    assert.deepEqual(parseVietQR(lowercaseCrc), parseVietQR(qr));
+    check(true, 'VietQR accepts lowercase CRC hex without changing recipient data');
     check(parseVietQR(qrFixture('')).amount === '', 'Static VietQR permits user-supplied amount');
-    for (const invalid of ['https://evil.example', qr.slice(0, -1) + (qr.endsWith('0') ? '1' : '0'), qr + '000201', qrFixture('1.5'), qrFixture('-1'), '']) {
+    for (const invalid of ['https://evil.example', qr.slice(0, -1) + (qr.endsWith('0') ? '1' : '0'), lowercaseCrc.slice(0, -1) + 'g', lowercaseCrc.slice(0, -1) + '0', qr + '000201', qrFixture('1.5'), qrFixture('-1'), '']) {
         assert.throws(() => parseVietQR(invalid)); check(true, 'Invalid or unsupported QR is rejected');
     }
     const changeQR = (original, changed) => { const raw = qr.slice(0, -4).replace(original, changed); return raw + crc16(raw); };
@@ -195,7 +198,7 @@ export async function coreChecks({ api, admin, check }) {
     await api('/api/vietqr', { cookie, body: { qr: 'https://evil.example' }, status: 400 });
     await api('/api/vietqr', { cookie, body: { qr, app: 'evil', platform: 'android', amount: '15000', note: 'Test' }, status: 400 });
     const [[beforeQr]] = await admin.execute('SELECT COUNT(*) AS n FROM transactions WHERE user_id = ?', [user.id]);
-    const qrLink = (await api('/api/vietqr', { cookie, body: { qr, app: 'vcb', platform: 'android', amount: '15000', note: 'Test' } })).json.url;
+    const qrLink = (await api('/api/vietqr', { cookie, body: { qr: lowercaseCrc, app: 'vcb', platform: 'android', amount: '15000', note: 'Test' } })).json.url;
     check(new URL(qrLink).searchParams.get('ba') === '0123456789@mb', 'API validates QR and builds the documented bank link');
     const [[afterQr]] = await admin.execute('SELECT COUNT(*) AS n FROM transactions WHERE user_id = ?', [user.id]);
     check(beforeQr.n === afterQr.n, 'Creating a QR bank link never records a transaction');

@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { qrFixture } from './core-features.mjs';
 
 export async function browserCoreChecks({ origin, admin, check }) {
@@ -178,7 +179,8 @@ export async function browserCoreChecks({ origin, admin, check }) {
         await page.getByLabel('Nội dung VietQR', { exact: true }).fill('https://evil.example');
         await page.getByRole('button', { name: 'Kiểm tra VietQR', exact: true }).click();
         await page.getByRole('alert').filter({ hasText: /VietQR không hợp lệ/ }).waitFor();
-        await page.getByLabel('Nội dung VietQR', { exact: true }).fill(qrFixture());
+        const qr = qrFixture();
+        await page.getByLabel('Nội dung VietQR', { exact: true }).fill(qr.slice(0, -4) + qr.slice(-4).toLowerCase());
         await page.getByRole('button', { name: 'Kiểm tra VietQR', exact: true }).click();
         await page.getByRole('heading', { name: 'Kiểm tra người nhận', exact: true }).waitFor();
         check(await page.getByText('0123456789', { exact: true }).isVisible(), 'QR recipient is displayed for review');
@@ -196,12 +198,21 @@ export async function browserCoreChecks({ origin, admin, check }) {
         check(await page.getByRole('button', { name: 'Bật camera quét VietQR', exact: true }).isDisabled() && await bankLink.count() === 0, 'Connectivity loss disables QR and removes the outgoing bank link');
         await context.setOffline(false);
 
-        // Use a synthetic video stream to exercise the actual camera decoder and track cleanup.
+        const imageInput = page.getByLabel('Chọn ảnh QR', { exact: true });
+        await imageInput.setInputFiles({ name: 'blank.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="white"/></svg>') });
+        await page.getByRole('alert').filter({ hasText: 'Không tìm thấy mã QR trong ảnh.' }).waitFor();
+        check(await page.getByRole('heading', { name: 'Kiểm tra người nhận', exact: true }).count() === 0 && await bankLink.count() === 0, 'An image without QR clears the previous recipient and link');
+        await imageInput.setInputFiles(fileURLToPath(new URL('./fixtures/vietqr.png', import.meta.url)));
+        await page.getByRole('heading', { name: 'Kiểm tra người nhận', exact: true }).waitFor();
+        check(await page.getByText('0123456789', { exact: true }).isVisible() && !(await page.getByRole('checkbox').isChecked()), 'Image upload decodes QR and requires a fresh recipient review');
+
+        // Keep the QR above the center crop to exercise full-frame scanning and track cleanup.
         const png = (await readFile(new URL('./fixtures/vietqr.png', import.meta.url))).toString('base64');
         await page.evaluate(async (data) => {
             const image = new Image(); image.src = `data:image/png;base64,${data}`; await image.decode();
-            const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
-            canvas.getContext('2d').drawImage(image, 0, 0);
+            const canvas = document.createElement('canvas'); canvas.width = 600; canvas.height = 1200;
+            const context = canvas.getContext('2d'); context.fillStyle = 'white'; context.fillRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 120, 80, 360, 360);
             const stream = canvas.captureStream(10); window.testCameraTracks = stream.getTracks();
             navigator.mediaDevices.getUserMedia = async () => stream;
         }, png);
