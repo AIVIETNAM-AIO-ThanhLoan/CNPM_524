@@ -2,7 +2,7 @@ import nextEnv from '@next/env';
 import mysql from 'mysql2/promise';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { databaseConfig } from '../database/config.mjs';
+import { databaseConfig, databaseUserHost } from '../database/config.mjs';
 
 const MIGRATIONS = [
     ['001_initial', '../database/schema.sql'],
@@ -23,10 +23,14 @@ const MIGRATIONS = [
 async function main() {
     nextEnv.loadEnvConfig(process.cwd());
     const config = databaseConfig();
+    const host = databaseUserHost();
     const setupUser = process.env.DB_SETUP_USER;
     const setupPassword = process.env.DB_SETUP_PASSWORD;
     if (!setupUser || setupPassword === undefined) {
         throw new Error('Cần DB_SETUP_USER và DB_SETUP_PASSWORD (có thể rỗng với XAMPP mặc định).');
+    }
+    if (host === '%' && (!setupPassword || setupPassword === 'CHANGE_ME' || setupPassword === config.password)) {
+        throw new Error('Docker setup requires a nonempty administrator password different from DB_PASSWORD.');
     }
     const connection = await mysql.createConnection({ ...config, database: undefined,
         user: setupUser, password: setupPassword });
@@ -64,7 +68,6 @@ async function main() {
             }
         }
         // Provision only new accounts: never overwrite existing passwords/privileges.
-        const host = '127.0.0.1';
         const [users] = await connection.execute('SELECT User FROM mysql.user WHERE User = ? AND Host = ?', [config.user, host]);
         if (!users.length) {
             await connection.query('CREATE USER ?@? IDENTIFIED BY ?', [config.user, host, config.password]);

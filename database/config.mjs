@@ -1,3 +1,11 @@
+export function databaseUserHost(env = process.env) {
+    const host = env.DB_USER_HOST ?? '127.0.0.1';
+    if (!['127.0.0.1', '%'].includes(host)) {
+        throw new Error('DB_USER_HOST must be 127.0.0.1 (local) or % (Docker network).');
+    }
+    return host;
+}
+
 export function databaseConfig(env = process.env) {
     const database = env.DB_NAME || 'cnpm_524';
     const user = env.DB_USER || '';

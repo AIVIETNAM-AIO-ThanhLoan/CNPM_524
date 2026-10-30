@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
+import { databaseUserHost } from '../database/config.mjs';
 
 export async function migrationUpgrade({ admin, env, suffix, setup, check }) {
     const name = `cnpm_upgrade_${suffix}`;
@@ -49,6 +50,6 @@ export async function migrationUpgrade({ admin, env, suffix, setup, check }) {
         await admin.changeUser({ database: env.DB_NAME });
         await admin.query("SET time_zone = '+00:00'");
         await admin.query(`DROP DATABASE IF EXISTS \`${name}\``);
-        await admin.query('DROP USER IF EXISTS ?@?', [user, '127.0.0.1']);
+        await admin.query('DROP USER IF EXISTS ?@?', [user, databaseUserHost(env)]);
     }
 }

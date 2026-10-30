@@ -12,6 +12,7 @@ import { pathToFileURL } from 'node:url';
 import { coreChecks } from './core-features.mjs';
 import { migrationUpgrade } from './migrations.mjs';
 import { browserCoreChecks } from './browser-core.mjs';
+import { databaseConfig, databaseUserHost } from '../database/config.mjs';
 
 nextEnv.loadEnvConfig(process.cwd());
 const suffix = randomBytes(6).toString('hex');
@@ -72,11 +73,24 @@ function totp(secret, offset = 0) {
 }
 
 try {
+    assert.equal(databaseUserHost({}), '127.0.0.1');
+    assert.equal(databaseUserHost({ DB_USER_HOST: '%' }), '%');
+    for (const host of ['', 'localhost', '0.0.0.0', "%' OR 1=1"]) {
+        assert.throws(() => databaseUserHost({ DB_USER_HOST: host }), /DB_USER_HOST/);
+    }
+    check(true, 'Provisioning host defaults to loopback and only accepts the explicit Docker wildcard');
     const typescript = JSON.parse(await readFile('tsconfig.json', 'utf8'));
     typescript.include = typescript.include.filter((item) => !item.startsWith('.next-test-'));
     typescript.include.push(`${distDir}/types/**/*.ts`, `${distDir}/dev/types/**/*.ts`);
     await writeFile(testTsconfig, JSON.stringify(typescript, null, 2));
     setup();
+    const restricted = await mysql.createConnection(databaseConfig(env));
+    try {
+        await restricted.query('SELECT id FROM users LIMIT 1');
+        await assert.rejects(restricted.query('CREATE TABLE denied_test (id INT)'), { code: 'ER_TABLEACCESS_DENIED_ERROR' });
+        await assert.rejects(restricted.query("SELECT User FROM mysql.user"), { code: 'ER_TABLEACCESS_DENIED_ERROR' });
+        check(true, 'Application account can read its database but cannot create tables or read administrator accounts');
+    } finally { await restricted.end(); }
     await admin.changeUser({ database: dbName });
     if (process.argv.includes('--browser')) {
         env.NODE_ENV = 'production';
@@ -586,7 +600,7 @@ try {
     assert.match(dbName, /^cnpm_test_[a-f0-9]{12}$/);
     assert.match(dbUser, /^cnpm_t_[a-f0-9]{12}$/);
     await admin.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
-    await admin.query('DROP USER IF EXISTS ?@?', [dbUser, '127.0.0.1']);
+    await admin.query('DROP USER IF EXISTS ?@?', [dbUser, databaseUserHost(env)]);
     await admin.end();
     const directory = path.resolve(distDir);
     assert.equal(path.dirname(directory), process.cwd());

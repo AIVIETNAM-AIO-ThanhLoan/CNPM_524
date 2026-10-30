@@ -21,8 +21,8 @@ function fields(value) {
     return result;
 }
 export function parseVietQR(value) {
-    if (typeof value !== 'string' || value.length > 2048 || !value.startsWith('000201') || !/6304[0-9A-F]{4}$/.test(value)
-        || /[\u0000-\u001f\u007f]/.test(value) || crc16(value.slice(0, -4)) !== value.slice(-4)) throw new Error('VietQR không hợp lệ hoặc sai mã kiểm tra CRC.');
+    if (typeof value !== 'string' || value.length > 2048 || !value.startsWith('000201') || !/6304[0-9A-Fa-f]{4}$/.test(value)
+        || /[\u0000-\u001f\u007f]/.test(value) || crc16(value.slice(0, -4)) !== value.slice(-4).toUpperCase()) throw new Error('VietQR không hợp lệ hoặc sai mã kiểm tra CRC.');
     const root = fields(value);
     if (root['00'] !== '01' || root['53'] !== '704' || root['58'] !== 'VN' || !root['38'] || root['63'] !== value.slice(-4)
         || (root['01'] && !['11', '12'].includes(root['01']))) throw new Error('Chỉ hỗ trợ VietQR chuyển khoản VND tại Việt Nam.');

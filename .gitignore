@@ -9,10 +9,12 @@
 /out/
 /build/
 /coverage
+/outputs/
 
 # Biến môi trường
 .env*
 !.env.example
+!.env.docker.example
 
 # TypeScript và Next.js tự sinh
 *.tsbuildinfo

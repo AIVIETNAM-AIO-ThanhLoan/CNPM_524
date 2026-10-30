@@ -23,8 +23,10 @@ export default function Scan() {
     const [reviewed, setReviewed] = useState(false);
     const [url, setUrl] = useState('');
     const [error, setError] = useState('');
+    const [optionsError, setOptionsError] = useState('');
     const [scanning, setScanning] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [readingImage, setReadingImage] = useState(false);
     const [online, setOnline] = useState(true);
     const stop = useCallback(() => { generation.current++; stream.current?.getTracks().forEach((track) => track.stop()); stream.current = null; setScanning(false); }, []);
     useEffect(() => {
@@ -36,8 +38,8 @@ export default function Scan() {
     }, [stop]);
     useEffect(() => {
         const controller = new AbortController();
-        requestJson<Options>(`/api/vietqr?platform=${platform}`, undefined, controller.signal).then((options) => { if (!controller.signal.aborted) { setOptions(options); setApp(options.apps[0]?.appId || ''); setError(''); } })
-            .catch((error) => { if (!controller.signal.aborted) { setOptions({ banks: [], apps: [] }); setError(error.message); } });
+        requestJson<Options>(`/api/vietqr?platform=${platform}`, undefined, controller.signal).then((options) => { if (!controller.signal.aborted) { setOptions(options); setApp(options.apps[0]?.appId || ''); setOptionsError(''); } })
+            .catch((error) => { if (!controller.signal.aborted) { setOptions({ banks: [], apps: [] }); setOptionsError(error.message); } });
         return () => controller.abort();
     }, [platform]);
     function decode(value: string) {
@@ -47,10 +49,36 @@ export default function Scan() {
             setQr(value); setRecipient(decoded); setAmount(decoded.amount); setNote(decoded.note); setError(''); stop();
         } catch (error) { setRecipient(null); setError(error instanceof Error ? error.message : 'Mã QR không hợp lệ.'); }
     }
+    async function readImage(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.currentTarget.files?.[0];
+        event.currentTarget.value = '';
+        if (!file) return;
+        stop(); setUrl(''); setRecipient(null); setReviewed(false); setError('');
+        if (!navigator.onLine) { setError('Quét VietQR cần kết nối mạng.'); return; }
+        if (!file.type.startsWith('image/') || file.size > 10 * 1024 * 1024) { setError('Hãy chọn ảnh QR có dung lượng tối đa 10 MB.'); return; }
+        const current = generation.current;
+        const source = URL.createObjectURL(file);
+        setReadingImage(true);
+        try {
+            const image = new Image(); image.src = source; await image.decode();
+            if (current !== generation.current) return;
+            const scale = Math.min(1, 1600 / Math.max(image.width, image.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(image.width * scale)); canvas.height = Math.max(1, Math.round(image.height * scale));
+            const context = canvas.getContext('2d', { willReadFrequently: true });
+            if (!context) throw new Error();
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+            const result = jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' });
+            if (result) decode(result.data);
+            else setError('Không tìm thấy mã QR trong ảnh. Hãy chọn ảnh rõ nét, có đủ bốn góc của mã.');
+        } catch { if (current === generation.current) setError('Không đọc được ảnh. Hãy chọn ảnh PNG hoặc JPG rõ nét và thử lại.'); }
+        finally { URL.revokeObjectURL(source); setReadingImage(false); }
+    }
     async function start() {
         setError(''); setUrl(''); setRecipient(null); stop();
         if (!navigator.onLine) { setError('Quét VietQR cần kết nối mạng.'); return; }
-        if (!navigator.mediaDevices?.getUserMedia || !window.isSecureContext) { setError('Camera cần HTTPS và trình duyệt hỗ trợ. Bạn có thể dán nội dung QR bên dưới.'); return; }
+        if (!navigator.mediaDevices?.getUserMedia || !window.isSecureContext) { setError('Camera cần HTTPS hoặc localhost. Nếu đang mở bằng địa chỉ IP qua HTTP, hãy dùng Chọn ảnh QR bên dưới.'); return; }
         const current = generation.current;
         try {
             const camera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false });
@@ -58,10 +86,9 @@ export default function Scan() {
             stream.current = camera;
             if (!video.current) { stop(); return; }
             video.current.srcObject = camera;
-            await video.current.play(); setScanning(true);
-            // jsQR chạy trên luồng chính nên mỗi khung chỉ giải mã tối đa 480×480 để camera không bị giật trên điện thoại.
-            // Các khung xen kẽ: cả ô vuông giữa (QR to) và nửa giữa ở độ phân giải gốc (QR nhỏ hoặc ở xa);
-            // ảnh đảo màu chỉ thử thỉnh thoảng thay vì mỗi khung hai lần.
+            setScanning(true); await video.current.play();
+            if (current !== generation.current) { camera.getTracks().forEach((track) => track.stop()); return; }
+            // Alternate full-frame and centered crops so off-center QR codes stay visible without decoding full-resolution video.
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d', { willReadFrequently: true });
             let attempt = 0;
@@ -70,20 +97,29 @@ export default function Scan() {
                 const { videoWidth, videoHeight } = video.current;
                 if (video.current.readyState >= 2 && videoWidth && videoHeight) {
                     const side = Math.min(videoWidth, videoHeight);
-                    const region = attempt % 2 ? Math.round(side / 2) : side, size = Math.min(region, 480);
-                    if (canvas.width !== Math.min(side, 480)) { canvas.width = Math.min(side, 480); canvas.height = canvas.width; }
-                    context.drawImage(video.current, (videoWidth - region) / 2, (videoHeight - region) / 2, region, region, 0, 0, size, size);
-                    const pixels = context.getImageData(0, 0, size, size);
+                    const region = attempt % 3 === 2 ? Math.round(side / 2) : side;
+                    const width = attempt % 3 === 0 ? videoWidth : region, height = attempt % 3 === 0 ? videoHeight : region;
+                    const scale = Math.min(1, (attempt % 3 === 0 ? 640 : 480) / Math.max(width, height));
+                    canvas.width = Math.max(1, Math.round(width * scale)); canvas.height = Math.max(1, Math.round(height * scale));
+                    context.drawImage(video.current, (videoWidth - width) / 2, (videoHeight - height) / 2, width, height, 0, 0, canvas.width, canvas.height);
+                    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
                     let result = null;
                     // jsQR đôi khi ném lỗi với khung hình nhiễu; bỏ qua khung đó để vòng quét không dừng hẳn.
-                    try { result = jsQR(pixels.data, size, size, { inversionAttempts: attempt % 8 >= 6 ? 'onlyInvert' : 'dontInvert' }); } catch { /* quét tiếp khung sau */ }
+                    try { result = jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: attempt % 8 >= 6 ? 'onlyInvert' : 'dontInvert' }); } catch { /* quét tiếp khung sau */ }
                     attempt++;
                     if (result) { decode(result.data); stop(); return; }
                 }
                 setTimeout(scan, 150);
             };
             scan();
-        } catch { stop(); setError('Không mở được camera. Hãy cho phép quyền camera và thử lại.'); }
+        } catch (error) {
+            if (current !== generation.current) return;
+            stop();
+            const reason = error instanceof DOMException ? error.name : '';
+            setError(reason === 'NotAllowedError' ? 'Quyền camera đang bị chặn. Hãy cho phép camera trong cài đặt trang hoặc dùng Chọn ảnh QR.'
+                : reason === 'NotFoundError' ? 'Không tìm thấy camera. Bạn có thể dùng Chọn ảnh QR.'
+                    : 'Không mở được camera. Hãy đóng ứng dụng khác đang dùng camera rồi thử lại, hoặc dùng Chọn ảnh QR.');
+        }
     }
     async function createLink(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault(); setUrl(''); setError('');
@@ -95,14 +131,18 @@ export default function Scan() {
     }
     const selectedApp = options.apps.find((item) => item.appId === app);
     const bank = options.banks.find((item) => item.bin === recipient?.bankBin);
+    const displayedError = error || optionsError;
     return <main className="app-page ledger-page">
         <header className="page-header"><h1>Quét VietQR</h1></header>
         <p>Cần kết nối mạng. Kiểm tra thông tin trong ứng dụng ngân hàng trước khi trả tiền. Ting Ting không tự ghi giao dịch và không xác định thanh toán thành công khi bạn quay lại.</p>
         {!online && <p role="alert">Đang ngoại tuyến. VietQR chỉ dùng khi có mạng.</p>}
-        {error && <p role="alert" className="ledger-error">{error} <Link href="/login">Đăng nhập</Link></p>}
+        {displayedError && <p role="alert" className="ledger-error">{displayedError} {displayedError === 'Bạn cần đăng nhập.' && <Link href="/login">Đăng nhập</Link>}</p>}
         <section className="card ledger-form">
             <video ref={video} playsInline muted autoPlay aria-label="Camera quét VietQR" style={{ width: '100%', maxHeight: 320, display: scanning ? 'block' : 'none' }} />
-            <div className="action-row"><button className="btn-primary" disabled={!online || scanning} onClick={start}>Bật camera quét VietQR</button><button className="btn-secondary" onClick={stop} disabled={!scanning}>Dừng camera</button></div>
+            <div className="action-row"><button className="btn-primary" disabled={!online || scanning || readingImage} onClick={start}>Bật camera quét VietQR</button><button className="btn-secondary" onClick={stop} disabled={!scanning}>Dừng camera</button></div>
+            {scanning && <p role="status">Đưa toàn bộ mã QR vào khung hình, giữ yên và tránh lóa sáng.</p>}
+            <label>Chọn ảnh QR<input type="file" accept="image/*" disabled={!online || readingImage} onChange={readImage} /></label>
+            {readingImage && <p role="status">Đang đọc ảnh QR…</p>}
             <details><summary>Dán nội dung QR nếu không dùng camera</summary><form className="ledger-form" onSubmit={(event) => { event.preventDefault(); decode(String(new FormData(event.currentTarget).get('qr'))); }}>
                 <label>Nội dung VietQR<textarea name="qr" maxLength={2048} required /></label><button className="btn-secondary" disabled={!online}>Kiểm tra VietQR</button>
             </form></details>
