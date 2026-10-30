@@ -1,6 +1,11 @@
-.scan-placeholder {
-  margin: 48px 16px 0;
-  text-align: center;
-  font-size: 15px;
-  color: var(--color-muted);
-}
+.scan-upload { position: relative; align-self: start; cursor: pointer; font-size: 14px; }
+.scan-file { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.scan-upload:focus-within { outline: 2px solid var(--color-ink); outline-offset: 3px; }
+.scan-upload:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+.scan-review-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.scan-review-heading h2 { margin: 0; }
+.scan-recipient { margin: 0; display: grid; gap: 16px; }
+.scan-recipient dt { color: var(--color-muted); font-size: 14px; }
+.scan-recipient dd { margin: 4px 0 0; font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+.scan-page #transfer-amount { font-size: 24px; font-weight: 600; }
+.scan-page video { border-radius: 12px; background: #111; }

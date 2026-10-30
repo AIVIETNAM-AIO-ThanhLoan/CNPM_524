@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import Link from 'next/link';
 import jsQR from 'jsqr';
 import BottomNav from '../components/BottomNav';
@@ -13,7 +13,7 @@ export default function Scan() {
     const video = useRef<HTMLVideoElement>(null);
     const stream = useRef<MediaStream | null>(null);
     const generation = useRef(0);
-    const [platform, setPlatform] = useState('android');
+    const [platform, setPlatform] = useState('');
     const [options, setOptions] = useState<Options>({ banks: [], apps: [] });
     const [app, setApp] = useState('');
     const [qr, setQr] = useState('');
@@ -29,20 +29,23 @@ export default function Scan() {
     const [readingImage, setReadingImage] = useState(false);
     const [online, setOnline] = useState(true);
     const stop = useCallback(() => { generation.current++; stream.current?.getTracks().forEach((track) => track.stop()); stream.current = null; setScanning(false); }, []);
+    const resumeCamera = useEffectEvent(() => { if (!recipient && !readingImage && navigator.onLine && document.visibilityState === 'visible') void start(); });
     useEffect(() => {
-        const offline = () => { setOnline(navigator.onLine); if (!navigator.onLine) { stop(); setUrl(''); } };
-        const hidden = () => { if (document.visibilityState === 'hidden') stop(); };
-        Promise.resolve().then(() => { setOnline(navigator.onLine); if (/iPad|iPhone|iPod/.test(navigator.userAgent)) setPlatform('ios'); });
+        const offline = () => { setOnline(navigator.onLine); if (!navigator.onLine) { stop(); setUrl(''); } else resumeCamera(); };
+        const hidden = () => { if (document.visibilityState === 'hidden') stop(); else resumeCamera(); };
+        Promise.resolve().then(() => { setOnline(navigator.onLine); setPlatform(/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'ios' : 'android'); });
         window.addEventListener('offline', offline); window.addEventListener('online', offline); document.addEventListener('visibilitychange', hidden);
         return () => { stop(); window.removeEventListener('offline', offline); window.removeEventListener('online', offline); document.removeEventListener('visibilitychange', hidden); };
     }, [stop]);
     useEffect(() => {
+        if (!platform || !online) return;
         const controller = new AbortController();
         requestJson<Options>(`/api/vietqr?platform=${platform}`, undefined, controller.signal).then((options) => { if (!controller.signal.aborted) { setOptions(options); setApp(options.apps[0]?.appId || ''); setOptionsError(''); } })
             .catch((error) => { if (!controller.signal.aborted) { setOptions({ banks: [], apps: [] }); setOptionsError(error.message); } });
         return () => controller.abort();
-    }, [platform]);
+    }, [platform, online]);
     function decode(value: string) {
+        if (!navigator.onLine) { setError('Quét VietQR cần kết nối mạng.'); return; }
         setUrl(''); setReviewed(false);
         try {
             const decoded = parseVietQR(value);
@@ -78,7 +81,7 @@ export default function Scan() {
     async function start() {
         setError(''); setUrl(''); setRecipient(null); stop();
         if (!navigator.onLine) { setError('Quét VietQR cần kết nối mạng.'); return; }
-        if (!navigator.mediaDevices?.getUserMedia || !window.isSecureContext) { setError('Camera cần HTTPS hoặc localhost. Nếu đang mở bằng địa chỉ IP qua HTTP, hãy dùng Chọn ảnh QR bên dưới.'); return; }
+        if (!navigator.mediaDevices?.getUserMedia || !window.isSecureContext) { setError('Không thể mở camera trên kết nối này. Hãy chọn ảnh QR hoặc Chuyển tiền.'); return; }
         const current = generation.current;
         try {
             const camera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false });
@@ -121,47 +124,56 @@ export default function Scan() {
                     : 'Không mở được camera. Hãy đóng ứng dụng khác đang dùng camera rồi thử lại, hoặc dùng Chọn ảnh QR.');
         }
     }
+    const openCamera = useEffectEvent(start);
+    useEffect(() => { const timer = setTimeout(() => openCamera(), 0); return () => clearTimeout(timer); }, []);
+    useEffect(() => {
+        if (recipient && qr) document.getElementById('transfer-amount')?.focus();
+    }, [recipient, qr]);
     async function createLink(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault(); setUrl(''); setError('');
         if (!navigator.onLine || !reviewed) { setError('Cần mạng và xác nhận đã kiểm tra người nhận.'); return; }
         setBusy(true);
-        try { const data = await requestJson<{ url: string }>('/api/vietqr', { qr, platform, app, amount, note }); setUrl(data.url); }
+        try { const data = await requestJson<{ url: string }>('/api/vietqr', { qr: qr || undefined, bankBin: recipient?.bankBin, account: recipient?.account, platform, app, amount, note }); setUrl(data.url); }
         catch (error) { setError(error instanceof Error ? error.message : 'Không mở được liên kết.'); }
         finally { setBusy(false); }
     }
     const selectedApp = options.apps.find((item) => item.appId === app);
     const bank = options.banks.find((item) => item.bin === recipient?.bankBin);
-    const displayedError = error || optionsError;
-    return <main className="app-page ledger-page">
+    const displayedError = online ? error || optionsError : '';
+    function manualTransfer() {
+        stop(); setQr(''); setAmount(''); setNote(''); setUrl(''); setReviewed(false); setError('');
+        setRecipient({ bankBin: '', account: '', name: '', amount: '', note: '' });
+    }
+    return <main className="app-page ledger-page scan-page">
         <header className="page-header"><h1>Quét VietQR</h1></header>
-        <p>Cần kết nối mạng. Kiểm tra thông tin trong ứng dụng ngân hàng trước khi trả tiền. Ting Ting không tự ghi giao dịch và không xác định thanh toán thành công khi bạn quay lại.</p>
         {!online && <p role="alert">Đang ngoại tuyến. VietQR chỉ dùng khi có mạng.</p>}
         {displayedError && <p role="alert" className="ledger-error">{displayedError} {displayedError === 'Bạn cần đăng nhập.' && <Link href="/login">Đăng nhập</Link>}</p>}
-        <section className="card ledger-form">
+        <section className="card ledger-form" style={{ display: recipient ? 'none' : undefined }}>
             <video ref={video} playsInline muted autoPlay aria-label="Camera quét VietQR" style={{ width: '100%', maxHeight: 320, display: scanning ? 'block' : 'none' }} />
-            <div className="action-row"><button className="btn-primary" disabled={!online || scanning || readingImage} onClick={start}>Bật camera quét VietQR</button><button className="btn-secondary" onClick={stop} disabled={!scanning}>Dừng camera</button></div>
-            {scanning && <p role="status">Đưa toàn bộ mã QR vào khung hình, giữ yên và tránh lóa sáng.</p>}
-            <label>Chọn ảnh QR<input type="file" accept="image/*" disabled={!online || readingImage} onChange={readImage} /></label>
+            <label className="btn-secondary scan-upload">Chọn ảnh QR<input aria-label="Chọn ảnh QR" className="scan-file" type="file" accept="image/*" disabled={!online || readingImage} onChange={readImage} /></label>
             {readingImage && <p role="status">Đang đọc ảnh QR…</p>}
-            <details><summary>Dán nội dung QR nếu không dùng camera</summary><form className="ledger-form" onSubmit={(event) => { event.preventDefault(); decode(String(new FormData(event.currentTarget).get('qr'))); }}>
-                <label>Nội dung VietQR<textarea name="qr" maxLength={2048} required /></label><button className="btn-secondary" disabled={!online}>Kiểm tra VietQR</button>
-            </form></details>
+            <button type="button" className="btn-secondary" disabled={!online || readingImage} onClick={manualTransfer}>Chuyển tiền</button>
         </section>
         {recipient && <form className="card ledger-form" onSubmit={createLink}>
-            <h2>Kiểm tra người nhận</h2>
-            <p>Ngân hàng: {bank ? `${bank.shortName} · ${bank.name}` : `Chưa nhận diện (BIN ${recipient.bankBin})`}</p>
-            <p>Số tài khoản: <strong>{recipient.account}</strong></p>
-            <p>Tên trong QR: {recipient.name || 'Không có'}. Tên này chưa được ngân hàng xác minh.</p>
-            <label>Số tiền chuyển (VND)<input type="number" min="1" max="999999999999" step="1" required value={amount} onChange={(e) => { setAmount(e.target.value); setUrl(''); }} /></label>
-            <label>Nội dung chuyển<input maxLength={99} required value={note} onChange={(e) => { setNote(e.target.value); setUrl(''); }} /></label>
-            <label>Thiết bị<select aria-label="Thiết bị" value={platform} onChange={(e) => { setPlatform(e.target.value); setUrl(''); }}><option value="android">Android</option><option value="ios">iOS</option></select></label>
+            <div className="scan-review-heading"><h2>{qr ? 'Kiểm tra người nhận' : 'Chuyển tiền'}</h2><button type="button" className="btn-secondary" onClick={start} disabled={!online}>Quét mã khác</button></div>
+            {qr ? <dl className="scan-recipient">
+                <div><dt>Ngân hàng</dt><dd>{bank ? bank.shortName : `BIN ${recipient.bankBin}`}</dd></div>
+                <div><dt>Số tài khoản</dt><dd>{recipient.account}</dd></div>
+                <div><dt>Tên trong QR</dt><dd>{recipient.name || 'Không có tên trong mã'}</dd></div>
+            </dl> : <>
+                <label>Ngân hàng nhận<select aria-label="Ngân hàng nhận" required value={recipient.bankBin} onChange={(e) => { setRecipient({ ...recipient, bankBin: e.target.value }); setReviewed(false); setUrl(''); }}>
+                    <option value="">Chọn ngân hàng</option>
+                    {options.banks.map((item) => <option key={item.bin} value={item.bin}>{item.shortName} · {item.name}</option>)}
+                </select></label>
+                <label>Số tài khoản nhận<input inputMode="numeric" pattern="[0-9]{4,34}" maxLength={34} required value={recipient.account} onChange={(e) => { setRecipient({ ...recipient, account: e.target.value }); setReviewed(false); setUrl(''); }} /></label>
+            </>}
+            <label>Số tiền chuyển (VND)<input id="transfer-amount" inputMode="numeric" placeholder="Nhập số tiền" type="number" min="1" max="999999999999" step="1" required value={amount} onChange={(e) => { setAmount(e.target.value); setReviewed(false); setUrl(''); }} /></label>
+            <label>Nội dung chuyển<input maxLength={99} required value={note} onChange={(e) => { setNote(e.target.value); setReviewed(false); setUrl(''); }} /></label>
             <label>Ứng dụng ngân hàng<select aria-label="Ứng dụng ngân hàng" value={app} required onChange={(e) => { setApp(e.target.value); setUrl(''); }}>{options.apps.map((item) => <option value={item.appId} key={item.appId}>{item.appName}</option>)}</select></label>
-            <p>{selectedApp?.autofill ? 'Ứng dụng này được VietQR báo hỗ trợ tự điền trên hệ điều hành đã chọn.' : 'Ứng dụng này có thể chỉ mở app; bạn có thể cần nhập lại thông tin hoặc quét QR trong app.'} Khả năng tự điền tùy phiên bản app, thiết bị và dịch vụ VietQR.</p>
             <label className="review-check"><input type="checkbox" required checked={reviewed} onChange={(e) => { setReviewed(e.target.checked); setUrl(''); }} />Tôi đã kiểm tra ngân hàng, số tài khoản, số tiền và nội dung.</label>
             <button className="btn-primary" disabled={busy || !online || !bank || !reviewed}>Tạo liên kết mở ứng dụng</button>
             {url && online && reviewed && <a className="btn-primary" href={url}>Mở {selectedApp?.appName}</a>}
-            <a href="https://www.vietqr.io/deeplink" target="_blank" rel="noreferrer">Thông tin hỗ trợ VietQR Deep Link</a>
         </form>}
-        <BottomNav />
+        <BottomNav onNavigate={stop} />
     </main>;
 }

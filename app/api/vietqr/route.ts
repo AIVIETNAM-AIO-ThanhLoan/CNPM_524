@@ -29,7 +29,13 @@ export async function POST(request: Request) {
         const body = await jsonBody(request);
         await requireUser();
         let recipient;
-        try { recipient = parseVietQR(body.qr); } catch (error) { throw new HttpError(400, error instanceof Error ? error.message : 'VietQR không hợp lệ.'); }
+        if (body.qr !== undefined) {
+            try { recipient = parseVietQR(body.qr); } catch (error) { throw new HttpError(400, error instanceof Error ? error.message : 'VietQR không hợp lệ.'); }
+        } else {
+            if (typeof body.bankBin !== 'string' || !/^\d{6}$/.test(body.bankBin)
+                || typeof body.account !== 'string' || !/^\d{4,34}$/.test(body.account)) throw new HttpError(400, 'Ngân hàng hoặc số tài khoản không hợp lệ.');
+            recipient = { bankBin: body.bankBin, account: body.account, name: '' };
+        }
         const { banks, apps } = await options(body.platform);
         const bank = banks.find((b) => b.bin === recipient.bankBin);
         if (!bank || !apps.some((a) => a.appId === body.app)) throw new HttpError(400, 'Ngân hàng hoặc ứng dụng không được hỗ trợ.');
