@@ -33,6 +33,18 @@ Core features now include wallet/category archiving, transaction reversal/correc
 See [PWA setup, deployment and testing](docs/PWA_DEPLOYMENT.md), including HTTPS, Web Push keys, the separate always-running worker, offline limits and the physical-device acceptance checklist.
 
 
+## Lập trình với Docker trên Windows
+
+Docker Compose chạy Next.js development server, MariaDB riêng và reminder worker. Sửa code trên Windows sẽ tự cập nhật trong container; không cần XAMPP cho cách chạy này. Xem [hướng dẫn Docker](docs/DOCKER_DEVELOPMENT.md) để tạo cấu hình, khởi động, kiểm thử và sao lưu. Dữ liệu XAMPP hiện có không được nhập vào Docker.
+
+```powershell
+# Lần đầu: sao chép rồi đặt hai mật khẩu khác nhau trong .env.docker.
+Copy-Item .env.docker.example .env.docker
+docker compose --env-file .env.docker up --build --watch
+```
+
+Mở [http://localhost:3000](http://localhost:3000). Những lần sau giữ nguyên `.env.docker`, chỉ chạy lệnh Compose. Không ghi đè file cấu hình đã có. Đây là môi trường development cục bộ; không dùng trực tiếp để deploy public.
+
 ## Chạy ứng dụng với XAMPP trên Windows
 
 1. Mở XAMPP Control Panel và bật **MySQL** (MariaDB đi kèm XAMPP). Không cần bật Apache để chạy Next.js.

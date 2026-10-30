@@ -23,6 +23,10 @@ Yêu cầu Node.js 20.9+, MySQL 8+ hoặc MariaDB 10.4+. XAMPP đã kèm MariaDB
 
 Chạy lại `npm.cmd run db:setup` sau khi lấy code mới để áp dụng migration còn thiếu. MySQL DDL tự commit: nếu lần đầu bị lỗi giữa chừng, kiểm tra nguyên nhân và các bảng đã tạo trước khi tiếp tục; script chủ động dừng khi phát hiện bảng `users` không có migration, không xóa bảng để thử lại. Thay đổi schema đã áp dụng cần migration mới.
 
+### Docker development
+
+Xem [hướng dẫn Docker](../docs/DOCKER_DEVELOPMENT.md). Compose tạo database `cnpm_524_docker` riêng, dùng `DB_HOST=db` và `DB_USER_HOST=%` để cấp tài khoản kết nối giữa các container. Ngoài Docker, `DB_USER_HOST` mặc định là `127.0.0.1`; chỉ hai giá trị này được chấp nhận. Setup với `%` yêu cầu mật khẩu quản trị không rỗng và khác mật khẩu ứng dụng. Tài khoản ứng dụng vẫn chỉ có quyền SELECT, INSERT, UPDATE, DELETE; chỉ service `db-setup` có credentials quản trị.
+
 ## Mô hình dữ liệu
 
 ```mermaid
