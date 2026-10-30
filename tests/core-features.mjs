@@ -200,6 +200,9 @@ export async function coreChecks({ api, admin, check }) {
     const [[beforeQr]] = await admin.execute('SELECT COUNT(*) AS n FROM transactions WHERE user_id = ?', [user.id]);
     const qrLink = (await api('/api/vietqr', { cookie, body: { qr: lowercaseCrc, app: 'vcb', platform: 'android', amount: '15000', note: 'Test' } })).json.url;
     check(new URL(qrLink).searchParams.get('ba') === '0123456789@mb', 'API validates QR and builds the documented bank link');
+    await api('/api/vietqr', { cookie, body: { bankBin: '970422', account: 'invalid', app: 'vcb', platform: 'android', amount: '15000', note: 'Test' }, status: 400 });
+    const manualLink = (await api('/api/vietqr', { cookie, body: { bankBin: '970422', account: '0123456789', app: 'vcb', platform: 'android', amount: '15000', note: 'Test' } })).json.url;
+    check(new URL(manualLink).searchParams.get('ba') === '0123456789@mb', 'Manual transfer validates the account and preserves leading zeroes');
     const [[afterQr]] = await admin.execute('SELECT COUNT(*) AS n FROM transactions WHERE user_id = ?', [user.id]);
     check(beforeQr.n === afterQr.n, 'Creating a QR bank link never records a transaction');
 }

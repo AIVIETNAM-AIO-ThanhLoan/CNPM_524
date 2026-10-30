@@ -175,17 +175,11 @@ export async function browserCoreChecks({ origin, admin, check }) {
         await page.getByText('Đã tắt thông báo trên thiết bị này.', { exact: true }).waitFor();
 
         await page.goto(`${origin}/scan`);
-        await page.locator('details summary').click();
-        await page.getByLabel('Nội dung VietQR', { exact: true }).fill('https://evil.example');
-        await page.getByRole('button', { name: 'Kiểm tra VietQR', exact: true }).click();
-        await page.getByRole('alert').filter({ hasText: /VietQR không hợp lệ/ }).waitFor();
-        const qr = qrFixture();
-        await page.getByLabel('Nội dung VietQR', { exact: true }).fill(qr.slice(0, -4) + qr.slice(-4).toLowerCase());
-        await page.getByRole('button', { name: 'Kiểm tra VietQR', exact: true }).click();
+        await page.getByLabel('Chọn ảnh QR', { exact: true }).setInputFiles(fileURLToPath(new URL('./fixtures/vietqr.png', import.meta.url)));
         await page.getByRole('heading', { name: 'Kiểm tra người nhận', exact: true }).waitFor();
         check(await page.getByText('0123456789', { exact: true }).isVisible(), 'QR recipient is displayed for review');
+        check(await page.getByLabel('Thiết bị', { exact: true }).count() === 0 && !await page.getByLabel('Chọn ảnh QR', { exact: true }).isVisible(), 'Successful scan hides old controls and detects the device automatically');
         await page.getByLabel('Ứng dụng ngân hàng', { exact: true }).selectOption('vcb');
-        await page.getByText(/Ứng dụng này có thể chỉ mở app/).waitFor();
         check(await page.getByRole('button', { name: 'Tạo liên kết mở ứng dụng', exact: true }).isDisabled(), 'QR requires explicit recipient review');
         await page.getByRole('checkbox').check();
         await page.getByRole('button', { name: 'Tạo liên kết mở ứng dụng', exact: true }).click();
@@ -195,9 +189,10 @@ export async function browserCoreChecks({ origin, admin, check }) {
         await page.screenshot({ path: path.join(tmpdir(), 'cnpm-vietqr-review.png'), fullPage: true });
         await context.setOffline(true);
         await page.getByText('Đang ngoại tuyến. VietQR chỉ dùng khi có mạng.', { exact: true }).waitFor();
-        check(await page.getByRole('button', { name: 'Bật camera quét VietQR', exact: true }).isDisabled() && await bankLink.count() === 0, 'Connectivity loss disables QR and removes the outgoing bank link');
+        check(await page.getByRole('button', { name: 'Tạo liên kết mở ứng dụng', exact: true }).isDisabled() && await bankLink.count() === 0, 'Connectivity loss disables QR and removes the outgoing bank link');
         await context.setOffline(false);
 
+        await page.getByRole('button', { name: 'Quét mã khác', exact: true }).click();
         const imageInput = page.getByLabel('Chọn ảnh QR', { exact: true });
         await imageInput.setInputFiles({ name: 'blank.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="white"/></svg>') });
         await page.getByRole('alert').filter({ hasText: 'Không tìm thấy mã QR trong ảnh.' }).waitFor();
@@ -216,7 +211,7 @@ export async function browserCoreChecks({ origin, admin, check }) {
             const stream = canvas.captureStream(10); window.testCameraTracks = stream.getTracks();
             navigator.mediaDevices.getUserMedia = async () => stream;
         }, png);
-        await page.getByRole('button', { name: 'Bật camera quét VietQR', exact: true }).click();
+        await page.getByRole('button', { name: 'Quét mã khác', exact: true }).click();
         await until(() => page.evaluate(() => window.testCameraTracks.every((track) => track.readyState === 'ended')), 'Camera scan completes and stops the synthetic stream');
         await page.getByRole('heading', { name: 'Kiểm tra người nhận', exact: true }).waitFor();
         check(await page.evaluate(() => window.testCameraTracks.every((track) => track.readyState === 'ended')), 'Camera decoder reads a valid QR and stops its tracks');

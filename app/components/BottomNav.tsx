@@ -16,11 +16,12 @@ const navItems = [
 const leftItems = navItems.slice(0, 2);
 const rightItems = navItems.slice(2);
 
-export default function BottomNav() {
+export default function BottomNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   const renderItem = ({ href, label, Icon }: (typeof navItems)[number]) => (
     <Link
+      onNavigate={onNavigate}
       key={href}
       href={href}
       className={`nav-item ${pathname === href ? 'nav-active' : ''}`}
@@ -34,7 +35,7 @@ export default function BottomNav() {
   return (
     <nav className="bottom-nav">
       {leftItems.map(renderItem)}
-      <Link href="/scan" className="nav-qr" aria-label="Quét QR">
+      <Link onNavigate={onNavigate} href="/scan" className="nav-qr" aria-label="Quét QR">
         <QrCode size={28} strokeWidth={1.8} />
       </Link>
       {rightItems.map(renderItem)}
