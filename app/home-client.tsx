@@ -193,10 +193,10 @@ export default function Home({ initialDate }: { initialDate: string }) {
           <Plus size={18} strokeWidth={2} />
           Ghi giao dịch
         </Link>
-        <button type="button" className="btn-secondary">
+        <Link href="/receive-qr" className="btn-secondary">
           <QrCode size={18} strokeWidth={1.8} />
           QR của tôi
-        </button>
+        </Link>
       </div>
 
       <section className="suggestions-section">

@@ -4,11 +4,13 @@ export class HttpError extends Error {
     constructor(public status: number, message: string) { super(message); }
 }
 
-export async function jsonBody(request: Request): Promise<Record<string, unknown>> {
+function checkOrigin(request: Request) {
     const origin = request.headers.get('origin');
     const expected = process.env.APP_ORIGIN || new URL(request.url).origin;
     if (!origin || origin !== expected) throw new HttpError(403, 'Nguồn yêu cầu không hợp lệ. Hãy mở đúng địa chỉ ứng dụng.');
-    if (!request.headers.get('content-type')?.startsWith('application/json')) throw new HttpError(415, 'Yêu cầu phải dùng JSON.');
+}
+
+async function readBody(request: Request, limit: number, tooLarge: string): Promise<Buffer> {
     const reader = request.body?.getReader();
     if (!reader) throw new HttpError(400, 'Thiếu dữ liệu.');
     let size = 0;
@@ -17,14 +19,33 @@ export async function jsonBody(request: Request): Promise<Record<string, unknown
         const { done, value } = await reader.read();
         if (done) break;
         size += value.length;
-        if (size > 16384) { await reader.cancel(); throw new HttpError(413, 'Dữ liệu quá lớn.'); }
+        if (size > limit) { await reader.cancel(); throw new HttpError(413, tooLarge); }
         chunks.push(value);
     }
+    return Buffer.concat(chunks);
+}
+
+export async function jsonBody(request: Request): Promise<Record<string, unknown>> {
+    checkOrigin(request);
+    if (!request.headers.get('content-type')?.startsWith('application/json')) throw new HttpError(415, 'Yêu cầu phải dùng JSON.');
+    const data = await readBody(request, 16384, 'Dữ liệu quá lớn.');
     try {
-        const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        const body = JSON.parse(data.toString('utf8'));
         if (!body || Array.isArray(body) || typeof body !== 'object') throw new Error();
         return body;
     } catch { throw new HttpError(400, 'JSON không hợp lệ.'); }
+}
+
+export const IMAGE_LIMIT = 2 * 1024 * 1024;
+
+// Loại ảnh xác định theo chữ ký đầu file, không tin Content-Type do trình duyệt gửi.
+export async function imageBody(request: Request): Promise<{ mime: 'image/png' | 'image/jpeg' | 'image/webp'; data: Buffer }> {
+    checkOrigin(request);
+    const data = await readBody(request, IMAGE_LIMIT, 'Ảnh quá lớn (tối đa 2 MB).');
+    if (data.length >= 8 && data.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return { mime: 'image/png', data };
+    if (data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) return { mime: 'image/jpeg', data };
+    if (data.length >= 12 && data.toString('ascii', 0, 4) === 'RIFF' && data.toString('ascii', 8, 12) === 'WEBP') return { mime: 'image/webp', data };
+    throw new HttpError(415, 'Chỉ nhận ảnh PNG, JPEG hoặc WebP.');
 }
 
 export function text(value: unknown, label: string, max: number, required = true): string {

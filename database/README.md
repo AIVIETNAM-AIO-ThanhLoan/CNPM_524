@@ -20,6 +20,7 @@ Yêu cầu Node.js 20.9+, MySQL 8+ hoặc MariaDB 10.4+. XAMPP đã kèm MariaDB
 | 010 | `backup_runs` kết quả mỗi lần sao lưu (UC19) |
 | 011 | `goal_contributions` ghi khoản góp thủ công theo người dùng, không thay đổi ví |
 | 012 | Archive flags, recurring confirmations, account notifications, Web Push subscriptions and retry deliveries |
+| 013 | `receive_qr_images` ảnh QR nhận tiền của từng người (PNG/JPEG/WebP, tối đa 2 MB, tối đa 10 ảnh), một ảnh được đánh dấu `is_primary` |
 
 Chạy lại `npm.cmd run db:setup` sau khi lấy code mới để áp dụng migration còn thiếu. MySQL DDL tự commit: nếu lần đầu bị lỗi giữa chừng, kiểm tra nguyên nhân và các bảng đã tạo trước khi tiếp tục; script chủ động dừng khi phát hiện bảng `users` không có migration, không xóa bảng để thử lại. Thay đổi schema đã áp dụng cần migration mới.
 

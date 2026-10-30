@@ -67,7 +67,9 @@ export async function browserCoreChecks({ origin, admin, check }) {
         check(installation.installabilityErrors.length === 0, `Browser installation criteria: ${JSON.stringify(installation.installabilityErrors)}`);
         await cdp.detach();
         const cacheUrls = await page.evaluate(async () => {
-            const cache = await caches.open('tingting-static-v1'); return (await cache.keys()).map((request) => new URL(request.url).pathname);
+            // Tên cache tăng phiên bản mỗi khi đổi shell offline, nên tìm theo tiền tố.
+            const name = (await caches.keys()).find((key) => key.startsWith('tingting-static-'));
+            const cache = await caches.open(name); return (await cache.keys()).map((request) => new URL(request.url).pathname);
         });
         check(cacheUrls.includes('/offline') && cacheUrls.every((url) => url === '/offline' || url.startsWith('/_next/static/') || url.startsWith('/icon-')), 'Service worker caches the public shell and assets only');
 

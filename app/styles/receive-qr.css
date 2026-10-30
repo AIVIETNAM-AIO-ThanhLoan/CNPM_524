@@ -1,0 +1,10 @@
+.receive-qr-main { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.receive-qr-main img { width: 100%; max-width: 360px; max-height: 60vh; object-fit: contain; border-radius: 8px; background: white; }
+.receive-qr-main .action-row { justify-content: center; }
+.receive-qr-label { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--color-ink); }
+.receive-qr-badge { padding: 2px 8px; border-radius: 999px; background: var(--color-frost); color: var(--color-brand); font-size: 12px; font-weight: 600; }
+.receive-qr-thumbs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.receive-qr-thumbs button { flex: 0 0 88px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 2px solid var(--color-line); border-radius: 8px; background: white; color: var(--color-ink); font-size: 12px; cursor: pointer; }
+.receive-qr-thumbs button.is-selected { border-color: var(--color-brand); }
+.receive-qr-thumbs img { width: 72px; height: 72px; object-fit: contain; }
+.receive-qr-thumbs span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
