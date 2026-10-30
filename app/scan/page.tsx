@@ -59,8 +59,9 @@ export default function Scan() {
             if (!video.current) { stop(); return; }
             video.current.srcObject = camera;
             await video.current.play(); setScanning(true);
-            // jsQR chạy trên luồng chính: chỉ giải mã ô vuông giữa khung hình, thu nhỏ còn tối đa 480px
-            // và thử ảnh đảo màu xen kẽ thay vì mỗi khung hình hai lần, để camera không bị giật trên điện thoại.
+            // jsQR chạy trên luồng chính nên mỗi khung chỉ giải mã tối đa 480×480 để camera không bị giật trên điện thoại.
+            // Các khung xen kẽ: cả ô vuông giữa (QR to) và nửa giữa ở độ phân giải gốc (QR nhỏ hoặc ở xa);
+            // ảnh đảo màu chỉ thử thỉnh thoảng thay vì mỗi khung hai lần.
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d', { willReadFrequently: true });
             let attempt = 0;
@@ -68,11 +69,15 @@ export default function Scan() {
                 if (current !== generation.current || !navigator.onLine || !video.current || !context) return;
                 const { videoWidth, videoHeight } = video.current;
                 if (video.current.readyState >= 2 && videoWidth && videoHeight) {
-                    const side = Math.min(videoWidth, videoHeight), size = Math.min(side, 480);
-                    if (canvas.width !== size) { canvas.width = size; canvas.height = size; }
-                    context.drawImage(video.current, (videoWidth - side) / 2, (videoHeight - side) / 2, side, side, 0, 0, size, size);
+                    const side = Math.min(videoWidth, videoHeight);
+                    const region = attempt % 2 ? Math.round(side / 2) : side, size = Math.min(region, 480);
+                    if (canvas.width !== Math.min(side, 480)) { canvas.width = Math.min(side, 480); canvas.height = canvas.width; }
+                    context.drawImage(video.current, (videoWidth - region) / 2, (videoHeight - region) / 2, region, region, 0, 0, size, size);
                     const pixels = context.getImageData(0, 0, size, size);
-                    const result = jsQR(pixels.data, size, size, { inversionAttempts: attempt++ % 4 === 3 ? 'onlyInvert' : 'dontInvert' });
+                    let result = null;
+                    // jsQR đôi khi ném lỗi với khung hình nhiễu; bỏ qua khung đó để vòng quét không dừng hẳn.
+                    try { result = jsQR(pixels.data, size, size, { inversionAttempts: attempt % 8 >= 6 ? 'onlyInvert' : 'dontInvert' }); } catch { /* quét tiếp khung sau */ }
+                    attempt++;
                     if (result) { decode(result.data); stop(); return; }
                 }
                 setTimeout(scan, 150);
