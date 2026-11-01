@@ -42,6 +42,6 @@ export function vietqrLink(recipient, bankCode, app, amount, note, returnOrigin)
     const origin = new URL(returnOrigin);
     if (!['http:', 'https:'].includes(origin.protocol)) throw new Error('Địa chỉ ứng dụng không hợp lệ.');
     const url = new URL('https://dl.vietqr.io/pay');
-    url.search = new URLSearchParams({ app, ba: `${recipient.account}@${bankCode}`, am: amount, tn: note.trim(), bn: recipient.name, url: `${origin.origin}/scan` }).toString();
+    url.search = new URLSearchParams({ app, am: amount, tn: note.trim(), ba: `${recipient.account}@${bankCode}`, url: `${origin.origin}/scan` }).toString();
     return url.toString();
 }

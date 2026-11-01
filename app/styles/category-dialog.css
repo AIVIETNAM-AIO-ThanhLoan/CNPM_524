@@ -8,3 +8,11 @@
 .category-error { color: var(--color-danger) !important; }
 .tx-category-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .tx-category-heading .tx-section-title { margin-bottom: 0; }
+
+@media (max-width: 767px) {
+  .category-dialog { width: calc(100% - 24px); max-height: calc(100dvh - 24px - env(safe-area-inset-bottom)); padding: 16px; border-radius: 14px; }
+  .category-dialog .icon-btn { min-width: 44px; min-height: 44px; }
+  .category-dialog :is(input, select) { font-size: 16px; min-height: 48px; }
+  .category-dialog button { min-height: 44px; }
+  .tx-category-heading { flex-wrap: wrap; }
+}

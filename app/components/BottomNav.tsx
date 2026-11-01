@@ -33,9 +33,9 @@ export default function BottomNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav" aria-label="Điều hướng chính">
       {leftItems.map(renderItem)}
-      <Link onNavigate={onNavigate} href="/scan" className="nav-qr" aria-label="Quét QR">
+      <Link onNavigate={onNavigate} href="/scan" className="nav-qr" aria-current={pathname === "/scan" ? "page" : undefined} aria-label="Quét QR">
         <QrCode size={28} strokeWidth={1.8} />
       </Link>
       {rightItems.map(renderItem)}

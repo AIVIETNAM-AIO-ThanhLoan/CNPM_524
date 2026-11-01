@@ -1,0 +1,15 @@
+@media (max-width: 767px) {
+  .admin-page { min-width: 0; overflow-wrap: anywhere; }
+  .admin-page > header { background: var(--color-ink); padding-top: env(safe-area-inset-top); }
+  .admin-page > header > div { height: auto; min-height: 64px; gap: 8px; padding-block: 8px; flex-wrap: wrap; }
+  .admin-page > header .space-x-3 > div:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
+  .admin-page > header .space-x-3 > div:last-child > span { margin-left: 0; }
+  .admin-tabs > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding-block: 8px; }
+  .admin-tabs button { margin: 0; padding: 10px 4px; color: var(--color-ink); }
+  .admin-page button { min-height: 44px; }
+  .admin-page main { padding-top: 16px; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .admin-page main .flex.justify-between { flex-wrap: wrap; gap: 12px; }
+  .admin-page .overflow-x-auto { max-width: 100%; overscroll-behavior-x: contain; }
+  .admin-page table { min-width: 560px; }
+  .admin-page :is(button, input):focus-visible { outline: 2px solid #0b5cad; outline-offset: 3px; }
+}

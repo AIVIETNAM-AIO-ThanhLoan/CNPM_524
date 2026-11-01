@@ -60,7 +60,7 @@ export default function GoalsPage() {
         finally { setBusy(false); }
     }
 
-    return <main className="app-page">
+    return <main className="app-page ledger-page">
         <header className="page-header"><Link href="/">← Trang chủ</Link><h1 className="page-title">Mục tiêu tiết kiệm</h1></header>
         <p>Khoản góp được ghi thủ công để theo dõi tiến độ và không thay đổi số dư ví.</p>
         {error && <p className="ledger-error" role="alert">{error}</p>}

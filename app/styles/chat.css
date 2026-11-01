@@ -187,3 +187,18 @@
   opacity: 0.5;
   cursor: default;
 }
+
+@media (max-width: 767px) {
+  .chat-page { height: 100dvh; min-height: 0; }
+  .chat-header { padding: 10px 16px; flex-shrink: 0; }
+  .chat-round-btn, .chat-send { width: 44px; height: 44px; }
+  .chat-body { overflow-y: auto; overscroll-behavior-y: contain; }
+  .chat-welcome { padding: 20px 16px; align-items: flex-start; }
+  .chat-avatar { flex-shrink: 0; }
+  .chat-welcome-title { font-size: 21px; overflow-wrap: anywhere; }
+  .chat-messages { flex: 1 0 auto; overflow-y: visible; }
+  .bubble { max-width: 92%; font-size: 16px; }
+  .chat-prompts { flex-shrink: 0; gap: 6px; padding-bottom: 8px; max-height: 28dvh; overflow-y: auto; }
+  .prompt-chip { border-radius: 12px; text-align: left; }
+  .chat-input-row { flex-shrink: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); gap: 8px; }
+}

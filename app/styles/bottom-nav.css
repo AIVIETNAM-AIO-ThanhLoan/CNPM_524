@@ -60,3 +60,14 @@
   border-radius: 50%;
   background-color: var(--color-brand);
 }
+
+@media (max-width: 767px) {
+  .bottom-nav { padding: 4px 8px calc(4px + env(safe-area-inset-bottom)); box-shadow: none; gap: 4px; }
+  .nav-item { min-height: 56px; border-radius: 12px; gap: 3px; }
+  .nav-item.nav-active { background: var(--color-haze); color: #0b5cad; font-weight: 700; }
+  .nav-item.nav-active::after { display: none; }
+  .nav-qr { width: 48px; height: 48px; margin-top: 0; border-radius: 12px; box-shadow: none; }
+  .bottom-nav a:focus-visible { outline: 2px solid #0b5cad; outline-offset: 2px; }
+}
+
+.nav-qr[aria-current="page"] { outline: 2px solid var(--color-ink); outline-offset: 3px; }

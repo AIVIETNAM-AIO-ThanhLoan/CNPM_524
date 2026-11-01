@@ -1,9 +1,7 @@
 .budgets-page { width: 100%; max-width: 960px; margin: 0 auto; }
-.budgets-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .budget-total-card { display: flex; flex-direction: column; gap: 8px; margin: 20px 16px 16px; padding: 26px 22px; border-radius: 22px; background: linear-gradient(125deg, #0b5cad, #3c98e6); color: white; }
 .budget-total-label { font-size: 14px; font-weight: 500; }
 .budget-total { font-size: clamp(30px, 7vw, 44px); line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
-.budget-total-card p { font-size: 13px; color: #e7f3ff; }
 .budget-count { align-self: flex-start; margin-top: 8px; padding: 5px 10px; border-radius: 20px; background: #ffffff24; font-size: 12px; }
 .budget-month-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 0 16px 20px; border-bottom: 1px solid var(--color-line); }
 .budget-month-controls label { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 8px; font-size: 13px; color: var(--color-muted); }
@@ -11,7 +9,6 @@
 .budget-categories { padding: 20px 16px; }
 .budget-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .budget-section-heading h2 { font-size: 20px; font-weight: 650; }
-.budget-section-description { margin-top: 8px; margin-bottom: 18px; color: var(--color-muted); font-size: 13px; }
 .budget-category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .budget-category-card { min-width: 0; padding: 20px; border: 1px solid var(--color-line); border-radius: 17px; background: white; }
 .budget-category-title { display: flex; align-items: center; gap: 10px; }
@@ -27,3 +24,20 @@
 .budget-feedback .btn-secondary { flex: initial; }
 .budget-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 10px; color: var(--color-muted); font-size: 14px; }
 @media (max-width: 540px) { .budget-category-grid { grid-template-columns: 1fr; } }
+
+@media (max-width: 767px) {
+  .budget-total-card { margin: 12px 16px; padding: 16px; gap: 4px; border-radius: 14px; }
+  .budget-total { font-size: 30px; }
+  .budget-count { margin-top: 4px; }
+  .budget-month-controls { padding-bottom: 10px; }
+  .budget-categories { padding-top: 14px; }
+  .budget-section-heading h2 { font-size: 18px; }
+  .budget-category-grid { grid-template-columns: 1fr; gap: 10px; }
+  .budget-category-card { padding: 12px; border-radius: 12px; }
+  .budget-category-amount { margin: 8px 0 0; font-size: 21px; }
+  .budget-set-button { min-height: 44px; }
+}
+
+@media (max-width: 767px) {
+  .budget-category-card progress { display: block; width: 100%; height: 6px; margin-top: 10px; accent-color: #0b5cad; }
+}

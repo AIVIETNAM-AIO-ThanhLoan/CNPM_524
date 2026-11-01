@@ -65,16 +65,14 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
     }
 
     return <main className="app-page budgets-page">
-        <header className="page-header budgets-header"><h1 className="page-title">Ngân sách</h1></header>
         <section className="budget-total-card" aria-label="Tổng ngân sách">
             <span className="budget-total-label">Tổng ngân sách tháng {Number(month.slice(5))}/{month.slice(0, 4)}</span>
             <strong className="budget-total" data-testid="budget-total" aria-live="polite">{data && !data.error ? formatBudgetMoney(data.totalAmount) : '—'}</strong>
-            <p>Tự động cộng từ ngân sách của từng danh mục.</p>
             {data && !data.error && <span className="budget-count">Đã đặt cho {data.budgets.length}/{data.categories.length} danh mục</span>}
         </section>
         <div className="budget-month-controls">
             <button type="button" className="icon-btn" aria-label="Tháng trước" disabled={busy || month === '1000-01'} onClick={() => shiftMonth(-1)}><ChevronLeft size={21} /></button>
-            <label><span>Tháng áp dụng</span><input type="month" aria-label="Chọn tháng ngân sách" value={month} min="1000-01" max="9999-12" disabled={busy} onChange={(event) => changeMonth(event.target.value)} /></label>
+            <label><input type="month" aria-label="Chọn tháng ngân sách" value={month} min="1000-01" max="9999-12" disabled={busy} onChange={(event) => changeMonth(event.target.value)} /></label>
             <button type="button" className="icon-btn" aria-label="Tháng sau" disabled={busy || month === '9999-12'} onClick={() => shiftMonth(1)}><ChevronRight size={21} /></button>
         </div>
         {!ready && <p className="data-status" role="status">Đang tải ngân sách…</p>}
@@ -83,7 +81,6 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
         {notice && <p className="budget-feedback" role="status">{notice}</p>}
         {data && !data.error && <section className="budget-categories" aria-labelledby="budget-categories-title">
             <div className="budget-section-heading"><h2 id="budget-categories-title">Danh mục</h2></div>
-            <p className="budget-section-description">Dùng chung danh mục chi tiêu với Ghi giao dịch.</p>
             {!data.categories.length && <div className="budget-empty"><Wallet size={32} /><p>Chưa có danh mục chi tiêu.</p><Link href="/transactions/new">Mở Ghi giao dịch để thêm danh mục</Link></div>}
             <div className="budget-category-grid">{data.categories.map((category) => {
                 const budget = data.budgets.find((item) => item.categoryId === category.id);

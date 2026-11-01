@@ -1,0 +1,14 @@
+@media (max-width: 767px) {
+  :is(.currency-page, .gold-page) .page-header :is(a, button) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; flex-shrink: 0; }
+  .currency-page select { flex: 1; width: 0; min-width: 0; min-height: 48px; padding-inline: 4px; }
+  .currency-page .p-5 { padding: 14px; }
+  .currency-page .mt-8 { margin-top: 18px; }
+  .currency-page .text-3xl { font-size: 25px; line-height: 1.3; gap: 8px; overflow-wrap: anywhere; }
+  .currency-page button { flex-shrink: 0; }
+  .currency-page .p-3.flex { flex-wrap: wrap; gap: 8px; overflow-wrap: anywhere; }
+  .currency-page .text-2xl { font-size: 24px; }
+  .gold-page .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gold-page .grid-cols-2 .p-3 { padding: 10px 4px; }
+  .gold-page .grid-cols-2 .text-lg { font-size: 16px; overflow-wrap: anywhere; }
+  .gold-page .justify-between { flex-wrap: wrap; gap: 8px; }
+}

@@ -150,6 +150,10 @@ export async function finance(userId: string, start: string, end: string, search
     const breakdown = await rows<RowDataPacket>(`SELECT c.name, t.kind, SUM(IF(t.reverses_id IS NULL, t.amount, -t.amount)) AS amount
         FROM transactions t JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
         WHERE t.user_id = ? AND t.booked_on BETWEEN ? AND ? GROUP BY c.id, c.name, t.kind ORDER BY amount DESC`, scope);
+    const daily = await rows<RowDataPacket>(`SELECT booked_on AS date,
+        SUM(CASE WHEN kind = 'income' THEN IF(reverses_id IS NULL, amount, -amount) ELSE 0 END) AS income,
+        SUM(CASE WHEN kind = 'expense' THEN IF(reverses_id IS NULL, amount, -amount) ELSE 0 END) AS expense
+        FROM transactions WHERE user_id = ? AND booked_on BETWEEN ? AND ? GROUP BY booked_on`, scope);
     const budgetRows = await rows<RowDataPacket>('SELECT COALESCE(SUM(amount), 0) AS amount FROM budgets WHERE user_id = ? AND month_start = ?', [userId, `${start.slice(0, 7)}-01`]);
     const spentRows = await rows<RowDataPacket>(`SELECT COALESCE(SUM(IF(t.reverses_id IS NULL, t.amount, -t.amount)), 0) AS amount FROM transactions t
         JOIN budgets b ON b.user_id = t.user_id AND b.category_id = t.category_id AND b.month_start = ?
@@ -159,5 +163,5 @@ export async function finance(userId: string, start: string, end: string, search
     const budgetSpent = Number(spentRows[0].amount);
     return { income: Number(totals[0].income), expense: Number(totals[0].expense),
         budget: budgetAmount ? Math.round(budgetSpent / budgetAmount * 100) : 0,
-        budgetAmount, budgetSpent, transactions: transactions.slice(0, 200), hasMore: transactions.length > 200, breakdown };
+        budgetAmount, budgetSpent, transactions: transactions.slice(0, 200), hasMore: transactions.length > 200, breakdown, daily };
 }

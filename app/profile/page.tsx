@@ -21,7 +21,6 @@ export default async function Profile() {
     <div className="app-page">
       {user && (
         <header className="profile-header">
-          <h1 className="profile-title">Ví của tôi</h1>
           <LogoutButton className="profile-logout" />
         </header>
       )}

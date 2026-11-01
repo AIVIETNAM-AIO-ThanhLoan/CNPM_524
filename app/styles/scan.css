@@ -9,3 +9,10 @@
 .scan-recipient dd { margin: 4px 0 0; font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
 .scan-page #transfer-amount { font-size: 24px; font-weight: 600; }
 .scan-page video { border-radius: 12px; background: #111; }
+
+@media (max-width: 767px) {
+  .scan-upload { align-self: stretch; }
+  .scan-page video { max-height: 40dvh !important; object-fit: contain; }
+  .scan-review-heading .btn-secondary { flex: 0 1 auto; }
+  .scan-page #transfer-amount { font-size: 24px; }
+}

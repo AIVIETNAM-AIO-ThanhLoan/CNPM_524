@@ -169,8 +169,18 @@
   text-align: center;
 }
 
-.profile-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-ink);
+@media (max-width: 767px) {
+  .profile-header { padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
+  .profile-logout { min-height: 44px; padding: 10px 14px; box-shadow: none; }
+  .profile-hero { margin-top: 12px; padding: 14px; justify-content: flex-start; }
+  .avatar-wrap { flex-direction: row; gap: 14px; }
+  .avatar { width: 64px; height: 64px; flex-shrink: 0; }
+  .avatar-name { font-size: 17px; text-align: left; overflow-wrap: anywhere; }
+  .settings-card { margin-top: 14px; padding: 14px; }
+  .settings-row { min-height: 48px; padding: 10px 0; gap: 12px; flex-wrap: wrap; }
+  .settings-row strong { overflow-wrap: anywhere; }
+  .settings-card .profile-actions { margin: 12px 0 0; flex-wrap: wrap; gap: 8px; }
+  .settings-card .profile-actions a { flex-basis: 180px; }
+  .guest-card { padding: 20px 16px; }
+  .guest-icon { width: 56px; height: 56px; margin-bottom: 0; }
 }

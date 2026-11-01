@@ -1,4 +1,6 @@
 'use client';
+
+import '../styles/market.css';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRightLeft, RefreshCw, Save, Clock, CheckCircle2 } from 'lucide-react';
@@ -118,7 +120,7 @@ export default function CurrencyClient() {
   };
 
   return (
-    <div className="app-page pb-24">
+    <div className="app-page currency-page pb-24">
       <header className="page-header flex items-center gap-3 p-4 mb-2">
         <Link href="/" className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition">
           <ArrowLeft size={20} />
