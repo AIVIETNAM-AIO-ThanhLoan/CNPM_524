@@ -8,3 +8,10 @@
 .receive-qr-thumbs button.is-selected { border-color: var(--color-brand); }
 .receive-qr-thumbs img { width: 72px; height: 72px; object-fit: contain; }
 .receive-qr-thumbs span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 767px) {
+  .receive-qr-label { flex-wrap: wrap; justify-content: center; overflow-wrap: anywhere; }
+  .receive-qr-main img { max-height: 45dvh; }
+  .receive-qr-thumbs { overscroll-behavior-x: contain; }
+  .receive-qr-thumbs button { min-height: 104px; }
+}

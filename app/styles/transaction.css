@@ -252,3 +252,16 @@
   border-radius: 12px;
   background-color: #0b5cad;
 }
+
+@media (max-width: 767px) {
+  .tx-page { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .tx-header { padding: 10px 16px; }
+  .tx-round-btn { width: 44px; height: 44px; }
+  .tx-form { gap: 14px; padding: 12px 16px; }
+  .tx-amount-box { padding: 12px; }
+  .tx-form .tx-amount-input { font-size: 30px; }
+  .tx-categories { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .tx-category { padding: 10px 4px; box-shadow: none; background: var(--color-haze); min-width: 0; }
+  .tx-category-name { overflow-wrap: anywhere; }
+  .tx-field-input { min-height: 48px; }
+}

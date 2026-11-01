@@ -1,5 +1,7 @@
 'use client';
 
+import '../styles/admin.css';
+
 import { useState } from 'react';
 import {
   Users,
@@ -40,7 +42,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
+    <div className="admin-page min-h-screen bg-white flex flex-col font-sans">
       {/* Header Quản trị */}
       <header className="bg-wine text-white border-b border-wine sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -81,7 +83,7 @@ export default function AdminDashboardPage() {
       </header>
 
       {/* Điều hướng Tab */}
-      <div className="bg-white border-b border-line shadow-sm">
+      <div className="admin-tabs bg-white border-b border-line shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-8 text-sm font-medium">
           <button
             onClick={() => setActiveTab('overview')}

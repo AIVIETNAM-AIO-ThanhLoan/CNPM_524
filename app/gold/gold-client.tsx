@@ -1,4 +1,6 @@
 'use client';
+
+import '../styles/market.css';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Coins, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
@@ -46,7 +48,7 @@ export default function GoldClient() {
 
   return (
     // Thay đổi wrapper thành app-page để đồng bộ, thêm pb-24 để không bị BottomNav che
-    <div className="app-page pb-24">
+    <div className="app-page gold-page pb-24">
       
       {/* Header chuẩn web app */}
       <header className="page-header flex items-center justify-between p-4 mb-2">

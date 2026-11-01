@@ -16,6 +16,7 @@ import {
   UtensilsCrossed,
   Wallet,
 } from 'lucide-react';
+import CalendarReport from './calendar-report';
 import BottomNav from '../components/BottomNav';
 import { colorAt } from '../lib/colors';
 import '../styles/reports.css';
@@ -41,12 +42,14 @@ const daysBetween = (start: string, end: string) =>
   Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86400000) + 1;
 
 export default function Reports({ initialDate }: { initialDate: string }) {
+  const [screen, setScreen] = useState<'calendar' | 'details'>('calendar');
+  const [selected, setSelected] = useState(initialDate);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
   const [tab, setTab] = useState<'expense' | 'income'>('expense');
   const [anchor, setAnchor] = useState(() => new Date(`${initialDate}T12:00:00`));
   const from = new Date(anchor);
   const to = new Date(anchor);
-  if (viewMode === 'month') {
+  if (screen === 'calendar' || viewMode === 'month') {
     from.setDate(1);
     to.setMonth(to.getMonth() + 1, 0);
   } else {
@@ -57,12 +60,12 @@ export default function Reports({ initialDate }: { initialDate: string }) {
   const startDate = dateKey(from);
   const endDate = dateKey(to);
   const { data, error, loading } = useFinance(startDate, endDate);
-  const shift = (delta: number) => setAnchor((old) => viewMode === 'month'
+  const shift = (delta: number) => setAnchor((old) => screen === 'calendar' || viewMode === 'month'
     ? new Date(old.getFullYear(), old.getMonth() + delta, 1, 12)
     : new Date(old.getFullYear(), old.getMonth(), old.getDate() + delta * 7, 12));
 
   const period = {
-    label: viewMode === 'month' ? `Tháng ${anchor.getMonth() + 1}/${anchor.getFullYear()}` : 'Tuần này',
+    label: screen === 'calendar' || viewMode === 'month' ? `Tháng ${anchor.getMonth() + 1}/${anchor.getFullYear()}` : 'Tuần này',
     range: `${startDate.slice(8)}/${startDate.slice(5, 7)} – ${endDate.slice(8)}/${endDate.slice(5, 7)}`,
     income: data.breakdown.filter((c) => c.kind === 'income').map((c): Category => ({ name: c.name, amount: Number(c.amount) })),
     expense: data.breakdown.filter((c) => c.kind === 'expense').map((c): Category => ({ name: c.name, amount: Number(c.amount) })),
@@ -94,6 +97,11 @@ export default function Reports({ initialDate }: { initialDate: string }) {
     <div className="app-page">
       <header className="page-header reports-header">
         <div className="segmented">
+          <button type="button" className={`segmented-btn ${screen === 'calendar' ? 'active' : ''}`} aria-pressed={screen === 'calendar'} onClick={() => setScreen('calendar')}>Lịch</button>
+          <button type="button" className={`segmented-btn ${screen === 'details' ? 'active' : ''}`} aria-pressed={screen === 'details'} onClick={() => { setScreen('details'); setViewMode('month'); }}>Chi tiết</button>
+        </div>
+        {screen === 'details' &&
+        <div className="segmented">
           <button
             type="button"
             className={`segmented-btn ${viewMode === 'week' ? 'active' : ''}`}
@@ -109,6 +117,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
             Tháng
           </button>
         </div>
+        }
       </header>
 
       <div className="period-box">
@@ -128,6 +137,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
       {error && <p className="data-status" role="alert">{error} <Link href="/login">Đăng nhập</Link></p>}
       {!loading && !error && !data.breakdown.length && <p className="data-status">Chưa có thu/chi trong kỳ này.</p>}
 
+      {screen === 'calendar' ? <CalendarReport key={startDate} start={startDate} end={endDate} today={initialDate} selected={selected} select={setSelected} data={data} loading={loading} error={error} goToday={() => { setAnchor(new Date(`${initialDate}T12:00:00`)); setSelected(initialDate); }} /> : <>
       <div className="stat-pair">
         <div className="stat-card stat-expense">
           <span className="stat-label">Chi tiêu</span>
@@ -207,6 +217,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
         })}
       </section>
 
+      </>}
       <BottomNav />
     </div>
   );

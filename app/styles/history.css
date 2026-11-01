@@ -222,3 +222,22 @@
   background-color: var(--color-frost);
   color: #0b5cad;
 }
+
+@media (max-width: 767px) {
+  .history-month { margin-top: 10px; padding: 4px; }
+  .history-month-btn { min-width: 44px; height: 44px; flex-shrink: 0; }
+  .history-month-label { min-height: 44px; }
+  .history-month[aria-label] .history-month-btn { width: auto; padding-inline: 12px; border-radius: 8px; }
+  .search-bar { margin-top: 10px; }
+  .history-summary { margin-top: 12px; padding: 12px; }
+  .history-summary-title { margin-bottom: 8px; font-size: 15px; }
+  .summary-pair { gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-pair .stat-box { padding: 10px 4px; }
+  .summary-pair .stat-amount { font-size: 14px; overflow-wrap: anywhere; white-space: normal; }
+  .history-group { margin-top: 14px; }
+  .tx-item { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 12px 0; }
+  .tx-info { align-items: flex-start; gap: 10px; }
+  .tx-info > div { min-width: 0; overflow-wrap: anywhere; }
+  .tx-amount { padding-left: 50px; text-align: left; overflow-wrap: anywhere; }
+  .empty-state { margin-top: 24px; }
+}

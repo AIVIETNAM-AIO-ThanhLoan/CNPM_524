@@ -18,3 +18,18 @@ details summary { cursor: pointer; }
 details[open] summary { margin-bottom: 16px; }
 .tx-extra { margin: 0 16px 16px; }
 .tx-form .tx-amount-input { padding: 0; border: none; background: transparent; border-radius: 0; }
+
+@media (max-width: 767px) {
+  .ledger-page { gap: 12px; }
+  .ledger-page .page-header h1 { font-size: 22px; font-weight: 650; line-height: 1.3; }
+  .ledger-page .card { padding: 16px; border-radius: 12px; min-width: 0; overflow-wrap: anywhere; }
+  .ledger-page h2 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+  .ledger-form { gap: 12px; }
+  .ledger-form :is(input:not([type=checkbox]):not([type=radio]), select) { min-height: 48px; }
+  .ledger-form textarea { min-height: 88px; }
+  .ledger-form .review-check { min-height: 44px; align-items: center; }
+  .action-row > :is(button, a) { flex: 1 1 120px; }
+  .ledger-page details > summary { min-height: 44px; padding-block: 10px; font-weight: 600; }
+  .ledger-page progress { display: block; width: 100%; height: 8px; margin-block: 12px; accent-color: #0b5cad; }
+  .management-item { gap: 10px; }
+}

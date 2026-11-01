@@ -320,3 +320,20 @@
 .chat-entry {
   text-decoration: none;
 }
+
+@media (max-width: 767px) {
+  .home-header { padding: 10px 16px 0; padding-top: max(10px, env(safe-area-inset-top)); }
+  .home-search { height: 44px; }
+  .home-search input { font-size: 16px; }
+  .summary-card { margin-top: 10px; padding: 14px; box-shadow: none; }
+  .home-segmented-btn { min-height: 44px; }
+  .period-nav { margin-top: 8px; padding: 2px; }
+  .period-nav-btn { width: 44px; height: 44px; }
+  .stats-row { margin: 12px 0; gap: 6px; }
+  .stat-value { font-size: 14px; overflow-wrap: anywhere; }
+  .action-buttons { margin-top: 12px; gap: 8px; }
+  .suggestions-section { margin-top: 18px; }
+  .suggestion-grid { gap: 8px; }
+  .suggestion-card { padding: 12px 6px; gap: 6px; box-shadow: none; background: var(--color-haze); }
+  .suggestion-icon { width: 36px; height: 36px; border-radius: 10px; }
+}
