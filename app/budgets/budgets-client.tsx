@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Pencil, Plus, Wallet } from 'lucide-react';
+import AddCategoryButton from '../components/AddCategoryButton';
 import BottomNav from '../components/BottomNav';
 import { type Category, requestJson } from '../lib/client-api';
 import { formatBudgetMoney } from '../lib/budget-money';
@@ -80,7 +81,13 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
         {error && <p className="budget-feedback budget-error" role="alert">{error}</p>}
         {notice && <p className="budget-feedback" role="status">{notice}</p>}
         {data && !data.error && <section className="budget-categories" aria-labelledby="budget-categories-title">
-            <div className="budget-section-heading"><h2 id="budget-categories-title">Danh mục</h2></div>
+            <div className="budget-section-heading">
+                <h2 id="budget-categories-title">Danh mục</h2>
+                <AddCategoryButton kind="expense" disabled={busy} onAdded={(category) => {
+                    setSnapshot((current) => current ? { ...current, categories: [...current.categories, category] } : current);
+                    setNotice(`Đã thêm danh mục ${category.name}.`);
+                }} />
+            </div>
             {!data.categories.length && <div className="budget-empty"><Wallet size={32} /><p>Chưa có danh mục chi tiêu.</p><Link href="/transactions/new">Mở Ghi giao dịch để thêm danh mục</Link></div>}
             <div className="budget-category-grid">{data.categories.map((category) => {
                 const budget = data.budgets.find((item) => item.categoryId === category.id);
