@@ -38,10 +38,9 @@ export default function LoginPage() {
     <div className="auth-container">
       <div className="auth-content">
         <Wallet className="auth-logo" strokeWidth={1.8} />
-        <p className="auth-brand">Chi Tiêu</p>
+        <p className="auth-brand">Ting Ting</p>
 
         <h1 className="auth-title">Đăng nhập</h1>
-        <p className="auth-subtitle">Chào mừng bạn quay lại</p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-field">

@@ -1,21 +1,14 @@
 import Link from 'next/link';
-import { Coins, Languages, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import AvatarUpload from '../components/AvatarUpload';
 import LogoutButton from '../components/LogoutButton';
 import RecoveryCodeButton from '../components/RecoveryCodeButton';
 import { getCurrentUser } from '../lib/session';
-import { wallets } from '../lib/ledger';
 import '../styles/profile.css';
-
-const settings = [
-  { Icon: Languages, label: 'Ngôn ngữ', value: 'Tiếng Việt' },
-  { Icon: Coins, label: 'Tiền tệ mặc định', value: 'VND' },
-];
 
 export default async function Profile() {
   const user = await getCurrentUser();
-  const accounts = user ? await wallets(user.id) : [];
 
   return (
     <div className="app-page">
@@ -56,40 +49,10 @@ export default async function Profile() {
 
       {user && (
         <section className="card settings-card">
-          {accounts.map((wallet) => (
-            <div className="settings-row" key={wallet.id}>
-              <span>{wallet.name}</span>
-              <strong>{Number(wallet.balance).toLocaleString('vi-VN')}đ</strong>
-            </div>
-          ))}
-          <div className="profile-actions">
-            <Link className="btn-primary" href="/transactions/new">
-              Ghi giao dịch / thêm ví
-            </Link>
-            <Link className="btn-secondary" href="/manage">Quản lý ví và danh mục</Link>
-          </div>
-        </section>
-      )}
-
-      {user && (
-        <section className="card settings-card">
           <h2 className="settings-title">Bảo mật</h2>
           <RecoveryCodeButton />
         </section>
       )}
-
-      <section className="card settings-card">
-        <h2 className="settings-title">Cài đặt chung</h2>
-        {settings.map(({ Icon, label, value }) => (
-          <div key={label} className="settings-row">
-            <span className="settings-label">
-              <Icon size={20} strokeWidth={1.8} />
-              {label}
-            </span>
-            <span className="settings-value">{value}</span>
-          </div>
-        ))}
-      </section>
 
       <BottomNav />
     </div>

@@ -51,7 +51,7 @@ export default function RegisterPage() {
       <div className="auth-container">
         <div className="auth-content">
           <Wallet className="auth-logo" strokeWidth={1.8} />
-          <p className="auth-brand">Chi Tiêu</p>
+          <p className="auth-brand">Ting Ting</p>
 
           <h1 className="auth-title">Lưu mã khôi phục</h1>
           <p className="auth-subtitle">Dùng mã này để đặt lại mật khẩu khi bạn quên. Mã chỉ hiện một lần.</p>
@@ -71,7 +71,7 @@ export default function RegisterPage() {
     <div className="auth-container">
       <div className="auth-content">
         <Wallet className="auth-logo" strokeWidth={1.8} />
-        <p className="auth-brand">Chi Tiêu</p>
+        <p className="auth-brand">Ting Ting</p>
 
         <h1 className="auth-title">Đăng ký</h1>
         <p className="auth-subtitle">Tạo tài khoản mới</p>

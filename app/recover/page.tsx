@@ -49,7 +49,7 @@ export default function RecoverPage() {
       <div className="auth-container">
         <div className="auth-content">
           <Wallet className="auth-logo" strokeWidth={1.8} />
-          <p className="auth-brand">Chi Tiêu</p>
+          <p className="auth-brand">Ting Ting</p>
 
           <h1 className="auth-title">Đã đặt lại mật khẩu</h1>
           <p className="auth-subtitle">Mã cũ đã hết hiệu lực. Hãy lưu mã khôi phục mới này.</p>
@@ -69,7 +69,7 @@ export default function RecoverPage() {
     <div className="auth-container">
       <div className="auth-content">
         <Wallet className="auth-logo" strokeWidth={1.8} />
-        <p className="auth-brand">Chi Tiêu</p>
+        <p className="auth-brand">Ting Ting</p>
 
         <h1 className="auth-title">Quên mật khẩu</h1>
         <p className="auth-subtitle">Nhập mã khôi phục bạn đã lưu khi đăng ký</p>
