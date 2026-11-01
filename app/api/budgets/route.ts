@@ -34,10 +34,10 @@ export async function POST(request: Request) {
         const categoryId = uuid(body.categoryId);
         const month = monthStart(body.month);
         const amount = money(body.amount);
-        const [category] = await rows<RowDataPacket>("SELECT id FROM categories WHERE id = ? AND user_id = ? AND kind = 'expense'", [categoryId, user.id]);
-        if (!category) throw new HttpError(400, 'Chỉ đặt ngân sách cho danh mục chi tiêu của bạn.');
         await atomic(async (connection) => {
             await connection.execute('SELECT id FROM users WHERE id = ? FOR UPDATE', [user.id]);
+            const [categories] = await connection.execute<RowDataPacket[]>("SELECT id FROM categories WHERE id = ? AND user_id = ? AND kind = 'expense' AND archived = FALSE", [categoryId, user.id]);
+            if (!categories.length) throw new HttpError(400, 'Chỉ đặt ngân sách cho danh mục chi tiêu đang sử dụng của bạn.');
             await connection.execute(`INSERT INTO budgets (id, user_id, category_id, month_start, amount) VALUES (?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE amount = VALUES(amount)`, [randomUUID(), user.id, categoryId, month, amount]);
             await budgetAlerts(connection, user.id);
