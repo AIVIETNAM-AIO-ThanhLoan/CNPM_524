@@ -46,8 +46,8 @@ function setup(overrides = {}) {
     assert.equal(result.status, 0, result.stderr);
 }
 
-async function api(route, { body, cookie, status = 200, requestOrigin = origin, raw } = {}) {
-    const response = await fetch(`${origin}${route}`, { method: body !== undefined || raw !== undefined ? 'POST' : 'GET',
+async function api(route, { body, cookie, status = 200, requestOrigin = origin, raw, method } = {}) {
+    const response = await fetch(`${origin}${route}`, { method: method ?? (body !== undefined || raw !== undefined ? 'POST' : 'GET'),
         headers: { 'Content-Type': 'application/json', Origin: requestOrigin, ...(cookie ? { Cookie: cookie } : {}) },
         body: raw !== undefined ? raw : body !== undefined ? JSON.stringify(body) : undefined });
     const json = await response.json();
@@ -238,6 +238,39 @@ try {
     const emptyMonthSummary = (await api('/api/finance?start=2027-01-01&end=2027-01-31', { cookie })).json;
     check(emptyMonthSummary.budgetAmount === 0.5 && emptyMonthSummary.budgetSpent === 0 && emptyMonthSummary.budget === 0, 'Home budget selects the requested month without carrying over expenses');
     check((await api(`/api/budgets?month=${budgetMonth}`, { cookie })).json.totalAmount === '750000.00', 'Budget months stay separate');
+    const disposableId = (await api('/api/categories', { cookie, body: { name: 'Danh mục xóa thử', kind: 'expense' }, status: 201 })).json.id;
+    const [disposable] = await admin.execute('SELECT account_id FROM categories WHERE id = ?', [disposableId]);
+    await api('/api/budgets', { cookie, body: { categoryId: disposableId, month: '2027-02', amount: '100' }, status: 201 });
+    await api('/api/budgets', { cookie, body: { categoryId: disposableId, month: '2027-03', amount: '200' }, status: 201 });
+    const deleteCategory = { method: 'DELETE', body: { id: disposableId } };
+    await api('/api/categories', { ...deleteCategory, status: 401 });
+    await api('/api/categories', { ...deleteCategory, cookie, requestOrigin: 'https://other.example', status: 403 });
+    await api('/api/categories', { ...deleteCategory, cookie: cookieB, status: 404 });
+    await api('/api/categories', { ...deleteCategory, cookie, body: { id: 'invalid' }, status: 400 });
+    check((await api('/api/budgets?month=2027-02', { cookie })).json.totalAmount === '100.00', 'Rejected category deletion preserves its budget');
+    await api('/api/categories', { ...deleteCategory, cookie });
+    check(!(await api('/api/categories?all=1', { cookie })).json.categories.some((category) => category.id === disposableId), 'Unused category is deleted from the database');
+    const [deletedAccount] = await admin.execute('SELECT id FROM accounts WHERE id = ?', [disposable[0].account_id]);
+    check(deletedAccount.length === 0, 'Deleting an unused category also removes its ledger account');
+    check((await api('/api/budgets?month=2027-02', { cookie })).json.totalAmount === '0.00' && (await api('/api/budgets?month=2027-03', { cookie })).json.totalAmount === '0.00', 'Category deletion removes its budgets in all months');
+    check((await api(`/api/budgets?month=${budgetMonth}`, { cookie })).json.totalAmount === '750000.00', 'Other category budgets remain unchanged');
+    await api('/api/categories', { ...deleteCategory, cookie, status: 404 });
+    const emptyCategoryId = (await api('/api/categories', { cookie, body: { name: 'Chưa đặt ngân sách', kind: 'expense' }, status: 201 })).json.id;
+    await api('/api/categories', { cookie, method: 'DELETE', body: { id: emptyCategoryId } });
+    check(!(await api('/api/categories', { cookie })).json.categories.some((category) => category.id === emptyCategoryId), 'Category deletion works without a saved budget');
+    const historicalId = (await api('/api/categories', { cookie, body: { name: 'Danh mục giữ lịch sử', kind: 'expense' }, status: 201 })).json.id;
+    await api('/api/transactions', { cookie, body: { ...base, kind: 'expense', categoryId: historicalId, amount: '5.00', bookedOn: '2028-02-01', requestKey: randomUUID() }, status: 201 });
+    await api('/api/budgets', { cookie, body: { categoryId: historicalId, month: '2028-02', amount: '100' }, status: 201 });
+    const recurringId = (await api('/api/recurring', { cookie, body: { name: 'Khoản định kỳ xóa thử', walletId, categoryId: historicalId, amount: '5', nextDueOn: '2028-03-01', frequency: 'monthly' }, status: 201 })).json.id;
+    await api('/api/categories', { cookie, method: 'DELETE', body: { id: historicalId }, status: 409 });
+    check((await api('/api/budgets?month=2028-02', { cookie })).json.totalAmount === '100.00', 'An active recurring payment blocks deletion without changing the budget');
+    await api('/api/recurring', { cookie, body: { id: recurringId, action: 'toggle', enabled: false }, status: 201 });
+    await api('/api/categories', { cookie, method: 'DELETE', body: { id: historicalId } });
+    check(!(await api('/api/categories', { cookie })).json.categories.some((category) => category.id === historicalId), 'Used category disappears from active categories after deletion');
+    check((await api('/api/budgets?month=2028-02', { cookie })).json.totalAmount === '0.00', 'Used category deletion also clears its budget');
+    const historicalReport = (await api('/api/finance?start=2028-02-01&end=2028-02-29', { cookie })).json;
+    check(historicalReport.expense === 5 && historicalReport.transactions.some((transaction) => transaction.category === 'Danh mục giữ lịch sử'), 'Deleted category preserves ledger totals and historical category names');
+    await api('/api/budgets', { cookie, body: { categoryId: historicalId, month: '2028-02', amount: '100' }, status: 400 });
     await api('/api/goals', { cookie, body: { name: 'Mua xe', targetAmount: '20000000', dueOn: '2027-06-30' }, status: 201 });
     await api('/api/goals', { cookie, body: { name: 'Quỹ dự phòng', targetAmount: '0' }, status: 400 });
     const { json: goalList } = await api('/api/goals', { cookie });
@@ -476,11 +509,12 @@ try {
             await totalIs('0đ');
             const expenseOptions = (await (await page.request.get(`${origin}/api/categories`)).json()).categories.filter((c) => c.kind === 'expense');
             check(await page.getByRole('article').count() === expenseOptions.length, 'Budget page uses existing expense categories');
-            check(await page.getByRole('button', { name: 'Thêm danh mục', exact: true }).count() === 0, 'Category creation belongs to the transaction form');
+            check(await page.getByRole('button', { name: 'Thêm danh mục', exact: true }).count() === 1, 'Category creation is available on the budget page');
             check(await page.getByRole('link', { name: 'Ngân sách', exact: true }).getAttribute('aria-current') === 'page', 'Budget navigation is active');
             const setBudget = async (name, value) => {
                 const card = page.getByRole('article', { name, exact: true });
-                await card.getByRole('button', { name: /^(Đặt|Sửa) ngân sách$/ }).click();
+                await card.getByRole('button', { name: `Tùy chọn danh mục ${name}`, exact: true }).click();
+                await card.getByRole('button', { name: 'Sửa', exact: true }).click();
                 await card.getByRole('spinbutton', { name: `Ngân sách cho ${name}`, exact: true }).fill(value);
                 await card.getByRole('button', { name: 'Lưu ngân sách', exact: true }).click();
                 await page.getByRole('status').filter({ hasText: `Đã lưu ngân sách cho ${name}.` }).waitFor();
@@ -557,12 +591,14 @@ try {
             await setBudget('Sức khỏe', '150000');
             await totalIs('1.550.000đ');
             const healthCard = page.getByRole('article', { name: 'Sức khỏe', exact: true });
-            await healthCard.getByRole('button', { name: 'Sửa ngân sách', exact: true }).click();
+            await healthCard.getByRole('button', { name: 'Tùy chọn danh mục Sức khỏe', exact: true }).click();
+            await healthCard.getByRole('button', { name: 'Sửa', exact: true }).click();
             await healthCard.getByRole('spinbutton').fill('0');
             check(!(await healthCard.locator('form').evaluate((form) => form.checkValidity())), 'Zero budget is invalid');
             await healthCard.getByRole('button', { name: 'Hủy', exact: true }).click();
             await page.route('**/api/budgets', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Không thể lưu ngân sách thử nghiệm.' }) }));
-            await healthCard.getByRole('button', { name: 'Sửa ngân sách', exact: true }).click();
+            await healthCard.getByRole('button', { name: 'Tùy chọn danh mục Sức khỏe', exact: true }).click();
+            await healthCard.getByRole('button', { name: 'Sửa', exact: true }).click();
             await healthCard.getByRole('spinbutton').fill('250000');
             await healthCard.getByRole('button', { name: 'Lưu ngân sách', exact: true }).click();
             await page.getByRole('alert').filter({ hasText: 'Không thể lưu ngân sách thử nghiệm.' }).waitFor();

@@ -50,3 +50,29 @@ export async function POST(request: Request) {
         return Response.json({ id }, { status: 201 });
     });
 }
+
+export async function DELETE(request: Request) {
+    return api(async () => {
+        const body = await jsonBody(request);
+        const user = await requireUser();
+        const id = uuid(body.id);
+        await atomic(async (connection) => {
+            await connection.execute('SELECT id FROM users WHERE id = ? FOR UPDATE', [user.id]);
+            const [owned] = await connection.execute<RowDataPacket[]>('SELECT account_id FROM categories WHERE id = ? AND user_id = ? FOR UPDATE', [id, user.id]);
+            if (!owned.length) throw new HttpError(404, 'Không tìm thấy danh mục của bạn.');
+            const [recurring] = await connection.execute<RowDataPacket[]>('SELECT id, enabled FROM recurring_transactions WHERE user_id = ? AND category_id = ?', [user.id, id]);
+            if (recurring.some((item) => item.enabled)) throw new HttpError(409, 'Hãy tạm dừng hoặc đổi danh mục cho khoản định kỳ trước khi xóa.');
+            const [transactions] = await connection.execute<RowDataPacket[]>('SELECT id FROM transactions WHERE user_id = ? AND category_id = ? LIMIT 1', [user.id, id]);
+            const [entries] = await connection.execute<RowDataPacket[]>('SELECT id FROM transaction_entries WHERE user_id = ? AND account_id = ? LIMIT 1', [user.id, owned[0].account_id]);
+            await connection.execute('DELETE FROM budgets WHERE user_id = ? AND category_id = ?', [user.id, id]);
+            if (transactions.length || entries.length || recurring.length) {
+                // Keep ledger references so historical reports still show the category name.
+                await connection.execute('UPDATE categories SET archived = TRUE WHERE user_id = ? AND id = ?', [user.id, id]);
+            } else {
+                await connection.execute('DELETE FROM categories WHERE user_id = ? AND id = ?', [user.id, id]);
+                await connection.execute('DELETE FROM accounts WHERE user_id = ? AND id = ?', [user.id, owned[0].account_id]);
+            }
+        });
+        return Response.json({ id });
+    });
+}

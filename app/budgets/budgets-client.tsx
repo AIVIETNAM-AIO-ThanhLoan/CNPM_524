@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Pencil, Plus, Wallet } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Ellipsis, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
 import AddCategoryButton from '../components/AddCategoryButton';
 import BottomNav from '../components/BottomNav';
 import { type Category, requestJson } from '../lib/client-api';
@@ -19,6 +19,8 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
     const [revision, setRevision] = useState(0);
     const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
     const [editing, setEditing] = useState<string | null>(null);
+    const [openMenu, setOpenMenu] = useState<string | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
     const [amount, setAmount] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -26,6 +28,24 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
     const key = `${month}:${revision}`;
     const ready = snapshot?.key === key;
     const data = ready ? snapshot : null;
+
+    useEffect(() => {
+        if (!openMenu) return;
+        function closeOutside(event: PointerEvent) {
+            if (event.target instanceof Node && !menuRef.current?.contains(event.target)) setOpenMenu(null);
+        }
+        function closeOnEscape(event: KeyboardEvent) {
+            if (event.key !== 'Escape') return;
+            menuRef.current?.querySelector<HTMLButtonElement>('.budget-menu-toggle')?.focus();
+            setOpenMenu(null);
+        }
+        document.addEventListener('pointerdown', closeOutside);
+        document.addEventListener('keydown', closeOnEscape);
+        return () => {
+            document.removeEventListener('pointerdown', closeOutside);
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [openMenu]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -42,7 +62,7 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
 
     function changeMonth(value: string) {
         if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(value) || value < '1000-01' || value > '9999-12' || busy) return;
-        setMonth(value); setEditing(null); setError(''); setNotice('');
+        setMonth(value); setEditing(null); setOpenMenu(null); setError(''); setNotice('');
     }
 
     function shiftMonth(delta: number) {
@@ -62,6 +82,27 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
             setEditing(null);
             setNotice(`Đã lưu ngân sách cho ${category.name}.`);
         } catch (error) { setError(error instanceof Error ? error.message : 'Không thể lưu ngân sách.'); }
+        finally { setBusy(false); }
+    }
+
+    function editBudget(category: Category, budget?: Budget) {
+        setOpenMenu(null); setEditing(category.id); setAmount(budget?.amount || ''); setError(''); setNotice('');
+    }
+
+    async function removeCategory(category: Category) {
+        if (busy) return;
+        setBusy(true); setOpenMenu(null); setEditing(null); setError(''); setNotice('');
+        try {
+            const response = await fetch('/api/categories', {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: category.id }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Không thể xóa danh mục.');
+            setRevision((current) => current + 1);
+            notifyFinanceUpdated();
+            setNotice(`Đã xóa danh mục ${category.name}.`);
+        } catch (error) { setError(error instanceof Error ? error.message : 'Không thể xóa danh mục.'); }
         finally { setBusy(false); }
     }
 
@@ -92,7 +133,21 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
             <div className="budget-category-grid">{data.categories.map((category) => {
                 const budget = data.budgets.find((item) => item.categoryId === category.id);
                 return <article key={category.id} className="budget-category-card" aria-label={category.name}>
-                    <div className="budget-category-title"><span className="budget-category-icon"><Wallet size={20} aria-hidden="true" /></span><h3>{category.name}</h3></div>
+                    <div className="budget-category-heading">
+                        <div className="budget-category-title"><span className="budget-category-icon"><Wallet size={20} aria-hidden="true" /></span><h3>{category.name}</h3></div>
+                        <div className="budget-card-menu" ref={openMenu === category.id ? menuRef : undefined}
+                            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpenMenu(null); }}>
+                            <button type="button" className="budget-menu-toggle" aria-label={`Tùy chọn danh mục ${category.name}`}
+                                aria-expanded={openMenu === category.id} aria-controls={`budget-menu-${category.id}`} disabled={busy}
+                                onClick={() => setOpenMenu((current) => current === category.id ? null : category.id)}>
+                                <Ellipsis size={22} aria-hidden="true" />
+                            </button>
+                            {openMenu === category.id && <div id={`budget-menu-${category.id}`} className="budget-menu-options" role="group" aria-label={`Thao tác danh mục ${category.name}`}>
+                                <button type="button" className="budget-menu-delete" disabled={busy} onClick={() => removeCategory(category)}><Trash2 size={16} aria-hidden="true" />Xóa</button>
+                                <button type="button" disabled={busy} onClick={() => editBudget(category, budget)}><Pencil size={16} aria-hidden="true" />Sửa</button>
+                            </div>}
+                        </div>
+                    </div>
                     {Boolean(category.archived) && <p>Danh mục đã lưu trữ; vẫn giữ ngân sách và lịch sử.</p>}
                     <p className={`budget-category-amount ${budget ? '' : 'is-unset'}`}>{budget ? formatBudgetMoney(budget.amount) : 'Chưa đặt ngân sách'}</p>
                     {budget && <><p>Đã chi: {formatBudgetMoney(budget.spent)} · {Math.round(Number(budget.spent) / Number(budget.amount) * 100)}%</p>
@@ -101,8 +156,8 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
                     {editing === category.id ? <form className="ledger-form budget-editor" onSubmit={(event) => save(event, category)}>
                         <label>Số tiền (VND)<input name="amount" aria-label={`Ngân sách cho ${category.name}`} type="number" inputMode="decimal" min="0.01" max="999999999999.99" step="0.01" required autoFocus value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} /></label>
                         <div className="budget-editor-actions"><button type="button" className="btn-secondary" disabled={busy} onClick={() => { setEditing(null); setError(''); }}>Hủy</button><button type="submit" className="btn-primary" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu ngân sách'}</button></div>
-                    </form> : <button type="button" className="budget-set-button" disabled={busy} onClick={() => { setEditing(category.id); setAmount(budget?.amount || ''); setError(''); setNotice(''); }}>
-                        {budget ? <Pencil size={15} /> : <Plus size={16} />}{budget ? 'Sửa ngân sách' : 'Đặt ngân sách'}
+                    </form> : !budget && <button type="button" className="budget-set-button" disabled={busy} onClick={() => editBudget(category)}>
+                        <Plus size={16} aria-hidden="true" />Đặt ngân sách
                     </button>}
                 </article>;
             })}</div>
