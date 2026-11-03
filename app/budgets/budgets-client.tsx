@@ -75,12 +75,12 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
         if (busy) return;
         setBusy(true); setError(''); setNotice('');
         try {
-            await requestJson('/api/budgets', { categoryId: category.id, month, amount });
+            const saved = await requestJson<{ amount: string }>('/api/budgets', { categoryId: category.id, month, amount });
             notifyFinanceUpdated();
             const budgets = await requestJson<BudgetResponse>(`/api/budgets?month=${month}`);
             setSnapshot((current) => current?.key === key ? { ...current, ...budgets } : current);
             setEditing(null);
-            setNotice(`Đã lưu ngân sách cho ${category.name}.`);
+            setNotice(saved.amount === '0.00' ? `Đã bỏ đặt ngân sách cho ${category.name}.` : `Đã lưu ngân sách cho ${category.name}.`);
         } catch (error) { setError(error instanceof Error ? error.message : 'Không thể lưu ngân sách.'); }
         finally { setBusy(false); }
     }
@@ -154,7 +154,7 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
                         <progress aria-label={`Mức sử dụng ngân sách ${category.name}`} max={Number(budget.amount)} value={Math.max(0, Number(budget.spent))} />
                         {Number(budget.spent) >= Number(budget.amount) * 0.8 && <p role="status">{Number(budget.spent) >= Number(budget.amount) ? 'Đã chạm ngưỡng 100% ngân sách.' : 'Đã chạm ngưỡng 80% ngân sách.'}</p>}</>}
                     {editing === category.id ? <form className="ledger-form budget-editor" onSubmit={(event) => save(event, category)}>
-                        <label>Số tiền (VND)<input name="amount" aria-label={`Ngân sách cho ${category.name}`} type="number" inputMode="decimal" min="0.01" max="999999999999.99" step="0.01" required autoFocus value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} /></label>
+                        <label>Số tiền (VND)<input name="amount" aria-label={`Ngân sách cho ${category.name}`} type="number" inputMode="decimal" min="0" max="999999999999.99" step="0.01" required autoFocus value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} /></label>
                         <div className="budget-editor-actions"><button type="button" className="btn-secondary" disabled={busy} onClick={() => { setEditing(null); setError(''); }}>Hủy</button><button type="submit" className="btn-primary" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu ngân sách'}</button></div>
                     </form> : !budget && <button type="button" className="budget-set-button" disabled={busy} onClick={() => editBudget(category)}>
                         <Plus size={16} aria-hidden="true" />Đặt ngân sách

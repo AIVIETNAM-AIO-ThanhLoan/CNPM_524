@@ -173,9 +173,10 @@
   .profile-header { padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
   .profile-logout { min-height: 44px; padding: 10px 14px; box-shadow: none; }
   .profile-hero { margin-top: 12px; padding: 14px; justify-content: flex-start; }
-  .avatar-wrap { flex-direction: row; gap: 14px; }
+  .avatar-wrap { flex-direction: row; flex-wrap: wrap; width: 100%; gap: 14px; }
+  .avatar-wrap > :is([role="status"], [role="alert"]) { flex-basis: 100%; font-size: 13px; overflow-wrap: anywhere; }
   .avatar { width: 64px; height: 64px; flex-shrink: 0; }
-  .avatar-name { font-size: 17px; text-align: left; overflow-wrap: anywhere; }
+  .avatar-name { flex: 1; min-width: 0; font-size: 17px; text-align: left; overflow-wrap: anywhere; }
   .settings-card { margin-top: 14px; padding: 14px; }
   .settings-row { min-height: 48px; padding: 10px 0; gap: 12px; flex-wrap: wrap; }
   .settings-row strong { overflow-wrap: anywhere; }

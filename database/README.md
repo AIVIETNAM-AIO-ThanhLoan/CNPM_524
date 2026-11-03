@@ -6,7 +6,7 @@ Yêu cầu Node.js 20.9+, MySQL 8+ hoặc MariaDB 10.4+. XAMPP đã kèm MariaDB
 
 `.env.local` giữ cấu hình ứng dụng và credentials setup, được Git bỏ qua. `DB_USER` phải là tài khoản riêng, không phải root, có mật khẩu không rỗng. `DB_SETUP_USER` chỉ dùng bởi CLI để tạo database/user và bảng. Script không đổi mật khẩu hoặc quyền của user đã có; nếu dùng user có sẵn, quản trị viên phải cấp quyền DML trên database tương ứng trước.
 
-`npm.cmd run db:setup` áp dụng `schema.sql` và các migration đã khai báo trong script, ghi checksum trong `schema_migrations` và không chạy lại phiên bản đã áp dụng. Migration 002 thêm trigger thu hồi mọi session khi một user bị khóa (`blocked=true`); mở khóa không khôi phục các session cũ.
+`npm.cmd run db:setup` áp dụng `schema.sql` và các migration trong `scripts/database-migrations.mjs`, ghi checksum trong `schema_migrations` và không chạy lại phiên bản đã áp dụng. Migration 002 thêm trigger thu hồi mọi session khi một user bị khóa (`blocked=true`); mở khóa không khôi phục các session cũ.
 
 | Migration | Nội dung |
 | --- | --- |
@@ -21,8 +21,11 @@ Yêu cầu Node.js 20.9+, MySQL 8+ hoặc MariaDB 10.4+. XAMPP đã kèm MariaDB
 | 011 | `goal_contributions` ghi khoản góp thủ công theo người dùng, không thay đổi ví |
 | 012 | Archive flags, recurring confirmations, account notifications, Web Push subscriptions and retry deliveries |
 | 013 | `receive_qr_images` ảnh QR nhận tiền của từng người (PNG/JPEG/WebP, tối đa 2 MB, tối đa 10 ảnh), một ảnh được đánh dấu `is_primary` |
+| 014 | `user_avatars` ảnh đại diện theo tài khoản; PNG/JPEG/WebP tối đa 2 MB, một ảnh mỗi người, tự cập nhật khi thay ảnh |
 
 Chạy lại `npm.cmd run db:setup` sau khi lấy code mới để áp dụng migration còn thiếu. MySQL DDL tự commit: nếu lần đầu bị lỗi giữa chừng, kiểm tra nguyên nhân và các bảng đã tạo trước khi tiếp tục; script chủ động dừng khi phát hiện bảng `users` không có migration, không xóa bảng để thử lại. Thay đổi schema đã áp dụng cần migration mới.
+
+`npm.cmd run db:check` kiểm tra chỉ đọc bằng tài khoản CLI: checksum/phiên bản migration, bảng/cột khai báo trong SQL, trigger khóa tài khoản và số dòng/tổng bút toán của từng giao dịch. Lệnh trả mã lỗi nếu có phần thiếu; không sửa bảng hoặc dữ liệu. Bảng cũ ngoài manifest vẫn được giữ nguyên.
 
 ### Docker development
 
@@ -67,6 +70,8 @@ erDiagram
 | `reminder_deliveries` | Mỗi lần nhắc khoản định kỳ theo kỳ/ngày nhắc, trạng thái gửi và số lần thử |
 | `backup_runs` | Thời điểm, file, dung lượng, SHA-256 và lỗi của mỗi lần sao lưu |
 | `schema_migrations` | Phiên bản và checksum schema đã áp dụng |
+| `user_avatars` | MIME, dữ liệu ảnh và thời điểm cập nhật; khóa chính là `user_id`, ảnh được xóa theo tài khoản |
+| `receive_qr_images` | Ảnh QR nhận tiền, nhãn và trạng thái ảnh chính theo người dùng |
 
 Khóa ngoại ghép `(user_id, id)` giữ tài khoản, danh mục và dòng sổ trong cùng một người dùng. Tất cả API đọc/ghi đều lấy user từ session phía server; client không được chọn `user_id` hay vai trò khi đăng ký.
 
@@ -121,6 +126,8 @@ API ghi chỉ nhận JSON, yêu cầu header `Origin` khớp `APP_ORIGIN`. Cooki
 | POST | `/api/auth/2fa/verify` | `{code}`; bước hai đăng nhập, dùng cookie `cnpm_2fa` |
 | GET | `/api/admin/stats` | Chỉ admin: số người dùng, giao dịch, tỷ giá đã lưu, 10 lần sao lưu gần nhất |
 | GET/POST | `/api/admin/users` | Chỉ admin: danh sách `?q=` / khóa, mở khóa `{userId, blocked}`; không tự khóa mình, không khóa admin khác |
+| GET/POST/DELETE | `/api/avatar` | Đọc/thay/xóa ảnh đại diện của phiên hiện tại; POST gửi file ảnh nguyên bản, DELETE gửi `{}`; ảnh không được cache |
+| GET/POST | `/api/admin/rates` | Chỉ admin: tỷ giá mới nhất từng cặp / đồng bộ các ngoại tệ được nguồn cung cấp sang VND, lưu `exchange_rates` theo ngày nguồn |
 
 Khi tài khoản đã bật 2FA, `POST /api/auth/login` đúng mật khẩu trả `{twoFactorRequired: true}` và cookie `cnpm_2fa` thay vì session; client gửi mã tới `/api/auth/2fa/verify` để nhận session. Mã TOTP chấp nhận lệch ±30 giây, không dùng lại được mã đã dùng; sai 5 lần thì phiên chờ bị hủy, sai 15 lần/15 phút thì tạm khóa nhập mã.
 
@@ -140,7 +147,9 @@ Ví dụ body ghi giao dịch:
 
 Chuyển tiền dùng `kind=transfer`, `targetId` là ví nhận, không cần `categoryId`. Gửi lại cùng `requestKey` và nội dung trả về giao dịch cũ; dùng cùng khóa với nội dung khác trả HTTP 409. Form giữ khóa khi chưa rõ kết quả do lỗi mạng. Lịch sử chia trang 200 giao dịch; tổng và thống kê vẫn tính toàn kỳ. Khoảng truy vấn tối đa 366 ngày. Ngày nghiệp vụ là `DATE`, ngày mặc định theo múi giờ Việt Nam; session hết hạn theo UTC.
 
-Đăng nhập, khôi phục mật khẩu và nhập mã 2FA có giới hạn 15 lần sai/15 phút trong một tiến trình. Khi triển khai nhiều instance cần kho giới hạn dùng chung; chưa có xác minh email/điện thoại hoặc Google OAuth. Khôi phục mật khẩu dùng mã khôi phục 16 ký tự cấp khi đăng ký (hoặc tạo lại ở trang Tôi): mã dùng một lần, bị thay ngay sau khi dùng, và thông báo lỗi không cho biết tài khoản có tồn tại hay không. Secret TOTP lưu dạng văn bản trong database; bảo vệ database và file sao lưu như dữ liệu nhạy cảm. `/admin` yêu cầu vai trò admin; giao diện vẫn là bản mẫu, API thật ở `/api/admin/*`.
+Đăng nhập, khôi phục mật khẩu và nhập mã 2FA có giới hạn 15 lần sai/15 phút trong một tiến trình. Khi triển khai nhiều instance cần kho giới hạn dùng chung; chưa có xác minh email/điện thoại hoặc Google OAuth. Khôi phục mật khẩu dùng mã khôi phục 16 ký tự cấp khi đăng ký (hoặc tạo lại ở trang Tôi): mã dùng một lần, bị thay ngay sau khi dùng, và thông báo lỗi không cho biết tài khoản có tồn tại hay không. Secret TOTP lưu dạng văn bản trong database; bảo vệ database và file sao lưu như dữ liệu nhạy cảm. `/admin` yêu cầu vai trò admin; tổng quan, tìm/khóa/mở khóa người dùng, đồng bộ tỷ giá và lịch sử sao lưu đều lấy dữ liệu thật. Sao lưu/khôi phục tiếp tục chạy bằng CLI với tài khoản setup, không cấp thao tác này cho web.
+
+Ảnh đại diện được lưu trên server và nạp lại khi mở trang Tôi. Lịch sử chat giữ nguyên trong bộ nhớ trang, không được lưu vào database. Giá vàng hiện là dữ liệu minh họa và được ghi rõ trên giao diện; không phải dữ liệu thị trường trực tiếp.
 
 ## Sao lưu và khôi phục
 
@@ -160,6 +169,7 @@ npm.cmd run db:restore -- --file backups/cnpm_524-YYYYMMDD-HHMMSS.sql --target c
 
 ```powershell
 npm.cmd run lint
+npm.cmd run db:check
 npx.cmd tsc --noEmit
 npm.cmd run build
 npm.cmd run test:integration
@@ -169,5 +179,7 @@ npm.cmd run test:browser
 Integration runner cần MySQL đang chạy và credentials `DB_SETUP_*`. Nó tạo database/user có tên ngẫu nhiên `cnpm_test_*`/`cnpm_t_*`, chạy server riêng trên cổng trống, kiểm tra auth/CSRF/quyền sở hữu, tiền thập phân, chống trùng, chuyển tiền, ghi đồng thời, rollback khi dòng thứ hai lỗi, báo cáo, setup chạy lại và các trang. Sau cùng chỉ dọn đúng tài nguyên thử nghiệm đã tạo. Không dùng database `cnpm_524` để ghi dữ liệu test.
 
 `test:browser` uses a production build and adds PWA/offline, expired-session/account-switching, pending logout, simulated push subscriptions and camera-stream QR checks. See [deployment and PWA verification](../docs/PWA_DEPLOYMENT.md) for configuration, worker supervision, external-service fixtures and the required physical-device checklist. On Windows it uses installed Edge; on Linux run `npx playwright install chromium` once.
+
+`tests/persistence.mjs` bổ sung kiểm tra avatar/QR (định dạng, dung lượng, quyền sở hữu), đồng bộ tỷ giá quản trị, sao lưu thật bằng CLI và khôi phục vào database tạm. Kiểm tra khôi phục xác nhận ảnh BLOB/giao dịch còn nguyên, từ chối ghi đè đích có dữ liệu và từ chối file sai checksum. Mọi database/file test đều được dọn đúng phạm vi sau khi chạy.
 
 Có thể kiểm tra thủ công sau đăng nhập: thu 1.000.000đ vào Tiền mặt, chi 50.000đ, chuyển 200.000đ sang Ngân hàng. Số dư phải là 750.000đ và 200.000đ; tổng thu 1.000.000đ và tổng chi 50.000đ. Đăng xuất rồi đăng nhập lại để xác nhận dữ liệu vẫn còn.

@@ -10,11 +10,16 @@ export async function GET(request: Request) {
     if (type === 'currency') {
       const from = searchParams.get('from') || 'USD';
       const to = searchParams.get('to') || 'VND';
-      const res = await fetch(`https://open.er-api.com/v6/latest/${from}`, { next: { revalidate: 3600 } });
+      if (!/^[A-Z]{3}$/.test(from) || !/^[A-Z]{3}$/.test(to)) return NextResponse.json({ error: 'Mã tiền tệ không hợp lệ.' }, { status: 400 });
+      
+      const res = await fetch(`https://open.er-api.com/v6/latest/${from}`, { 
+        next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000)
+      });
       const data = await res.json();
       
-      if (data.result === 'success') {
-        return NextResponse.json({ success: true, rate: data.rates[to], updatedAt: data.time_last_update_utc });
+      if (res.ok && data.result === 'success' && typeof data.rates?.[to] === 'number' && Number.isFinite(data.rates[to]) && data.rates[to] > 0) {
+        const rate = data.rates[to];
+        return NextResponse.json({ success: true, rate, updatedAt: data.time_last_update_utc });
       }
       return NextResponse.json({ error: 'Không lấy được tỷ giá' }, { status: 400 });
     } 
@@ -65,8 +70,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ error: 'Yêu cầu không hợp lệ' }, { status: 400 });
-  } catch (error) {
-    console.error("Lỗi API:", error);
+  } catch {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }

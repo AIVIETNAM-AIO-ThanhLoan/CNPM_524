@@ -7,9 +7,9 @@ import { useFinance } from '../lib/use-finance';
 const money = (n: number) => n.toLocaleString('vi-VN') + 'đ';
 const compact = new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 });
 
-export default function CalendarReport({ start, end, today, selected, select, data, loading, error, goToday }: {
+export default function CalendarReport({ start, end, today, selected, select, data, loading, error }: {
   start: string; end: string; today: string; selected: string; select: (day: string) => void;
-  data: Finance; loading: boolean; error: string; goToday: () => void;
+  data: Finance; loading: boolean; error: string;
 }) {
   const day = selected.startsWith(start.slice(0, 7)) ? selected : start;
   const [page, setPage] = useState(1);
@@ -17,7 +17,6 @@ export default function CalendarReport({ start, end, today, selected, select, da
   const offset = (new Date(`${start}T12:00:00`).getDay() + 6) % 7;
   return <>
     <section className="report-calendar" aria-label="Lịch thu chi">
-      <button type="button" className="calendar-today" onClick={() => { setPage(1); goToday(); }}>Hôm nay</button>
       <div className="calendar-grid">
         {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(label => <span className="calendar-weekday" key={label}>{label}</span>)}
         {Array.from({ length: offset }, (_, i) => <span key={`blank-${i}`} />)}

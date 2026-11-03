@@ -5,10 +5,13 @@ import AvatarUpload from '../components/AvatarUpload';
 import LogoutButton from '../components/LogoutButton';
 import RecoveryCodeButton from '../components/RecoveryCodeButton';
 import { getCurrentUser } from '../lib/session';
+import { rows } from '../lib/db';
+import type { RowDataPacket } from 'mysql2/promise';
 import '../styles/profile.css';
 
 export default async function Profile() {
   const user = await getCurrentUser();
+  const avatars = user ? await rows<RowDataPacket>('SELECT updated_at FROM user_avatars WHERE user_id = ?', [user.id]) : [];
 
   return (
     <div className="app-page">
@@ -43,7 +46,7 @@ export default async function Profile() {
 
       {user && (
         <section className="card profile-hero">
-          <AvatarUpload name={user.name} />
+          <AvatarUpload key={user.id} name={user.name} initialSrc={avatars.length ? `/api/avatar?v=${encodeURIComponent(`${user.id}:${avatars[0].updated_at}`)}` : null} />
         </section>
       )}
 
