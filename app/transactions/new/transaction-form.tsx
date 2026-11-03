@@ -8,6 +8,7 @@ import { PALETTE } from '@/app/lib/colors';
 import { type Category, requestJson, today, type Wallet } from '@/app/lib/client-api';
 import BottomNav from '@/app/components/BottomNav';
 import AddCategoryButton from '@/app/components/AddCategoryButton';
+import VoiceAssistant from '@/app/components/VoiceAssistant';
 import { notifyFinanceUpdated } from '@/app/lib/finance-updates';
 import { cacheAccount, pendingEntries, queueEntry, synchronize } from '@/app/lib/offline';
 import PendingEntries from '@/app/components/PendingEntries';
@@ -28,7 +29,6 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
     const [queued, setQueued] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [bookedOn, setBookedOn] = useState(today);
-    // Retain a key on ambiguous network failure. Prevent accidental duplicate posting.
     const pending = useRef<{ payload: string; key: string } | null>(null);
     const visibleCategories = categories.filter((c) => c.kind === kind);
     const categoryId = visibleCategories.find((c) => c.id === selectedCategory)?.id || visibleCategories[0]?.id || '';
@@ -76,6 +76,34 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
         finally { setBusy(false); }
     }
 
+    async function handleVoiceConfirm(data: { walletId: string; categoryId: string; kind: string; amount: number; note: string }) {
+        if (busy) return;
+        setBusy(true); setError(''); setSuccess('Đang lưu giao dịch bằng giọng nói...');
+        const payload = {
+            kind: data.kind as 'income' | 'expense' | 'transfer',
+            walletId: data.walletId,
+            targetId: null,
+            categoryId: data.categoryId,
+            amount: data.amount,
+            bookedOn: today,
+            note: data.note
+        };
+
+        try {
+            await cacheAccount({ userId, wallets, categories });
+            const requestKey = crypto.randomUUID();
+            await queueEntry({ userId, requestKey, payload, state: 'pending', error: '', createdAt: new Date().toISOString() });
+            await synchronize(userId);
+            notifyFinanceUpdated();
+            setSuccess('Đã lưu giao dịch thành công!');
+            setTimeout(() => router.push('/history'), 1000);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Lỗi lưu giao dịch.');
+        } finally {
+            setBusy(false);
+        }
+    }
+
     return <main className="app-page tx-page">
         <header className="tx-header"><Link href="/" className="tx-round-btn" aria-label="Quay lại"><ArrowLeft size={20} strokeWidth={1.8} /></Link><h1 className="tx-title">Ghi giao dịch</h1></header>
         {error && <p className="ledger-error" role="alert">{error}</p>}
@@ -84,6 +112,7 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
             pending.current = null; setSuccess(''); setError(''); setQueued(false);
             formRef.current?.reset();
         }}>Ghi khoản khác</button>}
+        
         <form ref={formRef} className="tx-form ledger-form" onSubmit={submit}>
             <label>Loại giao dịch<select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="expense">Chi tiền</option><option value="income">Thu tiền</option><option value="transfer">Chuyển giữa hai ví</option></select></label>
             <label>{kind === 'transfer' ? 'Ví nguồn' : 'Ví'}<select name="walletId" required>{wallets.map((w) => <option key={w.id} value={w.id}>{w.name} · {Number(w.balance).toLocaleString('vi-VN')}đ</option>)}</select></label>
@@ -105,11 +134,19 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
             <p>Chuyển giữa các ví không tính vào thu/chi. Bạn có thể ghi số dư âm để phản ánh khoản chi chưa nhập nguồn tiền.</p>
             <button type="submit" className="btn-primary tx-save" disabled={busy || (kind !== 'transfer' && !categoryId)}>{busy ? 'Đang lưu…' : 'Lưu giao dịch'}</button>
         </form>
+        
         <PendingEntries userId={userId} />
         <p className="data-status"><Link href="/manage">Quản lý ví và danh mục</Link></p>
         <details className="card tx-extra"><summary>Thêm ví (cần mạng)</summary><form className="ledger-form" onSubmit={(e) => addOption(e, 'wallets')}>
             <label>Tên ví<input name="name" maxLength={100} required /></label><p>Ví mới bắt đầu từ 0đ.</p><button className="btn-secondary" disabled={busy}>Thêm ví</button>
         </form></details>
+        
+        <VoiceAssistant 
+            wallets={wallets} 
+            categories={categories} 
+            onConfirm={handleVoiceConfirm} 
+        />
+
         <BottomNav />
     </main>;
 }

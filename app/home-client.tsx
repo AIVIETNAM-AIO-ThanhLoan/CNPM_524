@@ -1,5 +1,5 @@
 'use client';
-
+import VoiceAssistant from './components/VoiceAssistant';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -24,19 +24,14 @@ import { useNotifications } from './lib/use-notifications';
 import { BUDGET_ON_BRAND, ON_BRAND, PALETTE } from './lib/colors';
 import './styles/home.css';
 
-// Đề xuất: mỗi chức năng một màu có nghĩa. Giá vàng dùng chữ "Au" đúng màu vàng
 const suggestions: { label: string; color: string; Icon?: typeof BellRing; mark?: string; href?: string }[] = [
-  // Nút Quy đổi tiền tệ trỏ đến /currency
   { Icon: ArrowRightLeft, label: 'Quy đổi tiền tệ', color: PALETTE.teal, href: '/currency' },
-  // Nút Giá vàng trỏ đến /gold
   { mark: 'Au', label: 'Giá vàng', color: PALETTE.gold, href: '/gold' },
-  // Nút Lời nhắc trỏ về /reminders (hoặc bạn có thể xóa dòng này nếu không dùng)
   { Icon: BellRing, label: 'Lời nhắc', color: PALETTE.indigo, href: '/reminders' },
   { Icon: Target, label: 'Mục tiêu tiết kiệm', color: PALETTE.teal, href: '/goals' },
 ];
 
 const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-
 
 const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -45,7 +40,6 @@ const monthLabel = (d: Date) => `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
 const dayLabel = (d: Date) =>
   `${WEEKDAYS[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 
-// Ngân sách: xanh khi dưới 70%, vàng từ 70% đến 90%, đỏ khi vượt 90%
 const budgetColor = (percent: number) =>
   percent > 90 ? BUDGET_ON_BRAND.alert : percent > 70 ? BUDGET_ON_BRAND.warning : BUDGET_ON_BRAND.ok;
 
@@ -220,6 +214,10 @@ export default function Home({ initialDate }: { initialDate: string }) {
       <Link href="/chat" className="assistant-fab" aria-label="Trợ lý AI">
         <AssistantBotIcon size={56} />
       </Link>
+      
+      {/* Nút Voice được gắn ở đây */}
+      <VoiceAssistant />
+
       <BottomNav />
     </div>
   );

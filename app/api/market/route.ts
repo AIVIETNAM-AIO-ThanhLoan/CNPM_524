@@ -1,53 +1,72 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type'); // 'currency' hoặc 'gold'
+  const type = searchParams.get('type');
 
   try {
-    // ==========================================
-    // 1. API TỶ GIÁ TIỀN TỆ (Dùng open.er-api.com)
-    // ==========================================
     if (type === 'currency') {
       const from = searchParams.get('from') || 'USD';
       const to = searchParams.get('to') || 'VND';
-      
-      const res = await fetch(`https://open.er-api.com/v6/latest/${from}`, { 
-        next: { revalidate: 3600 } // Cache 1 tiếng để không bị gọi API quá nhiều
-      });
+      const res = await fetch(`https://open.er-api.com/v6/latest/${from}`, { next: { revalidate: 3600 } });
       const data = await res.json();
       
       if (data.result === 'success') {
-        const rate = data.rates[to];
-        return NextResponse.json({ success: true, rate, updatedAt: data.time_last_update_utc });
+        return NextResponse.json({ success: true, rate: data.rates[to], updatedAt: data.time_last_update_utc });
       }
       return NextResponse.json({ error: 'Không lấy được tỷ giá' }, { status: 400 });
     } 
     
-    // ==========================================
-    // 2. API GIÁ VÀNG (Giả lập dữ liệu thời gian thực)
-    // ==========================================
     if (type === 'gold') {
-      // Vì API giá vàng thật thường mất phí, mình giả lập dữ liệu chuẩn xác
-      const goldPrices = [
-        { id: 1, brand: 'SJC', type: 'Vàng miếng 1L', buy: 79900000, sell: 82500000 },
-        { id: 2, brand: 'DOJI', type: 'Nhẫn tròn 9999', buy: 74800000, sell: 76500000 },
-        { id: 3, brand: 'PNJ', type: 'Vàng 24K (1 chỉ)', buy: 7500000, sell: 7680000 },
-        { id: 4, brand: 'Bảo Tín Minh Châu', type: 'Nhẫn tròn trơn', buy: 74900000, sell: 76400000 },
-      ];
-      
-      // Thêm chút biến động ngẫu nhiên để giống thật
-      const randomFluctuation = Math.floor(Math.random() * 200000);
-      
-      return NextResponse.json({ 
-        success: true, 
-        prices: goldPrices,
-        updatedAt: new Date().toLocaleString('vi-VN')
+      const res = await fetch('https://vang.today/api/prices', {
+        next: { revalidate: 300 },
+        headers: { 'User-Agent': 'Mozilla/5.0' }
       });
+      
+      const data = await res.json();
+
+      if (data.success && data.prices) {
+        // Chuyển object prices thành mảng
+        const goldPrices = Object.entries(data.prices)
+          // Lọc các loại vàng phổ biến
+          .filter(([code]) => ['SJL1L10', 'DOHNL', 'PQHNVM'].includes(code))
+          .map(([code, item]: [string, any], index: number) => {
+            let brand = 'Vàng';
+            let typeName = item.name;
+
+            if (code === 'SJL1L10') { brand = 'SJC'; typeName = 'Vàng miếng 1L'; }
+            if (code === 'DOHNL') { brand = 'DOJI'; typeName = 'Nhẫn tròn Hà Nội'; }
+            if (code === 'PQHNVM') { brand = 'PNJ'; typeName = 'Vàng miếng Hà Nội'; }
+
+            return {
+              id: index + 1,
+              brand: brand,
+              type: typeName,
+              buy: item.buy,
+              sell: item.sell,
+            };
+          });
+
+        // API mới trả về timestamp và time, không còn current_time
+        const updatedAt = data.time 
+          ? `${data.time} - ${data.date}` 
+          : new Date().toLocaleTimeString('vi-VN');
+
+        return NextResponse.json({ 
+          success: true, 
+          prices: goldPrices, 
+          updatedAt: updatedAt
+        });
+      }
+      
+      return NextResponse.json({ error: 'Không lấy được giá vàng' }, { status: 400 });
     }
 
     return NextResponse.json({ error: 'Yêu cầu không hợp lệ' }, { status: 400 });
   } catch (error) {
+    console.error("Lỗi API:", error);
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
