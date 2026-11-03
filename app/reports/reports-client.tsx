@@ -137,7 +137,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
       {error && <p className="data-status" role="alert">{error} <Link href="/login">Đăng nhập</Link></p>}
       {!loading && !error && !data.breakdown.length && <p className="data-status">Chưa có thu/chi trong kỳ này.</p>}
 
-      {screen === 'calendar' ? <CalendarReport key={startDate} start={startDate} end={endDate} today={initialDate} selected={selected} select={setSelected} data={data} loading={loading} error={error} goToday={() => { setAnchor(new Date(`${initialDate}T12:00:00`)); setSelected(initialDate); }} /> : <>
+      {screen === 'calendar' ? <CalendarReport key={startDate} start={startDate} end={endDate} today={initialDate} selected={selected} select={setSelected} data={data} loading={loading} error={error} /> : <>
       <div className="stat-pair">
         <div className="stat-card stat-expense">
           <span className="stat-label">Chi tiêu</span>
