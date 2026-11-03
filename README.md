@@ -79,6 +79,7 @@ Scripts:
 - `npm run start`: chạy bản build
 - `npm run lint`: kiểm tra ESLint
 - `npm run db:setup`: tạo database, áp dụng schema một lần và tạo user ứng dụng mới
+- `npm run db:check`: kiểm tra chỉ đọc các migration, bảng/cột, trigger và cân bằng sổ kép
 - `npm run test:integration`: kiểm thử HTTP trên database và server tạm, tự dọn tài nguyên
 - `npm run test:browser`: production build and browser checks, including offline navigation and account switching
 - `npm run worker`: persistent reminder/Web Push worker; run alongside the web server

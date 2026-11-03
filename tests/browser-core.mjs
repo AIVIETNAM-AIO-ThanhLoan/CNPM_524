@@ -5,7 +5,6 @@ import { chromium } from 'playwright';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { qrFixture } from './core-features.mjs';
 
 export async function browserCoreChecks({ origin, admin, check }) {
     const profile = await mkdtemp(path.join(tmpdir(), 'cnpm-pwa-browser-'));

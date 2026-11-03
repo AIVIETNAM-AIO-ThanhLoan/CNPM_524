@@ -117,7 +117,7 @@ export default function GoldClient() {
 
         <div className="mt-6 p-4 bg-yellow-50 rounded-xl border border-yellow-100 mb-6">
           <p className="text-xs text-yellow-700 text-center">
-            * Giá vàng trên chỉ mang tính chất tham khảo.
+            Dữ liệu giá vàng minh họa, không phải giá thị trường hiện tại.
           </p>
         </div>
       </div>

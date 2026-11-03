@@ -13,6 +13,8 @@ import { coreChecks } from './core-features.mjs';
 import { migrationUpgrade } from './migrations.mjs';
 import { browserCoreChecks } from './browser-core.mjs';
 import { databaseConfig, databaseUserHost } from '../database/config.mjs';
+import { persistenceChecks } from './persistence.mjs';
+import { adminBrowserChecks } from './admin-browser.mjs';
 
 nextEnv.loadEnvConfig(process.cwd());
 const suffix = randomBytes(6).toString('hex');
@@ -405,6 +407,7 @@ try {
     await api('/api/auth/login', { body: tfa, status: 401 });
     await api('/api/admin/users', { cookie, body: { userId: target.id, blocked: false } });
     await api('/api/auth/login', { body: tfa });
+    await persistenceChecks({ api, admin, check, origin, cookie, cookieB, userId: me.id, env, suffix });
     await admin.execute("UPDATE users SET role = 'user' WHERE id = ?", [me.id]);
     await api('/api/admin/stats', { cookie, status: 403 });
     // Server test chạy với DEEPSEEK_API_KEY và TAVILY_API_KEY rỗng nên không bao giờ gọi API thật
@@ -467,7 +470,12 @@ try {
             await page.getByPlaceholder('Mật khẩu', { exact: true }).fill(password);
             await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
             await page.waitForURL('**/profile');
-            await page.getByRole('heading', { name: 'Ví của tôi', exact: true }).waitFor();
+            await page.getByRole('button', { name: 'Đổi ảnh đại diện', exact: true }).waitFor();
+            await page.locator('.avatar-wrap input[type=file]').setInputFiles(path.resolve('tests/fixtures/vietqr.png'));
+            await page.getByRole('status').filter({ hasText: 'Đã lưu ảnh đại diện.' }).waitFor();
+            await page.reload();
+            await page.getByAltText('Ảnh đại diện', { exact: true }).waitFor();
+            check(await page.getByAltText('Ảnh đại diện', { exact: true }).evaluate((image) => image.complete && image.naturalWidth > 0), 'Avatar persists and loads after a full page reload');
             checks++;
             const record = async (kind, amount) => {
                 await page.goto(`${origin}/transactions/new`);
@@ -488,11 +496,12 @@ try {
             await record('income', '1000000');
             await record('expense', '50000');
             await record('transfer', '200000');
-            await page.goto(`${origin}/profile`);
-            await page.getByText('750.000đ', { exact: true }).waitFor();
-            await page.getByText('200.000đ', { exact: true }).waitFor();
+            await page.goto(`${origin}/manage`);
+            await page.getByText('Số dư: 750.000đ', { exact: true }).waitFor();
+            await page.getByText('Số dư: 200.000đ', { exact: true }).waitFor();
             checks += 2;
             await page.goto(`${origin}/reports`);
+            await page.getByRole('button', { name: 'Chi tiết', exact: true }).click();
             await page.getByText('-50.000đ', { exact: true }).waitFor();
             await page.getByText('+1.000.000đ', { exact: true }).waitFor();
             checks += 2;
@@ -642,6 +651,7 @@ try {
             await page.goto(`${origin}/transactions/new`);
             check(!(await page.locator('form').first().evaluate((form) => form.checkValidity())), 'Empty transaction form is invalid');
             check(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), 'Transaction form fits mobile width');
+            await adminBrowserChecks({ page, origin, admin, check });
             await page.goto(`${origin}/profile`);
             await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
             await page.getByText('Bạn chưa đăng nhập', { exact: true }).waitFor();

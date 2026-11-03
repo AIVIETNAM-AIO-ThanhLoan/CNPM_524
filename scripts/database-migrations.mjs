@@ -1,0 +1,16 @@
+export const MIGRATIONS = [
+    ['001_initial', '../database/schema.sql'],
+    ['002_block_sessions', '../database/migrations/002-block-sessions.sql'],
+    ['003_exchange_history', '../database/migrations/003-exchange-history.sql'],
+    ['004_two_factor', '../database/migrations/004-two-factor.sql'],
+    ['005_password_recovery', '../database/migrations/005-password-recovery.sql'],
+    ['006_transaction_reversal', '../database/migrations/006-transaction-reversal.sql'],
+    ['007_goal_accounts', '../database/migrations/007-goal-accounts.sql'],
+    ['008_budget_alerts', '../database/migrations/008-budget-alerts.sql'],
+    ['009_reminder_deliveries', '../database/migrations/009-reminder-deliveries.sql'],
+    ['010_backup_runs', '../database/migrations/010-backup-runs.sql'],
+    ['011_goal_contributions', '../database/migrations/011-goal-contributions.sql'],
+    ['012_core_pwa', '../database/migrations/012-core-pwa.sql'],
+    ['013_receive_qr_images', '../database/migrations/013-receive-qr-images.sql'],
+    ['014_user_avatars', '../database/migrations/014-user-avatars.sql'],
+];

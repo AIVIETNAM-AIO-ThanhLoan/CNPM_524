@@ -1,0 +1,8 @@
+CREATE TABLE user_avatars (
+    user_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+    mime ENUM('image/png', 'image/jpeg', 'image/webp') NOT NULL,
+    data MEDIUMBLOB NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CHECK (OCTET_LENGTH(data) BETWEEN 1 AND 2097152)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

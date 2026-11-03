@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { createReadStream, existsSync } from 'node:fs';
 import { open } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { databaseConfig } from '../database/config.mjs';
 
 export function toolConfig() {
@@ -72,4 +73,4 @@ export async function isCompleteDump(file) {
     } finally { await handle.close(); }
 }
 
-export const isMain = (url) => process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(url).pathname);
+export const isMain = (url) => Boolean(process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(url)));

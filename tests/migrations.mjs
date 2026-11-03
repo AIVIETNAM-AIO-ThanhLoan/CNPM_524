@@ -44,6 +44,10 @@ export async function migrationUpgrade({ admin, env, suffix, setup, check }) {
         check(true, 'Migration 012 preserves all populated rows and prior column values across 14 existing tables');
         const [[migrated]] = await admin.query("SELECT COUNT(*) AS n FROM schema_migrations WHERE version = '012_core_pwa'");
         check(migrated.n === 1, 'Existing database advances from migration 011 to 012');
+        const [[avatarMigration]] = await admin.query("SELECT COUNT(*) AS n FROM schema_migrations WHERE version = '014_user_avatars'");
+        check(avatarMigration.n === 1, 'Existing populated database advances to avatar migration 014');
+        const [[avatars]] = await admin.query('SELECT COUNT(*) AS n FROM user_avatars');
+        check(avatars.n === 0, 'Avatar migration adds storage without fabricating images for existing accounts');
         setup({ DB_NAME: name, DB_USER: user });
         check(true, 'Populated upgraded database supports another safe setup run');
     } finally {
