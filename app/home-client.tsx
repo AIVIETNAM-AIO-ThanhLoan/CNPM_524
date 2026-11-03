@@ -12,13 +12,13 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
-  MessageCircle,
   Plus,
   QrCode,
   Search,
   BellRing,
   Target,
 } from 'lucide-react';
+import AssistantBotIcon from './components/AssistantBotIcon';
 import BottomNav from './components/BottomNav';
 import { useNotifications } from './lib/use-notifications';
 import { BUDGET_ON_BRAND, ON_BRAND, PALETTE } from './lib/colors';
@@ -69,7 +69,7 @@ export default function Home({ initialDate }: { initialDate: string }) {
   const remaining = totals.income - totals.expense;
 
   return (
-    <div className="app-page">
+    <div className="app-page has-assistant-fab">
       <header className="home-header">
         <div className="header-top">
           <label className="home-search">
@@ -81,9 +81,6 @@ export default function Home({ initialDate }: { initialDate: string }) {
             {unread > 0 && (
               <span className="notif-badge">{unread}</span>
             )}
-          </Link>
-          <Link href="/chat" className="icon-btn chat-entry" aria-label="Trợ lý AI">
-            <MessageCircle size={22} strokeWidth={1.8} />
           </Link>
         </div>
       </header>
@@ -220,6 +217,9 @@ export default function Home({ initialDate }: { initialDate: string }) {
         </div>
       </section>
 
+      <Link href="/chat" className="assistant-fab" aria-label="Trợ lý AI">
+        <AssistantBotIcon size={56} />
+      </Link>
       <BottomNav />
     </div>
   );

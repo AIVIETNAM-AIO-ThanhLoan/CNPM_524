@@ -321,6 +321,81 @@
   text-decoration: none;
 }
 
+/* Nút Trợ lý AI nổi ở góc dưới bên trái, ngay trên thanh điều hướng:
+   robot nhấp nhô, chớp mắt, đèn ăng-ten sáng và vòng sáng lan ra để dễ chú ý */
+.assistant-fab {
+  position: fixed;
+  left: 16px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  z-index: 101;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  animation: assistant-float 3s ease-in-out infinite;
+}
+
+.assistant-fab:focus-visible {
+  outline: 2px solid #0b5cad;
+  outline-offset: 3px;
+}
+
+/* Chừa chỗ để nút nổi không che nội dung cuối trang */
+.app-page.has-assistant-fab {
+  padding-bottom: calc(160px + env(safe-area-inset-bottom));
+}
+
+.assistant-fab::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 2px solid #4a7be3;
+  animation: assistant-ring 2.4s ease-out infinite;
+  pointer-events: none;
+}
+
+.assistant-bot {
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(47, 95, 208, 0.35);
+}
+
+.assistant-bot-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: assistant-blink 4s infinite;
+}
+
+.assistant-bot-light {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: assistant-light 1.6s ease-in-out infinite;
+}
+
+.assistant-fab:active .assistant-bot {
+  transform: scale(0.94);
+}
+
+@keyframes assistant-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes assistant-ring {
+  0% { transform: scale(1); opacity: 0.7; }
+  80%, 100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes assistant-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+@keyframes assistant-light {
+  0%, 100% { fill: #fff; transform: scale(1); }
+  50% { fill: #ffd84d; transform: scale(1.25); }
+}
+
 @media (max-width: 767px) {
   .home-header { padding: 10px 16px 0; padding-top: max(10px, env(safe-area-inset-top)); }
   .home-search { height: 44px; }
