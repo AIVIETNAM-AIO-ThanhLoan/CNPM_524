@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createECDH, randomBytes, randomUUID } from 'node:crypto';
 import { crc16, parseVietQR, vietqrLink } from '../app/lib/vietqr.mjs';
 import { nextDue, vietnamToday } from '../app/lib/notification-jobs.mjs';
+import { parseVoiceAmount } from '../app/lib/voice-amount.mjs';
 import { workerTick } from '../scripts/push-worker.mjs';
 
 export const qrFixture = (amount = '15000') => {
@@ -14,6 +15,9 @@ export const qrFixture = (amount = '15000') => {
 
 export async function coreChecks({ api, admin, check }) {
     check(crc16('123456789') === '29B1', 'CRC16 matches the published check vector');
+    for (const [spoken, amount] of [['ăn uống 50 nghìn', 50000], ['Ăn uống 50.000 đồng', 50000], ['50k', 50000], ['1 triệu 500 nghìn', 1500000], ['1,5 triệu', 1500000], ['1 triệu rưỡi', 1500000], ['1tr5', 1500000], ['năm mươi nghìn', 50000], ['hai mươi lăm nghìn', 25000], ['một trăm linh năm nghìn', 105000], ['mua 2 cái áo 300 nghìn', 300000], ['ăn uống', 0]]) {
+        check(parseVoiceAmount(spoken) === amount, `Voice amount "${spoken}" is ${amount}`);
+    }
     const qr = qrFixture();
     check(parseVietQR(qr).account === '0123456789' && parseVietQR(qr).bankBin === '970422', 'VietQR preserves leading zeroes');
     const lowercaseCrc = qr.slice(0, -4) + qr.slice(-4).toLowerCase();

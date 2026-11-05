@@ -3,13 +3,26 @@ import { useState, useEffect, useRef } from 'react';
 import { Mic, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { requestJson, type Wallet, type Category, today } from '@/app/lib/client-api';
+import { notifyFinanceUpdated } from '@/app/lib/finance-updates';
+import { parseVoiceAmount } from '@/app/lib/voice-amount.mjs';
+
+// Trình duyệt chỉ hỏi quyền micro một lần; đã chặn hoặc không hỗ trợ thì không hiện hộp hỏi nên phải báo rõ cách xử lý.
+const VOICE_ERRORS: Record<string, string> = {
+  'not-allowed': 'Micro đang bị chặn nên trình duyệt không hỏi lại. Hãy bấm biểu tượng cạnh thanh địa chỉ, cho phép Micro rồi tải lại trang.',
+  'service-not-allowed': 'Trình duyệt không cho dùng dịch vụ nhận giọng nói. Trên Safari, hãy bật Siri và Đọc chính tả trong Cài đặt hệ thống, hoặc dùng Chrome.',
+  'audio-capture': 'Không tìm thấy micro. Hãy kiểm tra micro của thiết bị.',
+  'no-speech': 'Không nghe thấy tiếng nói. Hãy bấm micro và nói lại.',
+  network: 'Không kết nối được dịch vụ nhận giọng nói. Hãy kiểm tra mạng rồi thử lại.',
+};
 
 export default function VoiceAssistant() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState('');
+  const [saved, setSaved] = useState('');
   const [loading, setLoading] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
@@ -17,6 +30,8 @@ export default function VoiceAssistant() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   const recognitionRef = useRef<any>(null);
+  // Trình duyệt có thể kết thúc mà không trả kết quả cũng không báo lỗi; khi đó phải tự báo cho người dùng.
+  const answeredRef = useRef(false);
 
   useEffect(() => {
     if (isOpen && wallets.length === 0) {
@@ -42,18 +57,31 @@ export default function VoiceAssistant() {
         recognition.lang = 'vi-VN';
 
         recognition.onresult = (event: any) => {
-          const text = event.results[0][0].transcript.toLowerCase();
+          answeredRef.current = true;
+          const text = event.results[0][0].transcript.normalize('NFC').toLowerCase();
           setTranscript(text);
           processVoiceText(text);
           setIsListening(false);
         };
 
+        recognition.onstart = () => {
+          setIsStarting(false);
+          setIsListening(true);
+        };
+
         recognition.onerror = (event: any) => {
-          setError('Lỗi micro: ' + event.error);
+          answeredRef.current = true;
+          if (event.error !== 'aborted') setError(VOICE_ERRORS[event.error] || 'Lỗi micro: ' + event.error);
+          setIsStarting(false);
           setIsListening(false);
         };
 
-        recognition.onend = () => setIsListening(false);
+        recognition.onend = () => {
+          if (!answeredRef.current) setError('Chưa nhận được lời nói. Hãy bấm micro và nói lại.');
+          answeredRef.current = true;
+          setIsStarting(false);
+          setIsListening(false);
+        };
         recognitionRef.current = recognition;
       }
     }
@@ -66,11 +94,29 @@ export default function VoiceAssistant() {
     }
     if (isListening) {
       recognitionRef.current?.stop();
+    } else if (isStarting) {
+      answeredRef.current = true;
+      recognitionRef.current?.abort();
+      setIsStarting(false);
     } else {
       setTranscript('');
       setError('');
-      recognitionRef.current?.start();
-      setIsListening(true);
+      setSaved('');
+      answeredRef.current = false;
+      if (!window.isSecureContext) {
+        setError('Micro chỉ hoạt động trên HTTPS hoặc localhost. Hãy mở ứng dụng bằng địa chỉ HTTPS.');
+        return;
+      }
+      if (!recognitionRef.current) {
+        setError('Trình duyệt này không hỗ trợ nhận giọng nói. Hãy mở bằng Chrome.');
+        return;
+      }
+      try {
+        recognitionRef.current.start();
+        setIsStarting(true);
+      } catch {
+        setError('Không bật được micro. Hãy đóng hộp thoại và thử lại.');
+      }
     }
   };
 
@@ -81,37 +127,27 @@ export default function VoiceAssistant() {
     let matchedKind = 'expense';
 
     // 2. Tự động nhận diện Ví (nếu có đọc tên)
-    const foundWallet = wallets.find(w => text.includes(w.name.toLowerCase()));
+    const foundWallet = wallets.find(w => text.includes(w.name.normalize('NFC').toLowerCase()));
     if (foundWallet) matchedWallet = foundWallet.id;
 
     // 3. Tự động nhận diện Danh mục & Loại giao dịch (nếu có đọc tên)
-    const foundCategory = categories.find(c => text.includes(c.name.toLowerCase()));
+    const foundCategory = categories.find(c => text.includes(c.name.normalize('NFC').toLowerCase()));
     if (foundCategory) {
       matchedCategory = foundCategory.id;
       matchedKind = foundCategory.kind;
     }
 
-    if (text.includes('thu nhập') || text.includes('nhận được')) matchedKind = 'income';
-
-    // 4. Bóc tách số tiền
-    let cleanText = text.toLowerCase();
-    cleanText = cleanText.replace(/(\d)[.,\s](\d{3})/g, '$1$2');
-    cleanText = cleanText.replace(/(\d)[.,\s](\d{3})/g, '$1$2'); 
-    cleanText = cleanText.replace(/(\d+)\s*(nghìn|ngàn|k)\b/g, (_, num) => `${num}000`);
-    cleanText = cleanText.replace(/(\d+)\s*(triệu)\b/g, (_, num) => `${num}000000`);
-    cleanText = cleanText.replace(/(\d+)\s*(trăm)\b/g, (_, num) => `${num}00`);
-
-    const matches = cleanText.match(/\d+/g);
-    let amount = 0;
-    if (matches) {
-      matches.forEach(m => {
-        const val = parseInt(m, 10);
-        if (val > amount) amount = val;
-      });
+    if (!foundCategory && (text.includes('thu nhập') || text.includes('nhận được'))) {
+      matchedKind = 'income';
+      matchedCategory = categories.find(c => c.kind === 'income' && c.name.includes('khác'))?.id || categories.find(c => c.kind === 'income')?.id || '';
     }
 
-    if (!amount || amount <= 0 || isNaN(amount)) {
-      setError('Không nhận diện được số tiền. Hãy nói rõ hơn (VD: "ăn uống 50 nghìn").');
+    // 4. Bóc tách số tiền
+    const amount = parseVoiceAmount(text);
+
+    // Số quá nhỏ thường là thiếu đơn vị ("ăn uống 50"), không tự đoán để tránh ghi sai tiền.
+    if (amount < 1000) {
+      setError('Không nhận diện được số tiền. Hãy nói rõ cả đơn vị (VD: "ăn uống 50 nghìn").');
       return;
     }
 
@@ -133,8 +169,11 @@ export default function VoiceAssistant() {
       };
       
       await requestJson('/api/transactions', payload);
-      
-      setIsOpen(false);
+
+      const categoryName = categories.find(c => c.id === matchedCategory)?.name;
+      const walletName = wallets.find(w => w.id === matchedWallet)?.name;
+      setSaved(`Đã ghi ${matchedKind === 'income' ? 'khoản thu' : 'khoản chi'} ${amount.toLocaleString('vi-VN')}đ · ${categoryName} · ${walletName}`);
+      notifyFinanceUpdated();
       router.refresh();
     } catch (err: any) {
       console.error("Lỗi khi lưu qua Voice:", err);
@@ -201,6 +240,7 @@ export default function VoiceAssistant() {
 
             {!isDataLoaded && !error && <p style={{ textAlign: 'center', color: 'gray', marginBottom: '16px' }}>Đang tải dữ liệu...</p>}
             {error && <p style={{ color: '#ef4444', fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{error}</p>}
+            {saved && <p role="status" style={{ color: '#047857', fontWeight: 600, fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{saved}</p>}
             {transcript && <p style={{ textAlign: 'center', fontStyle: 'italic', color: '#4b5563', marginBottom: '16px' }}>Bạn đã nói: "{transcript}"</p>}
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -219,7 +259,7 @@ export default function VoiceAssistant() {
                 <Mic size={32} />
               </button>
               <p style={{ marginTop: '16px', fontSize: '14px', fontWeight: '500' }}>
-                {loading ? 'Đang lưu giao dịch...' : isListening ? 'Đang nghe...' : 'Bấm Micro để nói'}
+                {loading ? 'Đang lưu giao dịch...' : isListening ? 'Đang nghe...' : isStarting ? 'Đang bật micro... Nếu trình duyệt hỏi quyền, hãy chọn Cho phép.' : 'Bấm Micro để nói'}
               </p>
             </div>
           </div>
