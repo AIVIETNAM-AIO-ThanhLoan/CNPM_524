@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import BottomNav from '../components/BottomNav';
-import { requestJson, today, type Wallet, type Category } from '../lib/client-api';
+import { formatDate, requestJson, today, type Wallet, type Category } from '../lib/client-api';
 import { notifyFinanceUpdated } from '../lib/finance-updates';
 
 type Recurring = { id: string; name: string; amount: string; walletId: string; categoryId: string; nextDueOn: string; frequency: string; enabled: boolean; wallet: string; category: string };
@@ -49,7 +49,7 @@ export default function RemindersPage() {
         </form>
         {items.map((item) => <article className="card ledger-form" key={item.id}>
             <h2>{item.name}</h2><p>{Number(item.amount).toLocaleString('vi-VN')}đ · {item.wallet} · {item.category}</p>
-            <p>Hạn {item.nextDueOn} · {item.enabled ? 'Đang nhắc' : 'Đã tạm dừng'}</p>
+            <p>Hạn {formatDate(item.nextDueOn)} ·{item.enabled ? 'Đang nhắc' : 'Đã tạm dừng'}</p>
             <div className="action-row"><button className="btn-secondary" disabled={busy} onClick={() => setEditing(item)}>Sửa</button>
                 <button className="btn-secondary" disabled={busy} onClick={() => save({ id: item.id, action: 'toggle', enabled: !item.enabled })}>{item.enabled ? 'Tạm dừng' : 'Bật lại'}</button>
                 {Boolean(item.enabled) && item.nextDueOn <= today() && <button className="btn-primary" disabled={busy} onClick={() => confirm(item)}>Xác nhận đã thanh toán</button>}</div>

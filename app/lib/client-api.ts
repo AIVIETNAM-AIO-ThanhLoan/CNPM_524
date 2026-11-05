@@ -14,4 +14,11 @@ export type Finance = { daily: { date: string; income: string; expense: string }
 export const emptyFinance: Finance = { daily: [], income: 0, expense: 0, budget: 0, budgetAmount: 0, budgetSpent: 0, transactions: [], hasMore: false, breakdown: [] };
 
 export const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+// Database trả thời điểm UTC dạng 'YYYY-MM-DD HH:MM:SS'; hiển thị theo giờ Việt Nam, ví dụ '13:47 03/11/2026'.
+export const formatDateTime = (utc: string) => {
+    const date = new Date(`${utc.replace(' ', 'T')}Z`);
+    return Number.isNaN(date.getTime()) ? utc : new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+};
+// Ngày lịch 'YYYY-MM-DD' (không có múi giờ) → 'DD/MM/YYYY'.
+export const formatDate = (day: string) => /^\d{4}-\d{2}-\d{2}$/.test(day) ? day.split('-').reverse().join('/') : day;
 export const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
