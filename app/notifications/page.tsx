@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, BellRing, ArrowDownLeft, Wallet } from 'lucide-react';
+import { formatDateTime } from '../lib/client-api';
 import { KIND_COLOR, type NotificationKind } from '../lib/notifications';
 import { useNotifications } from '../lib/use-notifications';
 import PushSettings from '../components/PushSettings';
@@ -57,7 +58,7 @@ export default function NotificationsPage() {
                   <span className="notif-content">
                     <span className="notif-item-title">{n.title}</span>
                     <span className="notif-item-body">{n.body}</span>
-                    <span className="notif-item-time">{n.time}</span>
+                    <span className="notif-item-time">{formatDateTime(n.time)}</span>
                   </span>
                   {!n.read && <span className="notif-dot" aria-label="Chưa đọc" />}
                 </button>

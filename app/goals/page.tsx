@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import BottomNav from '../components/BottomNav';
-import { requestJson } from '../lib/client-api';
+import { formatDate, formatDateTime, requestJson } from '../lib/client-api';
 import '../styles/ledger.css';
 
 type Goal = { id: string; name: string; targetAmount: string; savedAmount: string; dueOn: string | null; status: string };
@@ -73,13 +73,13 @@ export default function GoalsPage() {
         </form>
         {goals.map((goal) => <section className="card" key={goal.id}>
             <h2>{goal.name}</h2>
-            <p>Đã ghi {Number(goal.savedAmount).toLocaleString('vi-VN')} / {Number(goal.targetAmount).toLocaleString('vi-VN')}đ{goal.dueOn ? ` · Hạn ${goal.dueOn}` : ''}</p>
+            <p>Đã ghi {Number(goal.savedAmount).toLocaleString('vi-VN')} / {Number(goal.targetAmount).toLocaleString('vi-VN')}đ{goal.dueOn ? ` · Hạn ${formatDate(goal.dueOn)}` : ''}</p>
             <progress aria-label={`Tiến độ ${goal.name}`} max={Number(goal.targetAmount)} value={Math.max(0, Number(goal.savedAmount))} />
             <p>{goal.status === 'active' ? 'Đang theo dõi' : goal.status === 'achieved' ? 'Đã hoàn thành' : 'Đã đóng'}</p>
             <div className="action-row"><button className="btn-secondary" disabled={busy} onClick={() => showContributions(goal.id)}>Xem khoản góp</button>
                 {goal.status === 'active' ? <><button className="btn-secondary" disabled={busy} onClick={() => changeStatus(goal, 'achieved')}>Đánh dấu hoàn thành</button><button className="btn-secondary" disabled={busy} onClick={() => changeStatus(goal, 'closed')}>Đóng mục tiêu</button></>
                     : <button className="btn-secondary" disabled={busy} onClick={() => changeStatus(goal, 'active')}>Mở lại mục tiêu</button>}</div>
-            {contributions[goal.id] && <ul>{contributions[goal.id].map((item) => <li key={item.id}>{Number(item.amount).toLocaleString('vi-VN')}đ · {item.createdAt} UTC</li>)}</ul>}
+            {contributions[goal.id] && <ul>{contributions[goal.id].map((item) => <li key={item.id}>{Number(item.amount).toLocaleString('vi-VN')}đ · {formatDateTime(item.createdAt)}</li>)}</ul>}
             {goal.status === 'active' && <form className="ledger-form" onSubmit={(event) => contribute(event, goal.id)}>
                 <label>Số tiền góp (VND)<input name="amount" type="number" min="0.01" max="999999999999.99" step="0.01" required /></label>
                 <button className="btn-secondary" disabled={busy}>Ghi khoản góp</button>

@@ -15,6 +15,9 @@ export function nextDue(due, frequency, anchorDay, anchorMonth) {
     return current.toISOString().slice(0, 10);
 }
 
+// Ngày 'YYYY-MM-DD' hoặc tháng 'YYYY-MM' → 'DD/MM/YYYY' / 'MM/YYYY' cho nội dung thông báo.
+const vietnamDate = (value) => value.split('-').reverse().join('/');
+
 export async function notify(connection, userId, eventKey, kind, title, body) {
     await connection.execute(`INSERT INTO notifications (id, user_id, event_key, kind, title, body)
         VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id = id`, [randomUUID(), userId, eventKey, kind, title, body]);
@@ -35,7 +38,7 @@ export async function budgetAlerts(connection, userId) {
                 VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id = id`,
             [userId, budget.category_id, budget.month_start, threshold, budget.amount, budget.spent]);
             await notify(connection, userId, `budget:${budget.category_id}:${budget.month_start}:${threshold}`, 'budget',
-                `Ngân sách ${budget.name} đã đạt ${threshold}%`, `Chi tiêu đã chạm ngưỡng ${threshold}% ngân sách tháng ${budget.month_start.slice(0, 7)}.`);
+                `Ngân sách ${budget.name} đã đạt ${threshold}%`, `Chi tiêu đã chạm ngưỡng ${threshold}% ngân sách tháng ${vietnamDate(budget.month_start.slice(0, 7))}.`);
         }
     }
 }
@@ -50,6 +53,6 @@ export async function reminderJobs(connection, today = vietnamToday()) {
         await connection.execute(`INSERT INTO reminder_deliveries (user_id, recurring_id, due_on, remind_on, status, sent_at)
             VALUES (?, ?, ?, ?, 'sent', UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE id = id`, [item.user_id, item.id, item.next_due_on, item.next_due_on]);
         await notify(connection, item.user_id, `recurring:${item.id}:${item.next_due_on}`, 'reminder',
-            `Đến hạn: ${item.name}`, `Hạn ${item.next_due_on}. Xác nhận đã thanh toán trong Lời nhắc để ghi giao dịch.`);
+            `Đến hạn: ${item.name}`, `Hạn ${vietnamDate(item.next_due_on)}. Xác nhận đã thanh toán trong Lời nhắc để ghi giao dịch.`);
     }
 }

@@ -76,34 +76,6 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
         finally { setBusy(false); }
     }
 
-    async function handleVoiceConfirm(data: { walletId: string; categoryId: string; kind: string; amount: number; note: string }) {
-        if (busy) return;
-        setBusy(true); setError(''); setSuccess('Đang lưu giao dịch bằng giọng nói...');
-        const payload = {
-            kind: data.kind as 'income' | 'expense' | 'transfer',
-            walletId: data.walletId,
-            targetId: null,
-            categoryId: data.categoryId,
-            amount: data.amount,
-            bookedOn: today,
-            note: data.note
-        };
-
-        try {
-            await cacheAccount({ userId, wallets, categories });
-            const requestKey = crypto.randomUUID();
-            await queueEntry({ userId, requestKey, payload, state: 'pending', error: '', createdAt: new Date().toISOString() });
-            await synchronize(userId);
-            notifyFinanceUpdated();
-            setSuccess('Đã lưu giao dịch thành công!');
-            setTimeout(() => router.push('/history'), 1000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Lỗi lưu giao dịch.');
-        } finally {
-            setBusy(false);
-        }
-    }
-
     return <main className="app-page tx-page">
         <header className="tx-header"><Link href="/" className="tx-round-btn" aria-label="Quay lại"><ArrowLeft size={20} strokeWidth={1.8} /></Link><h1 className="tx-title">Ghi giao dịch</h1></header>
         {error && <p className="ledger-error" role="alert">{error}</p>}
@@ -141,11 +113,7 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
             <label>Tên ví<input name="name" maxLength={100} required /></label><p>Ví mới bắt đầu từ 0đ.</p><button className="btn-secondary" disabled={busy}>Thêm ví</button>
         </form></details>
         
-        <VoiceAssistant 
-            wallets={wallets} 
-            categories={categories} 
-            onConfirm={handleVoiceConfirm} 
-        />
+        <VoiceAssistant />
 
         <BottomNav />
     </main>;
