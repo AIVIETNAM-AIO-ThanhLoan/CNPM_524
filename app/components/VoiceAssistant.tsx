@@ -16,6 +16,7 @@ export default function VoiceAssistant() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
+  // State cho việc xác nhận tạo danh mục mới
   const [pendingPayload, setPendingPayload] = useState<any>(null);
   const [missingCategoryName, setMissingCategoryName] = useState('');
 
@@ -80,14 +81,12 @@ export default function VoiceAssistant() {
   };
 
   const extractCategoryName = (text: string) => {
-    let cleanText = text;
+    let cleanText = text.toLowerCase();
     cleanText = cleanText.replace(/(\d+)\s*(nghìn|ngàn|k|triệu|trăm)?/g, '');
     wallets.forEach(w => {
       cleanText = cleanText.replace(new RegExp(w.name.toLowerCase(), 'g'), '');
     });
     cleanText = cleanText.replace(/(cho|vào|ví|tài khoản|mua|chi|thu|nhận|lương|tiền)\s+/g, '');
-    
-    // Dọn dẹp các dấu câu thừa (do giọng nói tạo ra)
     cleanText = cleanText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '');
     
     const name = cleanText.trim().replace(/\s+/g, ' ');
@@ -99,11 +98,12 @@ export default function VoiceAssistant() {
     let matchedWallet = wallets[0]?.id || '';
     let matchedKind = 'expense';
 
+    // 1. Tìm Ví và Loại giao dịch
     const foundWallet = wallets.find(w => text.includes(w.name.toLowerCase()));
     if (foundWallet) matchedWallet = foundWallet.id;
-
     if (text.includes('thu nhập') || text.includes('nhận') || text.includes('lương')) matchedKind = 'income';
 
+    // 2. Bóc tách số tiền
     let cleanTextForAmount = text.toLowerCase();
     cleanTextForAmount = cleanTextForAmount.replace(/(\d)[.,\s](\d{3})/g, '$1$2');
     cleanTextForAmount = cleanTextForAmount.replace(/(\d)[.,\s](\d{3})/g, '$1$2'); 
@@ -125,16 +125,31 @@ export default function VoiceAssistant() {
       return;
     }
 
+    // 3. Xử lý Danh mục
     let matchedCategory = '';
     const foundCategory = categories.find(c => text.includes(c.name.toLowerCase()));
     
     if (foundCategory) {
+      // Nếu đã có danh mục -> Lưu luôn
       matchedCategory = foundCategory.id;
       matchedKind = foundCategory.kind;
+      
+      executeSave({
+        requestKey: crypto.randomUUID(),
+        kind: matchedKind,
+        walletId: String(matchedWallet),
+        targetId: null,
+        categoryId: String(matchedCategory),
+        amount: String(amount),
+        bookedOn: today(),
+        note: `Ghi âm: ${text}`
+      });
     } else {
+      // Không tìm thấy danh mục -> Kiểm tra xem có đọc tên không
       const guessedName = extractCategoryName(text);
       
       if (guessedName.length > 1 && guessedName !== 'Khác') {
+        // CÓ ĐỌC TÊN -> Hiện Modal hỏi xác nhận
         setMissingCategoryName(guessedName);
         setPendingPayload({
           requestKey: crypto.randomUUID(),
@@ -146,23 +161,27 @@ export default function VoiceAssistant() {
           bookedOn: today(),
           note: `Ghi âm: ${text}`
         });
-        return; 
       } else {
-        matchedCategory = categories.find(c => c.kind === matchedKind && c.name.includes('Khác'))?.id || 
-                          categories.find(c => c.kind === matchedKind)?.id || '';
+        // CHỈ ĐỌC SỐ TIỀN -> Tự động vào danh mục "Khác"
+        const fallbackCategory = categories.find(c => c.kind === matchedKind && c.name.toLowerCase().includes('khác')) || 
+                                 categories.find(c => c.kind === matchedKind);
+        
+        if (fallbackCategory) {
+          executeSave({
+            requestKey: crypto.randomUUID(),
+            kind: matchedKind,
+            walletId: String(matchedWallet),
+            targetId: null,
+            categoryId: String(fallbackCategory.id),
+            amount: String(amount),
+            bookedOn: today(),
+            note: `Ghi âm: ${text}`
+          });
+        } else {
+          setError('Không tìm thấy danh mục "Khác" để lưu.');
+        }
       }
     }
-
-    executeSave({
-      requestKey: crypto.randomUUID(),
-      kind: matchedKind,
-      walletId: String(matchedWallet),
-      targetId: null,
-      categoryId: String(matchedCategory),
-      amount: String(amount),
-      bookedOn: today(),
-      note: `Ghi âm: ${text}`
-    });
   };
 
   const executeSave = async (payload: any) => {
@@ -179,32 +198,28 @@ export default function VoiceAssistant() {
     }
   };
 
-  // SỬA LỖI TẠI ĐÂY: Không đọc ID từ response của POST nữa, mà fetch lại danh sách để tìm
+  // Xử lý khi người dùng bấm "Tạo & Lưu" trên Modal
   const handleCreateCategory = async () => {
     if (!pendingPayload || !missingCategoryName) return;
     setLoading(true);
     setError('');
     try {
-      // 1. Tạo danh mục mới
       await requestJson('/api/categories', {
         name: missingCategoryName,
         kind: pendingPayload.kind
       });
       
-      // 2. Tải lại danh sách danh mục để tìm cái vừa tạo
       const cRes = await requestJson<{ categories: Category[] }>('/api/categories');
       setCategories(cRes.categories);
 
-      // 3. Tìm danh mục vừa tạo dựa vào tên và loại
       const newCategory = cRes.categories.find(
         c => c.name.toLowerCase() === missingCategoryName.toLowerCase() && c.kind === pendingPayload.kind
       );
 
       if (!newCategory) {
-        throw new Error("Đã tạo danh mục nhưng không thể lấy được ID. Vui lòng thử lại.");
+        throw new Error("Đã tạo danh mục nhưng không thể lấy được ID.");
       }
       
-      // 4. Cập nhật lại payload và lưu giao dịch
       const finalPayload = { ...pendingPayload, categoryId: String(newCategory.id) };
       await executeSave(finalPayload);
       
@@ -246,14 +261,15 @@ export default function VoiceAssistant() {
             
             <h2 style={{ fontSize: '20px', fontWeight: 'bold', textAlign: 'center', marginBottom: '12px' }}>Trợ lý giọng nói</h2>
             
+            {/* MÀN HÌNH GHI ÂM CHÍNH */}
             {!pendingPayload && (
               <>
                 <div style={{ backgroundColor: '#f3f4f6', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
                   <p style={{ fontSize: '14px', color: '#4b5563', textAlign: 'center', lineHeight: '1.5' }}>
                     Bạn có thể nói:<br/>
                     <strong style={{ color: '#10b981' }}>"Ăn uống 50 nghìn"</strong><br/>
-                    <strong style={{ color: '#10b981' }}>"Mua sách 200k"</strong><br/>
-                    <span style={{ fontSize: '12px', color: '#6b7280' }}>(Nếu danh mục chưa có, hệ thống sẽ hỏi tạo mới)</span>
+                    <strong style={{ color: '#10b981' }}>"Mua sách 200k"</strong> (Hỏi tạo danh mục)<br/>
+                    <strong style={{ color: '#10b981' }}>"50 nghìn"</strong> (Tự vào danh mục Khác)<br/>
                   </p>
                 </div>
 
@@ -280,6 +296,7 @@ export default function VoiceAssistant() {
               </>
             )}
 
+            {/* MÀN HÌNH HỎI XÁC NHẬN TẠO DANH MỤC */}
             {pendingPayload && missingCategoryName && (
               <div style={{ textAlign: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
