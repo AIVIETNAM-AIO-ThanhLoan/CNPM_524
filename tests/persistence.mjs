@@ -67,7 +67,8 @@ export async function persistenceChecks({ api, admin, check, origin, cookie, coo
     await api('/api/admin/rates', { cookie, body: {} });
     check((await api('/api/admin/rates', { cookie })).json.rates.length === rates.length, 'Same-day synchronization updates existing rates instead of duplicating them');
     const gold = (await api('/api/market?type=gold')).json;
-    check(gold.simulated === true && gold.updatedAt === null, 'Illustrative gold prices do not claim a live update time');
+    check(gold.success === true && gold.prices.length === 3 && gold.prices.some((item) => item.brand === 'SJC' && item.buy === 150000000), 'Gold prices are mapped from the provider');
+    check(gold.updatedAt === '09:30 - 05/11/2026', 'Gold prices show the update time reported by the provider');
     await api('/api/market?type=currency&from=BAD&to=VND', { status: 400 });
     await api('/api/market?type=currency&from=../USD', { status: 400 });
 

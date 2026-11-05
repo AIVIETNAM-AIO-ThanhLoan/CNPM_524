@@ -11,6 +11,14 @@ if (process.env.CNPM_TEST_UPSTREAM === 'true') {
             ] });
             return json({ apps: [{ appId: 'mb', appName: 'MB Bank', autofill: 1 }, { appId: 'vcb', appName: 'VCB Digibank', autofill: 0 }] });
         }
+        if (url.hostname === 'vang.today') {
+            return json({ success: true, time: '09:30', date: '05/11/2026', prices: {
+                SJL1L10: { name: 'SJC 9999', buy: 150000000, sell: 152000000 },
+                DOHNL: { name: 'DOJI Ha Noi', buy: 148000000, sell: 150000000 },
+                PQHNVM: { name: 'PNJ Ha Noi', buy: 149000000, sell: 151000000 },
+                XAUUSD: { name: 'Vang the gioi', buy: 4000, sell: 4000 },
+            } });
+        }
         if (url.hostname === 'open.er-api.com') {
             const base = url.pathname.split('/').at(-1);
             if (base === 'ZZZ') return json({ result: 'error' }, 503);
