@@ -1,4 +1,8 @@
-.scan-upload { position: relative; align-self: start; cursor: pointer; font-size: 14px; }
+.scan-tabs { margin-bottom: 4px; }
+/* Xanh đậm giống nút ở trang chủ để chữ dễ đọc trên nền trắng */
+.scan-page .btn-secondary { border-color: #0b5cad; color: #0b5cad; }
+.scan-actions { display: flex; gap: 8px; }
+.scan-upload { position: relative; cursor: pointer; font-size: 14px; }
 .scan-file { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .scan-upload:focus-within { outline: 2px solid var(--color-ink); outline-offset: 3px; }
 .scan-upload:has(input:disabled) { opacity: .5; cursor: not-allowed; }
@@ -11,7 +15,6 @@
 .scan-page video { border-radius: 12px; background: #111; }
 
 @media (max-width: 767px) {
-  .scan-upload { align-self: stretch; }
   .scan-page video { max-height: 40dvh !important; object-fit: contain; }
   .scan-review-heading .btn-secondary { flex: 0 1 auto; }
   .scan-page #transfer-amount { font-size: 24px; }

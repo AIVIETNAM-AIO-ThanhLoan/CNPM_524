@@ -13,13 +13,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  QrCode,
   Search,
   BellRing,
   Target,
 } from 'lucide-react';
 import AssistantBotIcon from './components/AssistantBotIcon';
 import BottomNav from './components/BottomNav';
+import { Skeleton, SkeletonStatus } from './components/Skeleton';
 import { useNotifications } from './lib/use-notifications';
 import { BUDGET_ON_BRAND, ON_BRAND, PALETTE } from './lib/colors';
 import './styles/home.css';
@@ -79,7 +79,7 @@ export default function Home({ initialDate }: { initialDate: string }) {
         </div>
       </header>
 
-      {loading && <p className="data-status" role="status">Đang tải dữ liệu…</p>}
+      {loading && <SkeletonStatus />}
       {error && <p className="data-status" role="alert">{error} <Link href="/login">Đăng nhập</Link></p>}
       <section className="card summary-card">
         <div className="home-segmented">
@@ -127,7 +127,7 @@ export default function Home({ initialDate }: { initialDate: string }) {
               Thu
             </span>
             <p className="stat-value" style={{ color: ON_BRAND.income }}>
-              {formatMoney(totals.income)}
+              {loading ? <Skeleton onBrand width="75%" height={20} style={{ margin: '0 auto' }} /> : formatMoney(totals.income)}
             </p>
           </div>
           <div className="stat-item">
@@ -136,12 +136,12 @@ export default function Home({ initialDate }: { initialDate: string }) {
               Chi
             </span>
             <p className="stat-value" style={{ color: ON_BRAND.expense }}>
-              {formatMoney(totals.expense)}
+              {loading ? <Skeleton onBrand width="75%" height={20} style={{ margin: '0 auto' }} /> : formatMoney(totals.expense)}
             </p>
           </div>
           <div className="stat-item">
             <span className="stat-label">Còn lại</span>
-            <p className="stat-value stat-main">{formatMoney(remaining)}</p>
+            <p className="stat-value stat-main">{loading ? <Skeleton onBrand width="85%" height={26} style={{ margin: '0 auto' }} /> : formatMoney(remaining)}</p>
           </div>
         </div>
 
@@ -150,11 +150,11 @@ export default function Home({ initialDate }: { initialDate: string }) {
             <div className="budget-info">
               <Link href="/budgets" className="home-budget-link" aria-label="Quản lý ngân sách">Ngân sách</Link>
               <span className="budget-percent" style={{ color: budgetColor(totals.budget) }}>
-                {totals.budget}%
+                {loading ? <Skeleton onBrand width={32} /> : `${totals.budget}%`}
               </span>
             </div>
             <div className="home-budget-amounts" aria-live="polite">
-              {loading ? <span>Đang tải ngân sách…</span> : error ? <span>Chưa tải được ngân sách.</span> : totals.budgetAmount ? <>
+              {loading ? <Skeleton onBrand width="60%" /> : error ? <span>Chưa tải được ngân sách.</span> : totals.budgetAmount ? <>
                 <span>Đã dùng <strong data-testid="home-budget-spent">{formatMoney(totals.budgetSpent)}</strong></span>
                 <span>/ <strong data-testid="home-budget-total">{formatMoney(totals.budgetAmount)}</strong></span>
               </> : <span>Chưa đặt ngân sách cho tháng này.</span>}
@@ -184,10 +184,7 @@ export default function Home({ initialDate }: { initialDate: string }) {
           <Plus size={18} strokeWidth={2} />
           Ghi giao dịch
         </Link>
-        <Link href="/receive-qr" className="btn-secondary">
-          <QrCode size={18} strokeWidth={1.8} />
-          QR của tôi
-        </Link>
+        <VoiceAssistant />
       </div>
 
       <section className="suggestions-section">
@@ -214,9 +211,6 @@ export default function Home({ initialDate }: { initialDate: string }) {
       <Link href="/chat" className="assistant-fab" aria-label="Trợ lý AI">
         <AssistantBotIcon size={56} />
       </Link>
-      
-      {/* Nút Voice được gắn ở đây */}
-      <VoiceAssistant />
 
       <BottomNav />
     </div>

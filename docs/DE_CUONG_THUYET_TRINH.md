@@ -147,7 +147,7 @@ Có thể giải thích lợi ích nhìn thấy ở cách triển khai: trang đ
 ```text
 app/
   layout.tsx              Khung trang và metadata chung
-  page.tsx                Trang chủ
+  (home)/page.tsx         Trang chủ
   reports/page.tsx        Báo cáo
   history/page.tsx        Lịch sử giao dịch
   profile/page.tsx        Hồ sơ

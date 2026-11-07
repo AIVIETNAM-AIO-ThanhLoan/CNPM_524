@@ -30,7 +30,8 @@ self.addEventListener('fetch', (event) => {
             const cache = await caches.open(CACHE);
             try {
                 const response = await fetch(event.request);
-                if (response.ok) await cache.put(event.request, response.clone());
+                // Ghi cache ở nền, không bắt trang chờ: mỗi lần mở có hàng chục file.
+                if (response.ok) event.waitUntil(cache.put(event.request, response.clone()));
                 return response;
             } catch (error) {
                 const cached = await cache.match(event.request);

@@ -186,3 +186,34 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Skeleton khi đang tải: chỉ animate transform để điện thoại không phải vẽ lại nhiều */
+.skeleton {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+  border-radius: 8px;
+  background-color: var(--color-line);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-on-brand { background-color: rgba(255, 255, 255, 0.22); }
+.skeleton-on-brand::after { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent); }
+@keyframes skeleton-shimmer { to { transform: translateX(100%); } }
+.skeleton-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.skeleton-stack { display: flex; flex-direction: column; gap: 12px; }
+.skeleton-columns { display: flex; gap: 12px; }
+.skeleton-columns > .skeleton { flex: 1; }
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.skeleton-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.skeleton-page-block { margin: 16px 16px 0; }
+.skeleton-list { padding: 4px 0; }
+.skeleton-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.skeleton-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { dateKey } from '../lib/client-api';
 import { useFinance } from '../lib/use-finance';
+import { Skeleton, SkeletonStatus } from '../components/Skeleton';
 import {
   Banknote,
   Car,
@@ -133,7 +134,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
         </button>
       </div>
 
-      {loading && <p className="data-status" role="status">Đang tải dữ liệu…</p>}
+      {loading && <SkeletonStatus />}
       {error && <p className="data-status" role="alert">{error} <Link href="/login">Đăng nhập</Link></p>}
       {!loading && !error && !data.breakdown.length && <p className="data-status">Chưa có thu/chi trong kỳ này.</p>}
 
@@ -141,19 +142,18 @@ export default function Reports({ initialDate }: { initialDate: string }) {
       <div className="stat-pair">
         <div className="stat-card stat-expense">
           <span className="stat-label">Chi tiêu</span>
-          <span className="stat-amount">-{formatMoney(totalExpense)}</span>
+          <span className="stat-amount">{loading ? <Skeleton width="70%" height={20} /> : `-${formatMoney(totalExpense)}`}</span>
         </div>
         <div className="stat-card stat-income">
           <span className="stat-label">Thu</span>
-          <span className="stat-amount">+{formatMoney(totalIncome)}</span>
+          <span className="stat-amount">{loading ? <Skeleton width="70%" height={20} /> : `+${formatMoney(totalIncome)}`}</span>
         </div>
       </div>
 
       <div className="stat-full">
         <span className="stat-label">Thu chi</span>
         <span className="stat-amount">
-          {difference >= 0 ? '+' : '-'}
-          {formatMoney(Math.abs(difference))}
+          {loading ? <Skeleton width={96} height={20} /> : `${difference >= 0 ? '+' : '-'}${formatMoney(Math.abs(difference))}`}
         </span>
       </div>
       <div className="stat-full">

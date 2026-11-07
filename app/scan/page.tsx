@@ -3,6 +3,7 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import Link from 'next/link';
 import jsQR from 'jsqr';
 import BottomNav from '../components/BottomNav';
+import ReceiveQrPanel from '../components/ReceiveQrPanel';
 import { requestJson } from '../lib/client-api';
 import { parseVietQR } from '../lib/vietqr.mjs';
 import '../styles/scan.css';
@@ -28,8 +29,9 @@ export default function Scan() {
     const [busy, setBusy] = useState(false);
     const [readingImage, setReadingImage] = useState(false);
     const [online, setOnline] = useState(true);
+    const [tab, setTab] = useState<'scan' | 'my-qr'>('scan');
     const stop = useCallback(() => { generation.current++; stream.current?.getTracks().forEach((track) => track.stop()); stream.current = null; setScanning(false); }, []);
-    const resumeCamera = useEffectEvent(() => { if (!recipient && !readingImage && navigator.onLine && document.visibilityState === 'visible') void start(); });
+    const resumeCamera = useEffectEvent(() => { if (tab === 'scan' && !recipient && !readingImage && navigator.onLine && document.visibilityState === 'visible') void start(); });
     useEffect(() => {
         const offline = () => { setOnline(navigator.onLine); if (!navigator.onLine) { stop(); setUrl(''); } else resumeCamera(); };
         const hidden = () => { if (document.visibilityState === 'hidden') stop(); else resumeCamera(); };
@@ -125,7 +127,11 @@ export default function Scan() {
         }
     }
     const openCamera = useEffectEvent(start);
-    useEffect(() => { const timer = setTimeout(() => openCamera(), 0); return () => clearTimeout(timer); }, []);
+    // Mở thẳng tab QR của tôi từ link /scan?tab=my-qr thì không bật camera.
+    useEffect(() => {
+        const timer = setTimeout(() => { if (new URLSearchParams(window.location.search).get('tab') === 'my-qr') setTab('my-qr'); else openCamera(); }, 0);
+        return () => clearTimeout(timer);
+    }, []);
     useEffect(() => {
         if (recipient && qr) document.getElementById('transfer-amount')?.focus();
     }, [recipient, qr]);
@@ -140,21 +146,34 @@ export default function Scan() {
     const selectedApp = options.apps.find((item) => item.appId === app);
     const bank = options.banks.find((item) => item.bin === recipient?.bankBin);
     const displayedError = online ? error || optionsError : '';
+    function selectTab(next: 'scan' | 'my-qr') {
+        if (next === tab) return;
+        setTab(next);
+        window.history.replaceState(null, '', next === 'my-qr' ? '/scan?tab=my-qr' : '/scan');
+        if (next === 'my-qr') stop(); else if (!recipient) void start();
+    }
     function manualTransfer() {
         stop(); setQr(''); setAmount(''); setNote(''); setUrl(''); setReviewed(false); setError('');
         setRecipient({ bankBin: '', account: '', name: '', amount: '', note: '' });
     }
     return <main className="app-page ledger-page scan-page">
-        <header className="page-header"><h1>Quét VietQR</h1></header>
-        {!online && <p role="alert">Đang ngoại tuyến. VietQR chỉ dùng khi có mạng.</p>}
-        {displayedError && <p role="alert" className="ledger-error">{displayedError} {displayedError === 'Bạn cần đăng nhập.' && <Link href="/login">Đăng nhập</Link>}</p>}
-        <section className="card ledger-form" style={{ display: recipient ? 'none' : undefined }}>
+        <header className="page-header"><h1>Mã QR</h1></header>
+        <div className="segmented scan-tabs" role="tablist" aria-label="Chức năng mã QR">
+            <button type="button" role="tab" aria-selected={tab === 'scan'} className={`segmented-btn ${tab === 'scan' ? 'active' : ''}`} onClick={() => selectTab('scan')}>Quét mã</button>
+            <button type="button" role="tab" aria-selected={tab === 'my-qr'} className={`segmented-btn ${tab === 'my-qr' ? 'active' : ''}`} onClick={() => selectTab('my-qr')}>QR của tôi</button>
+        </div>
+        {tab === 'my-qr' && <ReceiveQrPanel />}
+        {tab === 'scan' && !online && <p role="alert">Đang ngoại tuyến. VietQR chỉ dùng khi có mạng.</p>}
+        {tab === 'scan' && displayedError && <p role="alert" className="ledger-error">{displayedError} {displayedError === 'Bạn cần đăng nhập.' && <Link href="/login">Đăng nhập</Link>}</p>}
+        <section className="card ledger-form" style={{ display: recipient || tab !== 'scan' ? 'none' : undefined }}>
             <video ref={video} playsInline muted autoPlay aria-label="Camera quét VietQR" style={{ width: '100%', maxHeight: 320, display: scanning ? 'block' : 'none' }} />
-            <label className="btn-secondary scan-upload">Chọn ảnh QR<input aria-label="Chọn ảnh QR" className="scan-file" type="file" accept="image/*" disabled={!online || readingImage} onChange={readImage} /></label>
+            <div className="scan-actions">
+                <label className="btn-secondary scan-upload">Chọn ảnh QR<input aria-label="Chọn ảnh QR" className="scan-file" type="file" accept="image/*" disabled={!online || readingImage} onChange={readImage} /></label>
+                <button type="button" className="btn-secondary" disabled={!online || readingImage} onClick={manualTransfer}>Chuyển tiền</button>
+            </div>
             {readingImage && <p role="status">Đang đọc ảnh QR…</p>}
-            <button type="button" className="btn-secondary" disabled={!online || readingImage} onClick={manualTransfer}>Chuyển tiền</button>
         </section>
-        {recipient && <form className="card ledger-form" onSubmit={createLink}>
+        {tab === 'scan' && recipient && <form className="card ledger-form" onSubmit={createLink}>
             <div className="scan-review-heading"><h2>{qr ? 'Kiểm tra người nhận' : 'Chuyển tiền'}</h2><button type="button" className="btn-secondary" onClick={start} disabled={!online}>Quét mã khác</button></div>
             {qr ? <dl className="scan-recipient">
                 <div><dt>Ngân hàng</dt><dd>{bank ? bank.shortName : `BIN ${recipient.bankBin}`}</dd></div>

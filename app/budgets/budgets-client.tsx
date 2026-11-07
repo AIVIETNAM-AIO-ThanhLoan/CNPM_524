@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Ellipsis, Pencil, Plus, Trash2, Wallet, X } from 'lucide-react';
 import AddCategoryButton from '../components/AddCategoryButton';
 import BottomNav from '../components/BottomNav';
+import { Skeleton, SkeletonStatus } from '../components/Skeleton';
 import { type Category, requestJson } from '../lib/client-api';
 import { formatBudgetMoney } from '../lib/budget-money';
 import { notifyFinanceUpdated } from '../lib/finance-updates';
@@ -124,7 +125,7 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
             <label><input type="month" aria-label="Chọn tháng ngân sách" value={month} min="1000-01" max="9999-12" disabled={busy} onChange={(event) => changeMonth(event.target.value)} /></label>
             <button type="button" className="icon-btn" aria-label="Tháng sau" disabled={busy || month === '9999-12'} onClick={() => shiftMonth(1)}><ChevronRight size={21} /></button>
         </div>
-        {!ready && <p className="data-status" role="status">Đang tải ngân sách…</p>}
+        {!ready && <><SkeletonStatus label="Đang tải ngân sách…" /><div className="skeleton-grid skeleton-page-block">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} height={150} style={{ borderRadius: 16 }} />)}</div></>}
         {data?.error && <div className="budget-feedback" role="alert"><p>{data.error}</p><Link href="/login">Đăng nhập</Link><button type="button" className="btn-secondary" onClick={() => setRevision((n) => n + 1)}>Thử lại</button></div>}
         {error && <p className="budget-feedback budget-error" role="alert">{error}</p>}
         {notice && <p className="budget-feedback" role="status">{notice}</p>}

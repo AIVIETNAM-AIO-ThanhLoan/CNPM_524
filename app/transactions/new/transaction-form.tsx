@@ -77,7 +77,7 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
     }
 
     return <main className="app-page tx-page">
-        <header className="tx-header"><Link href="/" className="tx-round-btn" aria-label="Quay lại"><ArrowLeft size={20} strokeWidth={1.8} /></Link><h1 className="tx-title">Ghi giao dịch</h1></header>
+        <header className="tx-header"><Link href="/" className="tx-round-btn" aria-label="Quay lại"><ArrowLeft size={20} strokeWidth={1.8} /></Link><h1 className="tx-title">Ghi giao dịch</h1><VoiceAssistant className="btn-secondary tx-voice-btn" /></header>
         {error && <p className="ledger-error" role="alert">{error}</p>}
         {success && <p role="status">{success}</p>}
         {queued && <button className="btn-secondary" type="button" disabled={busy} onClick={() => {
@@ -113,8 +113,6 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
             <label>Tên ví<input name="name" maxLength={100} required /></label><p>Ví mới bắt đầu từ 0đ.</p><button className="btn-secondary" disabled={busy}>Thêm ví</button>
         </form></details>
         
-        <VoiceAssistant />
-
         <BottomNav />
     </main>;
 }
