@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChartColumn, CircleUserRound, House, QrCode, Wallet } from 'lucide-react';
+import { useOnline } from '../lib/use-online';
 import '../styles/bottom-nav.css';
 
 const navItems = [
@@ -18,6 +19,8 @@ const rightItems = navItems.slice(2);
 
 export default function BottomNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const online = useOnline();
+  if (!online) return null;
 
   const renderItem = ({ href, label, Icon }: (typeof navItems)[number]) => (
     <Link

@@ -1,8 +1,10 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { discardFailed, onOfflineChange, pendingEntries, queueEntry, synchronize, type PendingEntry } from '../lib/offline';
+import { useOnline } from '../lib/use-online';
 
 export default function PendingEntries({ userId }: { userId: string }) {
+    const online = useOnline();
     const [items, setItems] = useState<PendingEntry[]>([]);
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
@@ -17,12 +19,12 @@ export default function PendingEntries({ userId }: { userId: string }) {
     }
     return <section className="card ledger-form pending-list" aria-label="Giao dịch chưa gửi">
         <h2>Giao dịch chưa gửi ({items.length})</h2>
-        <p>Tự đồng bộ khi mở ứng dụng, có mạng và đăng nhập đúng tài khoản. Không xóa dữ liệu trình duyệt khi còn khoản chờ.</p>
+        <p>{items.length ? 'Không xóa dữ liệu trình duyệt khi còn giao dịch chờ đồng bộ.' : 'Chưa có giao dịch chờ đồng bộ.'}</p>
         {error && <p role="alert">{error}</p>}
         {items.map((item) => <article key={item.requestKey}>
             <p>{String(item.payload.note || 'Giao dịch')} · {String(item.payload.amount)}đ · {item.state === 'failed' ? 'Gửi thất bại' : 'Chờ đồng bộ'}</p>
             {item.error && <p role="alert">{item.error}</p>}
-            <div className="action-row"><button type="button" className="btn-secondary" disabled={busy} onClick={() => retry(item)}>Thử đồng bộ</button>
+            <div className="action-row"><button type="button" className="btn-secondary" disabled={busy || !online} onClick={() => retry(item)}>Thử đồng bộ</button>
                 {item.state === 'failed' && <button type="button" className="btn-secondary" disabled={busy} onClick={async () => {
                     if (window.confirm('Xóa khoản bị từ chối này khỏi thiết bị để nhập lại?')) {
                         try { await discardFailed(item); } catch (error) { setError(error instanceof Error ? error.message : 'Không xóa được.'); }

@@ -221,6 +221,21 @@
   cursor: default;
 }
 
+.tx-page.tx-page-offline { width: 100%; max-width: 640px; min-height: auto; margin-inline: auto; padding-bottom: 24px; }
+.tx-page-offline .tx-header { padding: 20px 16px 16px; }
+.tx-page-offline .tx-title { font-size: 20px; }
+.tx-page-offline :is(input, select, button) { min-height: 48px; font-size: 16px; }
+.tx-page-offline .tx-amount-input { font-size: 30px; }
+.tx-page-offline .tx-amount-label { color: #405f76; }
+.tx-page-offline .tx-form p, .tx-page-offline .pending-list p { color: #405f76; font-size: 14px; line-height: 1.6; }
+.tx-page-offline .pending-list { margin: 16px; }
+.tx-page-offline .pending-list h2 { font-size: 17px; font-weight: 600; }
+.tx-page-offline .pending-list article { border-top: 1px solid var(--color-line); padding-top: 16px; }
+.tx-page-offline .btn-primary { background: #0b5cad; }
+.tx-page-offline .btn-secondary { color: #0b5cad; border-color: #0b5cad; }
+.tx-page-offline button:disabled { cursor: not-allowed; }
+.tx-page-offline :is(input, select, button):focus-visible { outline: 2px solid #0b5cad; outline-offset: 3px; }
+
 /* Màn hình xác nhận sau khi lưu */
 .tx-success {
   flex: 1;

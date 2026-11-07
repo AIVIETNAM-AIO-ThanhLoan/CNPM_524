@@ -1,13 +1,15 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { WifiOff } from 'lucide-react';
 import { requestJson } from '../lib/client-api';
 import { accountRevision, cacheAccount, clearActiveAccount, synchronize, type OfflineAccount } from '../lib/offline';
 import { FINANCE_UPDATED } from '../lib/finance-updates';
+import { useOnline } from '../lib/use-online';
 
 export default function PwaRuntime() {
     const pathname = usePathname();
-    const [offline, setOffline] = useState(false);
+    const online = useOnline();
     const [error, setError] = useState('');
     const lastUser = useRef<string | null>(null);
     useEffect(() => {
@@ -15,7 +17,6 @@ export default function PwaRuntime() {
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }).catch(() => { if (!stopped) setError('Chưa sẵn sàng ngoại tuyến. Hãy mở ứng dụng qua HTTPS hoặc localhost.'); });
         async function refresh() {
             const revision = accountRevision();
-            setOffline(!navigator.onLine);
             if (!navigator.onLine) return;
             try {
                 const { user } = await requestJson<{ user: { id: string } | null }>('/api/auth/me');
@@ -37,5 +38,10 @@ export default function PwaRuntime() {
         window.addEventListener(FINANCE_UPDATED, refresh);
         return () => { stopped = true; clearInterval(timer); window.removeEventListener('online', refresh); window.removeEventListener('offline', refresh); window.removeEventListener('focus', refresh); window.removeEventListener(FINANCE_UPDATED, refresh); };
     }, [pathname]);
-    return <>{offline && <aside className="offline-status" role="status">Đang ngoại tuyến. <a href="/offline">Mở phiếu ghi giao dịch ngoại tuyến</a></aside>}{error && <p role="status" className="offline-status">{error}</p>}</>;
+    return <>{!online && <aside className="offline-status" role="status">
+        <WifiOff size={22} aria-hidden="true" />
+        <div><strong>Bạn đang ngoại tuyến</strong><p>Giao dịch được lưu trên thiết bị và tự đồng bộ khi có mạng, đúng tài khoản.</p>
+            {pathname !== '/offline' && pathname !== '/transactions/new' && <a href="/offline">Ghi giao dịch ngoại tuyến</a>}
+        </div>
+    </aside>}{error && <p role="status" className="offline-status">{error}</p>}</>;
 }
