@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Skeleton, SkeletonStatus } from './Skeleton';
 import { requestJson } from '../lib/client-api';
 import '../styles/ledger.css';
@@ -110,7 +111,7 @@ export default function ReceiveQrPanel() {
         {!loaded && <section className="card receive-qr-main"><SkeletonStatus label="Đang tải ảnh QR…" /><Skeleton width={240} height={240} /><Skeleton width={120} /></section>}
 
         {selected && <section className="card receive-qr-main">
-            <img src={imageUrl(selected, version)} alt={`Mã QR ${selected.label}`} />
+            <Image unoptimized width={1600} height={1600} src={imageUrl(selected, version)} alt={`Mã QR ${selected.label}`} />
             <p className="receive-qr-label">{selected.label}{selected.isPrimary ? <span className="receive-qr-badge">Ảnh chính</span> : null}</p>
             <p className="receive-qr-hint">Đưa mã này để người khác quét chuyển tiền cho bạn</p>
             {!selected.isPrimary && <button type="button" className="btn-primary receive-qr-make-primary" disabled={busy} onClick={makePrimary}>Đặt làm ảnh chính</button>}
@@ -123,7 +124,7 @@ export default function ReceiveQrPanel() {
 
         {images.length > 1 && <section className="receive-qr-thumbs" aria-label="Các ảnh QR đã lưu">
             {images.map((image) => <button type="button" key={image.id} className={image.id === selectedId ? 'is-selected' : ''} aria-pressed={image.id === selectedId} onClick={() => setSelectedId(image.id)}>
-                <img src={imageUrl(image, version)} alt="" />
+                <Image unoptimized width={80} height={80} src={imageUrl(image, version)} alt="" />
                 <span>{image.label}</span>
             </button>)}
         </section>}

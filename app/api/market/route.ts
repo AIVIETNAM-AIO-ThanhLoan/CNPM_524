@@ -27,17 +27,19 @@ export async function GET(request: Request) {
     if (type === 'gold') {
       const res = await fetch('https://vang.today/api/prices', {
         next: { revalidate: 300 },
+        signal: AbortSignal.timeout(10000),
         headers: { 'User-Agent': 'Mozilla/5.0' }
       });
       
-      const data = await res.json();
+      const data: { success?: boolean; time?: string; date?: string; prices?: Record<string, { name: string; buy: number; sell: number }> } = await res.json();
 
-      if (data.success && data.prices) {
+      if (res.ok && data.success && data.prices) {
         // Chuyển object prices thành mảng
         const goldPrices = Object.entries(data.prices)
           // Lọc các loại vàng phổ biến
           .filter(([code]) => ['SJL1L10', 'DOHNL', 'PQHNVM'].includes(code))
-          .map(([code, item]: [string, any], index: number) => {
+          .filter(([, item]) => Number.isFinite(item.buy) && Number.isFinite(item.sell) && item.buy > 0 && item.sell > 0)
+          .map(([code, item], index: number) => {
             let brand = 'Vàng';
             let typeName = item.name;
 

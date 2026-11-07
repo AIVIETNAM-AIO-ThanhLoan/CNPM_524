@@ -14,6 +14,7 @@
     "worker": "node scripts/push-worker.mjs",
     "test:integration": "node tests/integration.mjs",
     "test:browser": "node tests/integration.mjs --browser",
+    "test:voice": "node tests/voice-amount.mjs && node tests/voice-assistant.mjs",
     "test:ai-keys": "node scripts/test-ai-keys.mjs"
   },
   "dependencies": {

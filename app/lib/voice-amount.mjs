@@ -24,6 +24,8 @@ function phraseValue(tokens) {
 
 function readAmount(input) {
     let text = input.normalize('NFC').toLowerCase();
+    // Do not silently turn a negative amount into a positive transaction.
+    if (/(?:^|\s)âm(?:\s|$)|(?:^|[\s(])[-−]\s*(?:\d|không|một|hai|ba|bốn|năm|sáu|bảy|tám|chín)/u.test(text)) return { amount: 0, rest: text };
     for (let previous = ''; previous !== text;) { previous = text; text = text.replace(/(\d)[.,\s](\d{3})(?!\d)/g, '$1$2'); }
     text = text.replace(/(\d)(k|tr|triệu|nghìn|ngàn|tỷ|tỉ)(?![\p{L}])/gu, '$1 $2 ').replace(/(tr|triệu|k|nghìn|ngàn)(\d)/g, '$1 $2');
     const words = text.split(/\s+/).map((raw) => raw.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''));
@@ -32,6 +34,7 @@ function readAmount(input) {
         const numeric = /^\d+(?:[.,]\d+)?$/.test(token);
         const current = phrases[phrases.length - 1];
         if (numeric && current.tokens.length && /^\d/.test(current.tokens[current.tokens.length - 1])) phrases.push({ tokens: [token], indexes: [index] });
+        else if (token === 'và' && current.tokens.length) { current.indexes.push(index); }
         else if (numeric || token in DIGITS || token in SCALES || ['trăm', 'mươi', 'mười', 'rưỡi', 'lẻ', 'linh'].includes(token)) { current.tokens.push(token); current.indexes.push(index); }
         else if (current.tokens.length) phrases.push({ tokens: [], indexes: [] });
     });

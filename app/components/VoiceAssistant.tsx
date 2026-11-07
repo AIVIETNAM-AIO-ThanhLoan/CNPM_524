@@ -6,6 +6,27 @@ import { requestJson, type Wallet, type Category, today } from '@/app/lib/client
 import { notifyFinanceUpdated } from '@/app/lib/finance-updates';
 import { parseVoiceAmount, removeVoiceAmount } from '@/app/lib/voice-amount.mjs';
 
+
+type Recognition = {
+  continuous: boolean; interimResults: boolean; lang: string;
+  onstart: (() => void) | null;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start(): void; stop(): void; abort(): void;
+};
+type VoicePayload = {
+  requestKey: string; kind: 'income' | 'expense'; walletId: string;
+  targetId: null; categoryId: string; amount: string; bookedOn: string; note: string;
+};
+function abortRecognition(recognition: Recognition | null) {
+  if (!recognition) return;
+  recognition.onstart = null; recognition.onresult = null;
+  recognition.onerror = null; recognition.onend = null;
+  try { recognition.abort(); } catch { /* Already stopped. */ }
+}
+const errorMessage = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
+
 // Trình duyệt chỉ hỏi quyền micro một lần; đã chặn hoặc không hỗ trợ thì không hiện hộp hỏi nên phải báo rõ cách xử lý.
 const VOICE_ERRORS: Record<string, string> = {
   'not-allowed': 'Micro đang bị chặn nên trình duyệt không hỏi lại. Hãy bấm biểu tượng cạnh thanh địa chỉ, cho phép Micro rồi tải lại trang.',
@@ -31,264 +52,211 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  // State cho việc xác nhận tạo danh mục mới
-  const [pendingPayload, setPendingPayload] = useState<any>(null);
+  const [pendingPayload, setPendingPayload] = useState<VoicePayload | null>(null);
   const [missingCategoryName, setMissingCategoryName] = useState('');
+  const recognitionRef = useRef<Recognition | null>(null);
+  const dataRequest = useRef<AbortController | null>(null);
+  const openRef = useRef(false);
+  const processing = useRef(false);
+  const retryRequest = useRef<{ fingerprint: string; requestKey: string } | null>(null);
 
-  const recognitionRef = useRef<any>(null);
-  // Trình duyệt có thể kết thúc mà không trả kết quả cũng không báo lỗi; khi đó phải tự báo cho người dùng.
-  const answeredRef = useRef(false);
+  useEffect(() => () => {
+    openRef.current = false;
+    dataRequest.current?.abort();
+    abortRecognition(recognitionRef.current);
+  }, []);
 
-  useEffect(() => {
-    if (isOpen && wallets.length === 0) {
-      setIsDataLoaded(false);
-      Promise.all([
-        requestJson<{ wallets: Wallet[] }>('/api/wallets'),
-        requestJson<{ categories: Category[] }>('/api/categories')
-      ]).then(([wRes, cRes]) => {
-        setWallets(wRes.wallets);
-        setCategories(cRes.categories);
-        setIsDataLoaded(true);
-      }).catch((err) => setError(!navigator.onLine ? 'Nhập bằng giọng nói cần có mạng. Khi mất mạng, hãy dùng Ghi giao dịch.' : err instanceof Error ? err.message : 'Không thể tải dữ liệu. Vui lòng thử lại.'));
-    }
-  }, [isOpen, wallets.length]);
+  function stopRecognition() {
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    abortRecognition(recognition);
+    setIsStarting(false);
+    setIsListening(false);
+  }
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = 'vi-VN';
-
-        recognition.onresult = (event: any) => {
-          answeredRef.current = true;
-          const text = event.results[0][0].transcript.normalize('NFC').toLowerCase();
-          setTranscript(text);
-          processVoiceText(text);
-          setIsListening(false);
-        };
-
-        recognition.onstart = () => {
-          setIsStarting(false);
-          setIsListening(true);
-        };
-
-        recognition.onerror = (event: any) => {
-          answeredRef.current = true;
-          if (event.error !== 'aborted') setError(VOICE_ERRORS[event.error] || 'Lỗi micro: ' + event.error);
-          setIsStarting(false);
-          setIsListening(false);
-        };
-
-        recognition.onend = () => {
-          if (!answeredRef.current) setError('Chưa nhận được lời nói. Hãy bấm micro và nói lại.');
-          answeredRef.current = true;
-          setIsStarting(false);
-          setIsListening(false);
-        };
-        recognitionRef.current = recognition;
-      }
-    }
-  }, [wallets, categories]);
-
-  const toggleListening = () => {
-    if (!isDataLoaded) {
-      setError('Đang tải dữ liệu, vui lòng đợi 1 giây.');
-      return;
-    }
-    if (isListening) {
-      recognitionRef.current?.stop();
-    } else if (isStarting) {
-      answeredRef.current = true;
-      recognitionRef.current?.abort();
-      setIsStarting(false);
-    } else {
-      setTranscript('');
-      setError('');
-      setSaved('');
-      setPendingPayload(null);
-      setMissingCategoryName('');
-      answeredRef.current = false;
-      if (!window.isSecureContext) {
-        setError('Micro chỉ hoạt động trên HTTPS hoặc localhost. Hãy mở ứng dụng bằng địa chỉ HTTPS.');
-        return;
-      }
-      if (!recognitionRef.current) {
-        setError('Trình duyệt này không hỗ trợ nhận giọng nói. Hãy mở bằng Chrome.');
-        return;
-      }
-      try {
-        recognitionRef.current.start();
-        setIsStarting(true);
-      } catch {
-        setError('Không bật được micro. Hãy đóng hộp thoại và thử lại.');
-      }
-    }
-  };
-
-  // Ô nhập chữ dùng chung cách đọc với giọng nói; cũng là đường dự phòng khi thiết bị không nhận giọng được.
-  const submitTyped = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const text = typed.trim().normalize('NFC').toLowerCase();
-    if (!text || loading || !isDataLoaded) return;
-    setError('');
-    setSaved('');
-    setTranscript(text);
-    processVoiceText(text);
-  };
-
-  const extractCategoryName = (text: string) => {
-    let cleanText = removeVoiceAmount(text);
-    wallets.forEach(w => {
-      cleanText = cleanText.split(w.name.normalize('NFC').toLowerCase()).join('');
-    });
-    // Các từ này chỉ loại giao dịch hoặc đơn vị tiền, không phải tên danh mục.
-    cleanText = cleanText.replace(/thu nhập|nhận được|đồng|vnd|\d+/g, '');
-    cleanText = cleanText.replace(/(cho|vào|ví|tài khoản|mua|chi|thu|nhận|lương|tiền)\s+/g, '');
-    cleanText = cleanText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '');
-    
-    const name = cleanText.trim().replace(/\s+/g, ' ');
-    if (!name) return '';
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  };
-
-  const processVoiceText = async (text: string) => {
-    let matchedWallet = wallets[0]?.id || '';
-    let matchedKind = 'expense';
-
-    // 1. Tìm Ví và Loại giao dịch
-    const foundWallet = wallets.find(w => text.includes(w.name.normalize('NFC').toLowerCase()));
-    if (foundWallet) matchedWallet = foundWallet.id;
-    if (text.includes('thu nhập') || text.includes('nhận') || text.includes('lương')) matchedKind = 'income';
-
-    // 2. Bóc tách số tiền
-    const amount = parseVoiceAmount(text);
-
-    // Số quá nhỏ thường là thiếu đơn vị ("ăn uống 50"), không tự đoán để tránh ghi sai tiền.
-    if (amount < 1000) {
-      setError('Không nhận diện được số tiền. Hãy nói rõ cả đơn vị (VD: "ăn uống 50 nghìn").');
-      return;
-    }
-
-    // 3. Xử lý Danh mục
-    let matchedCategory = '';
-    const foundCategory = categories.find(c => text.includes(c.name.normalize('NFC').toLowerCase()));
-    
-    if (foundCategory) {
-      // Nếu đã có danh mục -> Lưu luôn
-      matchedCategory = foundCategory.id;
-      matchedKind = foundCategory.kind;
-      
-      executeSave({
-        requestKey: crypto.randomUUID(),
-        kind: matchedKind,
-        walletId: String(matchedWallet),
-        targetId: null,
-        categoryId: String(matchedCategory),
-        amount: String(amount),
-        bookedOn: today(),
-        note: `Ghi âm: ${text}`
-      }, foundCategory.name);
-    } else {
-      // Không tìm thấy danh mục -> Kiểm tra xem có đọc tên không
-      const guessedName = extractCategoryName(text);
-      
-      if (guessedName.length > 1 && guessedName !== 'Khác') {
-        // CÓ ĐỌC TÊN -> Hiện Modal hỏi xác nhận
-        setMissingCategoryName(guessedName);
-        setPendingPayload({
-          requestKey: crypto.randomUUID(),
-          kind: matchedKind,
-          walletId: String(matchedWallet),
-          targetId: null,
-          categoryId: '', 
-          amount: String(amount),
-          bookedOn: today(),
-          note: `Ghi âm: ${text}`
-        });
-      } else {
-        // CHỈ ĐỌC SỐ TIỀN -> Tự động vào danh mục "Khác"
-        const fallbackCategory = categories.find(c => c.kind === matchedKind && c.name.toLowerCase().includes('khác')) || 
-                                 categories.find(c => c.kind === matchedKind);
-        
-        if (fallbackCategory) {
-          executeSave({
-            requestKey: crypto.randomUUID(),
-            kind: matchedKind,
-            walletId: String(matchedWallet),
-            targetId: null,
-            categoryId: String(fallbackCategory.id),
-            amount: String(amount),
-            bookedOn: today(),
-            note: `Ghi âm: ${text}`
-          }, fallbackCategory.name);
-        } else {
-          setError('Không tìm thấy danh mục "Khác" để lưu.');
-        }
-      }
-    }
-  };
-
-  const executeSave = async (payload: any, categoryName: string) => {
-    setLoading(true);
+  async function openAssistant() {
+    if (processing.current) return;
+    stopRecognition();
+    dataRequest.current?.abort();
+    const controller = new AbortController();
+    dataRequest.current = controller;
+    openRef.current = true;
+    setIsOpen(true); setIsDataLoaded(false); setError(''); setSaved('');
+    setTranscript(''); setTyped(''); setPendingPayload(null); setMissingCategoryName('');
+    setIsHomeScreenIos((navigator as Navigator & { standalone?: boolean }).standalone === true);
     try {
-      await requestJson('/api/transactions', payload);
-      const walletName = wallets.find(w => w.id === payload.walletId)?.name;
-      setSaved(`Đã ghi ${payload.kind === 'income' ? 'khoản thu' : 'khoản chi'} ${Number(payload.amount).toLocaleString('vi-VN')}đ · ${categoryName} · ${walletName}`);
-      setPendingPayload(null);
-      setMissingCategoryName('');
-      setTyped('');
+      const [wRes, cRes] = await Promise.all([
+        requestJson<{ wallets: Wallet[] }>('/api/wallets', undefined, controller.signal),
+        requestJson<{ categories: Category[] }>('/api/categories', undefined, controller.signal),
+      ]);
+      if (controller.signal.aborted || !openRef.current) return;
+      if (!wRes.wallets.length) throw new Error('Bạn cần tạo ví trước khi ghi giao dịch bằng giọng nói.');
+      setWallets(wRes.wallets); setCategories(cRes.categories); setIsDataLoaded(true);
+    } catch (error) {
+      if (!controller.signal.aborted && openRef.current) setError(!navigator.onLine
+        ? 'Nhập bằng giọng nói cần có mạng. Khi mất mạng, hãy dùng Ghi giao dịch.'
+        : errorMessage(error, 'Không thể tải dữ liệu. Vui lòng thử lại.'));
+    }
+  }
+
+  function closeAssistant() {
+    // A request already sent may be committed; wait for its outcome before closing.
+    if (processing.current) return;
+    openRef.current = false;
+    dataRequest.current?.abort();
+    stopRecognition();
+    setIsOpen(false);
+  }
+
+  async function executeSave(payload: VoicePayload, categoryName: string) {
+    const { requestKey, ...content } = payload;
+    const fingerprint = JSON.stringify(content);
+    const key = retryRequest.current?.fingerprint === fingerprint ? retryRequest.current.requestKey : requestKey;
+    retryRequest.current = { fingerprint, requestKey: key };
+    try {
+      await requestJson('/api/transactions', { ...payload, requestKey: key });
+      retryRequest.current = null;
       notifyFinanceUpdated();
       router.refresh();
-    } catch (err: any) {
-      console.error("Lỗi khi lưu qua Voice:", err);
-      setError(err.message || 'Lỗi khi lưu giao dịch.');
-    } finally {
-      setLoading(false);
+      if (!openRef.current) return;
+      const walletName = wallets.find(w => w.id === payload.walletId)?.name;
+      setSaved(`Đã ghi ${payload.kind === 'income' ? 'khoản thu' : 'khoản chi'} ${Number(payload.amount).toLocaleString('vi-VN')}đ · ${categoryName} · ${walletName}`);
+      setPendingPayload(null); setMissingCategoryName(''); setTyped('');
+    } catch (error) {
+      if (openRef.current) setError(errorMessage(error, 'Lỗi khi lưu giao dịch.'));
     }
-  };
+  }
 
-  // Xử lý khi người dùng bấm "Tạo & Lưu" trên Modal
-  const handleCreateCategory = async () => {
-    if (!pendingPayload || !missingCategoryName) return;
-    setLoading(true);
-    setError('');
+  function extractCategoryName(text: string) {
+    let cleanText = removeVoiceAmount(text);
+    wallets.forEach(w => { cleanText = cleanText.split(w.name.normalize('NFC').toLowerCase()).join(''); });
+    cleanText = cleanText.replace(/thu nhập|nhận được|đồng|vnd|\d+/g, '');
+    cleanText = cleanText.replace(/(cho|vào|ví|tài khoản|mua|chi|thu|nhận|lương|tiền)\s+/g, '');
+    cleanText = cleanText.replace(/[.,/#!$%\^&*;:{}=\-_`~()]/g, '');
+    const name = cleanText.trim().replace(/\s+/g, ' ');
+    return name ? name.charAt(0).toUpperCase() + name.slice(1) : '';
+  }
+
+  async function processVoiceText(text: string) {
+    if (!openRef.current || processing.current || !isDataLoaded) return;
+    processing.current = true;
+    setLoading(true); setError(''); setSaved(''); setTranscript(text);
+    try {
+      const wallet = wallets.find(w => text.includes(w.name.normalize('NFC').toLowerCase())) || wallets[0];
+      if (!wallet) throw new Error('Bạn cần tạo ví trước khi ghi giao dịch.');
+      const amount = parseVoiceAmount(text);
+      if (!Number.isSafeInteger(amount) || amount < 1000 || amount >= 1e12) {
+        throw new Error('Không nhận diện được số tiền hợp lệ. Hãy nói số dương kèm đơn vị, ví dụ: ăn uống 50 nghìn.');
+      }
+      const available = categories.filter(c => !c.archived);
+      const category = [...available].sort((a, b) => b.name.length - a.name.length)
+        .find(c => text.includes(c.name.normalize('NFC').toLowerCase()));
+      const kind = category?.kind || (/thu nhập|nhận|lương/.test(text) ? 'income' : 'expense');
+      const payload: VoicePayload = { requestKey: crypto.randomUUID(), kind, walletId: wallet.id,
+        targetId: null, categoryId: category?.id || '', amount: amount.toFixed(2), bookedOn: today(), note: `Ghi âm: ${text}`.slice(0, 500) };
+      if (category) {
+        await executeSave(payload, category.name);
+      } else {
+        const guessedName = extractCategoryName(text);
+        if (guessedName.length > 1 && guessedName !== 'Khác') {
+          setMissingCategoryName(guessedName); setPendingPayload(payload);
+        } else {
+          const fallback = available.find(c => c.kind === kind && c.name.toLowerCase().includes('khác'))
+            || available.find(c => c.kind === kind);
+          if (!fallback) throw new Error('Không tìm thấy danh mục phù hợp để lưu.');
+          await executeSave({ ...payload, categoryId: fallback.id }, fallback.name);
+        }
+      }
+    } catch (error) {
+      if (openRef.current) setError(errorMessage(error, 'Không thể xử lý giao dịch.'));
+    } finally {
+      processing.current = false;
+      if (openRef.current) setLoading(false);
+    }
+  }
+
+  function toggleListening() {
+    if (!isDataLoaded || processing.current || !openRef.current) return;
+    if (isListening) { recognitionRef.current?.stop(); return; }
+    if (isStarting) { stopRecognition(); return; }
+    stopRecognition();
+    setError(''); setSaved(''); setTranscript('');
+    setPendingPayload(null); setMissingCategoryName('');
+    if (!window.isSecureContext) {
+      setError('Micro chỉ hoạt động trên HTTPS hoặc localhost. Hãy mở ứng dụng bằng địa chỉ HTTPS.'); return;
+    }
+    const browser = window as Window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
+    const Constructor = browser.SpeechRecognition || browser.webkitSpeechRecognition;
+    if (!Constructor) { setError('Trình duyệt này không hỗ trợ nhận giọng nói. Hãy mở bằng Chrome hoặc nhập chữ bên dưới.'); return; }
+    let answered = false;
+    const recognition = new Constructor();
+    const active = () => openRef.current && recognitionRef.current === recognition;
+    recognition.continuous = false; recognition.interimResults = false; recognition.lang = 'vi-VN';
+    recognition.onstart = () => { if (active()) { setIsStarting(false); setIsListening(true); } };
+    recognition.onresult = (event) => {
+      if (!active() || answered) return;
+      answered = true;
+      const text = event.results[0]?.[0]?.transcript?.trim().normalize('NFC').toLowerCase();
+      stopRecognition();
+      if (text) void processVoiceText(text); else setError(VOICE_ERRORS['no-speech']);
+    };
+    recognition.onerror = (event) => {
+      if (!active()) return;
+      answered = true;
+      stopRecognition();
+      if (event.error !== 'aborted') setError(VOICE_ERRORS[event.error] || `Lỗi micro: ${event.error}`);
+    };
+    recognition.onend = () => {
+      if (!active()) return;
+      stopRecognition();
+      if (!answered) setError(VOICE_ERRORS['no-speech']);
+    };
+    recognitionRef.current = recognition;
+    setIsStarting(true);
+    try { recognition.start(); } catch (error) {
+      stopRecognition();
+      setError(error instanceof Error && error.name === 'NotAllowedError' ? VOICE_ERRORS['not-allowed'] : 'Không bật được micro. Hãy đóng hộp thoại và thử lại.');
+    }
+  }
+
+  function submitTyped(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const text = typed.trim().normalize('NFC').toLowerCase();
+    if (!text || processing.current || !isDataLoaded) return;
+    stopRecognition();
+    void processVoiceText(text);
+  }
+
+  async function handleCreateCategory() {
+    if (!pendingPayload || !missingCategoryName || processing.current || !openRef.current) return;
+    processing.current = true; setLoading(true); setError('');
     try {
       const isMissing = (c: Category) => c.name.toLowerCase() === missingCategoryName.toLowerCase() && c.kind === pendingPayload.kind;
-      // Lần lưu trước có thể đã tạo xong danh mục nhưng ghi giao dịch lỗi; thử lại thì không tạo trùng.
-      let newCategory = categories.find(isMissing);
-      if (!newCategory) {
-        await requestJson('/api/categories', {
-          name: missingCategoryName,
-          kind: pendingPayload.kind
-        });
-
-        const cRes = await requestJson<{ categories: Category[] }>('/api/categories');
-        setCategories(cRes.categories);
-        newCategory = cRes.categories.find(isMissing);
+      let category = categories.find(isMissing);
+      if (!category) {
+        await requestJson('/api/categories', { name: missingCategoryName, kind: pendingPayload.kind });
+        const response = await requestJson<{ categories: Category[] }>('/api/categories');
+        if (!openRef.current) return;
+        setCategories(response.categories);
+        category = response.categories.find(isMissing);
       }
-
-      if (!newCategory) {
-        throw new Error("Đã tạo danh mục nhưng không thể lấy được ID.");
-      }
-      
-      const finalPayload = { ...pendingPayload, categoryId: String(newCategory.id) };
-      await executeSave(finalPayload, newCategory.name);
-      
-    } catch (err: any) {
-      setError(err.message || 'Không thể tạo danh mục mới.');
-      setLoading(false);
+      if (!category) throw new Error('Đã tạo danh mục nhưng không thể lấy được ID.');
+      await executeSave({ ...pendingPayload, categoryId: category.id }, category.name);
+    } catch (error) {
+      if (openRef.current) setError(errorMessage(error, 'Không thể tạo danh mục mới.'));
+    } finally {
+      processing.current = false;
+      if (openRef.current) setLoading(false);
     }
-  };
+  }
 
   return (
     <>
       <button
         type="button"
         className={className}
-        onClick={() => { setSaved(''); setTranscript(''); setIsHomeScreenIos((navigator as any).standalone === true); setIsOpen(true); }}
+        onClick={openAssistant}
+        aria-label="Nhập giao dịch bằng giọng nói"
         title="Nhập giao dịch bằng giọng nói"
       >
         <Mic size={18} strokeWidth={1.8} />
@@ -298,7 +266,7 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
       {isOpen && (
         <div role="dialog" aria-modal="true" aria-label="Trợ lý giọng nói" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', position: 'relative' }}>
-            <button onClick={() => setIsOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
+            <button type="button" aria-label="Đóng trợ lý giọng nói" disabled={loading} onClick={closeAssistant} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
               <X size={24} />
             </button>
             
@@ -310,19 +278,22 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
                 <div style={{ backgroundColor: '#f3f4f6', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
                   <p style={{ fontSize: '14px', color: '#4b5563', textAlign: 'center', lineHeight: '1.5' }}>
                     Bạn có thể nói:<br/>
-                    <strong style={{ color: '#047857' }}>"Ăn uống 50 nghìn"</strong><br/>
-                    <strong style={{ color: '#047857' }}>"Mua sách 200k"</strong> (Hỏi tạo danh mục)<br/>
-                    <strong style={{ color: '#047857' }}>"50 nghìn"</strong> (Tự vào danh mục Khác)<br/>
+                    <strong style={{ color: '#047857' }}>&quot;Ăn uống 50 nghìn&quot;</strong><br/>
+                    <strong style={{ color: '#047857' }}>&quot;Mua sách 200k&quot;</strong> (Hỏi tạo danh mục)<br/>
+                    <strong style={{ color: '#047857' }}>&quot;50 nghìn&quot;</strong> (Tự vào danh mục Khác)<br/>
                   </p>
                 </div>
 
-                {error && <p style={{ color: '#ef4444', fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{error}</p>}
+                {error && <p role="alert" style={{ color: '#ef4444', fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{error}</p>}
+                {error && !isDataLoaded && <button type="button" className="btn-secondary" onClick={openAssistant}>Thử lại</button>}
                 {isHomeScreenIos && <p style={{ color: '#92400e', backgroundColor: '#fef3c7', padding: '10px 12px', borderRadius: '8px', fontSize: '13px', textAlign: 'center', marginBottom: '16px' }}>App cài trên iPhone có thể không nhận giọng được. Hãy bấm ô nhập bên dưới, rồi dùng micro của bàn phím để đọc.</p>}
                 {saved && <p role="status" style={{ color: '#047857', fontWeight: 600, fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{saved}</p>}
-                {transcript && <p style={{ textAlign: 'center', fontStyle: 'italic', color: '#4b5563', marginBottom: '16px' }}>Bạn đã nói: "{transcript}"</p>}
+                {transcript && <p style={{ textAlign: 'center', fontStyle: 'italic', color: '#4b5563', marginBottom: '16px' }}>Bạn đã nói: &quot;{transcript}&quot;</p>}
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <button
+                    type="button"
+                    aria-label={isListening ? 'Dừng ghi âm' : isStarting ? 'Hủy bật micro' : 'Bắt đầu ghi âm'}
                     onClick={toggleListening}
                     disabled={loading || !isDataLoaded}
                     style={{
@@ -334,7 +305,7 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
                   >
                     <Mic size={32} />
                   </button>
-                  <p style={{ marginTop: '16px', fontSize: '14px', fontWeight: '500' }}>
+                  <p role="status" style={{ marginTop: '16px', fontSize: '14px', fontWeight: '500' }}>
                     {loading ? 'Đang xử lý...' : isListening ? 'Đang nghe...' : isStarting ? 'Đang bật micro... Nếu trình duyệt hỏi quyền, hãy chọn Cho phép.' : 'Bấm Micro để nói'}
                   </p>
                 </div>
@@ -366,12 +337,12 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
                   <AlertCircle size={48} color="#f59e0b" />
                 </div>
                 <p style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', marginBottom: '8px' }}>
-                  Danh mục "{missingCategoryName}" chưa tồn tại!
+                  Danh mục &quot;{missingCategoryName}&quot; chưa tồn tại!
                 </p>
                 <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px' }}>
                   Bạn có muốn tạo danh mục mới và lưu giao dịch này không?
                 </p>
-                {error && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{error}</p>}
+                {error && <p role="alert" style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{error}</p>}
                 
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button
