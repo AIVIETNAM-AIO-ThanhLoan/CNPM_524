@@ -45,7 +45,7 @@ export async function browserCoreChecks({ origin, admin, check }) {
     const fillTransaction = async (note, amount = '12345') => {
         await page.locator('input[name=amount]').fill(amount);
         await page.locator('input[name=note]').fill(note);
-        await page.getByRole('button', { name: 'Lưu giao dịch', exact: true }).click();
+        await page.getByRole('button', { name: /^(Lưu giao dịch|Lưu trên thiết bị)$/ }).click();
     };
     try {
         await post('/api/auth/register', { name: 'Offline A', account: 'pwa-a@example.com', password });
@@ -81,7 +81,7 @@ export async function browserCoreChecks({ origin, admin, check }) {
         await page.getByText('Đã lưu trên thiết bị, chờ đồng bộ khi có mạng và đăng nhập đúng tài khoản.', { exact: true }).waitFor();
         await waitEntries(1);
         const firstKey = (await entries())[0].requestKey;
-        await page.getByRole('button', { name: 'Lưu giao dịch', exact: true }).click();
+        await page.getByRole('button', { name: 'Lưu trên thiết bị', exact: true }).click();
         check((await entries()).length === 1 && (await entries())[0].requestKey === firstKey, 'Repeated offline submission keeps the original request key');
         await page.reload();
         await page.getByText(/Offline survives reload ·/).waitFor();
