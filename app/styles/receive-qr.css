@@ -1,6 +1,12 @@
 .receive-qr-main { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .receive-qr-main img { width: 100%; max-width: 360px; max-height: 60vh; object-fit: contain; border-radius: 8px; background: white; }
-.receive-qr-main .action-row { justify-content: center; }
+.receive-qr-hint { font-size: 13px; color: var(--color-muted); text-align: center; }
+.receive-qr-make-primary { flex: none; width: 100%; max-width: 360px; }
+.receive-qr-actions { display: flex; gap: 8px; width: 100%; max-width: 360px; }
+.scan-page .btn-secondary.receive-qr-delete { border-color: var(--color-danger); color: var(--color-danger); }
+.receive-qr-add { display: block; }
+.receive-qr-add summary { font-weight: 600; color: var(--color-ink); }
+.receive-qr-add:not([open]) summary { margin-bottom: 0; }
 .receive-qr-label { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--color-ink); }
 .receive-qr-badge { padding: 2px 8px; border-radius: 999px; background: var(--color-frost); color: var(--color-brand); font-size: 12px; font-weight: 600; }
 .receive-qr-thumbs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }

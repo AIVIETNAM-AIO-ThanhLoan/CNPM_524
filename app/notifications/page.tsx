@@ -7,6 +7,7 @@ import { formatDateTime } from '../lib/client-api';
 import { KIND_COLOR, type NotificationKind } from '../lib/notifications';
 import { useNotifications } from '../lib/use-notifications';
 import PushSettings from '../components/PushSettings';
+import { SkeletonList } from '../components/Skeleton';
 import '../styles/notifications.css';
 
 const KIND_ICON: Record<NotificationKind, typeof Wallet> = {
@@ -16,7 +17,7 @@ const KIND_ICON: Record<NotificationKind, typeof Wallet> = {
 };
 
 export default function NotificationsPage() {
-  const { items, unread, error, markRead } = useNotifications();
+  const { items, unread, error, loaded, markRead } = useNotifications();
 
   return (
     <div className="notif-page">
@@ -35,7 +36,9 @@ export default function NotificationsPage() {
       <p className="data-status"><Link href="/reminders">Quản lý khoản định kỳ</Link></p>
       {error && <p role="alert" className="ledger-error">{error}</p>}
 
-      {items.length === 0 ? (
+      {!loaded ? (
+        <div className="skeleton-page-block"><SkeletonList label="Đang tải thông báo…" /></div>
+      ) : items.length === 0 ? (
         <div className="notif-empty">
           <p className="notif-empty-title">Chưa có thông báo nào</p>
           <p className="notif-empty-text">Các thông báo về ngân sách và giao dịch sẽ hiển thị tại đây.</p>

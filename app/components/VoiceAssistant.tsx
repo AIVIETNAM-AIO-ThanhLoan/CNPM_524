@@ -9,13 +9,13 @@ import { parseVoiceAmount, removeVoiceAmount } from '@/app/lib/voice-amount.mjs'
 // Trình duyệt chỉ hỏi quyền micro một lần; đã chặn hoặc không hỗ trợ thì không hiện hộp hỏi nên phải báo rõ cách xử lý.
 const VOICE_ERRORS: Record<string, string> = {
   'not-allowed': 'Micro đang bị chặn nên trình duyệt không hỏi lại. Hãy bấm biểu tượng cạnh thanh địa chỉ, cho phép Micro rồi tải lại trang.',
-  'service-not-allowed': 'Trình duyệt không cho dùng dịch vụ nhận giọng nói. Trên Safari, hãy bật Siri và Đọc chính tả trong Cài đặt hệ thống, hoặc dùng Chrome.',
+  'service-not-allowed': 'Thiết bị không cho dùng nhận giọng nói ở đây. Hãy nhập vào ô bên dưới; trên điện thoại có thể bấm micro của bàn phím để đọc.',
   'audio-capture': 'Không tìm thấy micro. Hãy kiểm tra micro của thiết bị.',
   'no-speech': 'Không nghe thấy tiếng nói. Hãy bấm micro và nói lại.',
   network: 'Không kết nối được dịch vụ nhận giọng nói. Hãy kiểm tra mạng rồi thử lại.',
 };
 
-export default function VoiceAssistant() {
+export default function VoiceAssistant({ className = 'btn-secondary', label = 'Giọng nói' }: { className?: string; label?: string }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -23,6 +23,8 @@ export default function VoiceAssistant() {
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState('');
   const [saved, setSaved] = useState('');
+  const [typed, setTyped] = useState('');
+  const [isHomeScreenIos, setIsHomeScreenIos] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
@@ -47,7 +49,7 @@ export default function VoiceAssistant() {
         setWallets(wRes.wallets);
         setCategories(cRes.categories);
         setIsDataLoaded(true);
-      }).catch(() => setError('Không thể tải dữ liệu. Vui lòng thử lại.'));
+      }).catch((err) => setError(!navigator.onLine ? 'Nhập bằng giọng nói cần có mạng. Khi mất mạng, hãy dùng Ghi giao dịch.' : err instanceof Error ? err.message : 'Không thể tải dữ liệu. Vui lòng thử lại.'));
     }
   }, [isOpen, wallets.length]);
 
@@ -124,6 +126,17 @@ export default function VoiceAssistant() {
         setError('Không bật được micro. Hãy đóng hộp thoại và thử lại.');
       }
     }
+  };
+
+  // Ô nhập chữ dùng chung cách đọc với giọng nói; cũng là đường dự phòng khi thiết bị không nhận giọng được.
+  const submitTyped = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const text = typed.trim().normalize('NFC').toLowerCase();
+    if (!text || loading || !isDataLoaded) return;
+    setError('');
+    setSaved('');
+    setTranscript(text);
+    processVoiceText(text);
   };
 
   const extractCategoryName = (text: string) => {
@@ -226,6 +239,7 @@ export default function VoiceAssistant() {
       setSaved(`Đã ghi ${payload.kind === 'income' ? 'khoản thu' : 'khoản chi'} ${Number(payload.amount).toLocaleString('vi-VN')}đ · ${categoryName} · ${walletName}`);
       setPendingPayload(null);
       setMissingCategoryName('');
+      setTyped('');
       notifyFinanceUpdated();
       router.refresh();
     } catch (err: any) {
@@ -271,29 +285,18 @@ export default function VoiceAssistant() {
 
   return (
     <>
-      <style>{`
-        @keyframes floatVoice {
-          0% { transform: translateY(0px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
-          50% { transform: translateY(-8px); box-shadow: 0 12px 20px rgba(16, 185, 129, 0.6); }
-          100% { transform: translateY(0px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
-        }
-      `}</style>
-      
       <button
-        onClick={() => { setSaved(''); setTranscript(''); setIsOpen(true); }}
-        style={{
-          position: 'fixed', bottom: '90px', right: '24px', left: 'auto', 
-          width: '56px', height: '56px', backgroundColor: '#10b981', color: 'white',
-          borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, cursor: 'pointer', border: 'none', animation: 'floatVoice 3s ease-in-out infinite'
-        }}
+        type="button"
+        className={className}
+        onClick={() => { setSaved(''); setTranscript(''); setIsHomeScreenIos((navigator as any).standalone === true); setIsOpen(true); }}
         title="Nhập giao dịch bằng giọng nói"
       >
-        <Mic size={26} />
+        <Mic size={18} strokeWidth={1.8} />
+        {label}
       </button>
 
       {isOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+        <div role="dialog" aria-modal="true" aria-label="Trợ lý giọng nói" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', position: 'relative' }}>
             <button onClick={() => setIsOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
               <X size={24} />
@@ -307,13 +310,14 @@ export default function VoiceAssistant() {
                 <div style={{ backgroundColor: '#f3f4f6', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
                   <p style={{ fontSize: '14px', color: '#4b5563', textAlign: 'center', lineHeight: '1.5' }}>
                     Bạn có thể nói:<br/>
-                    <strong style={{ color: '#10b981' }}>"Ăn uống 50 nghìn"</strong><br/>
-                    <strong style={{ color: '#10b981' }}>"Mua sách 200k"</strong> (Hỏi tạo danh mục)<br/>
-                    <strong style={{ color: '#10b981' }}>"50 nghìn"</strong> (Tự vào danh mục Khác)<br/>
+                    <strong style={{ color: '#047857' }}>"Ăn uống 50 nghìn"</strong><br/>
+                    <strong style={{ color: '#047857' }}>"Mua sách 200k"</strong> (Hỏi tạo danh mục)<br/>
+                    <strong style={{ color: '#047857' }}>"50 nghìn"</strong> (Tự vào danh mục Khác)<br/>
                   </p>
                 </div>
 
                 {error && <p style={{ color: '#ef4444', fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{error}</p>}
+                {isHomeScreenIos && <p style={{ color: '#92400e', backgroundColor: '#fef3c7', padding: '10px 12px', borderRadius: '8px', fontSize: '13px', textAlign: 'center', marginBottom: '16px' }}>App cài trên iPhone có thể không nhận giọng được. Hãy bấm ô nhập bên dưới, rồi dùng micro của bàn phím để đọc.</p>}
                 {saved && <p role="status" style={{ color: '#047857', fontWeight: 600, fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{saved}</p>}
                 {transcript && <p style={{ textAlign: 'center', fontStyle: 'italic', color: '#4b5563', marginBottom: '16px' }}>Bạn đã nói: "{transcript}"</p>}
 
@@ -334,6 +338,24 @@ export default function VoiceAssistant() {
                     {loading ? 'Đang xử lý...' : isListening ? 'Đang nghe...' : isStarting ? 'Đang bật micro... Nếu trình duyệt hỏi quyền, hãy chọn Cho phép.' : 'Bấm Micro để nói'}
                   </p>
                 </div>
+
+                <form onSubmit={submitTyped} style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                  <input
+                    value={typed}
+                    onChange={(e) => setTyped(e.target.value)}
+                    aria-label="Nhập giao dịch bằng chữ"
+                    placeholder="Hoặc nhập: ăn uống 50 nghìn"
+                    enterKeyHint="done"
+                    style={{ flex: 1, minWidth: 0, padding: '12px', fontSize: '16px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading || !isDataLoaded || !typed.trim()}
+                    style={{ padding: '12px 16px', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: 'white', fontWeight: 600, cursor: 'pointer', opacity: loading || !isDataLoaded || !typed.trim() ? 0.5 : 1 }}
+                  >
+                    Ghi
+                  </button>
+                </form>
               </>
             )}
 

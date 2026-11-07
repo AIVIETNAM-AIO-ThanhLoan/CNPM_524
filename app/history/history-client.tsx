@@ -6,6 +6,7 @@ import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronLeft, ChevronRight,
 import { dateKey, type Transaction } from '../lib/client-api';
 import { useFinance } from '../lib/use-finance';
 import BottomNav from '../components/BottomNav';
+import { Skeleton, SkeletonList } from '../components/Skeleton';
 import TransactionRevision from '../components/TransactionRevision';
 import '../styles/history.css';
 
@@ -80,19 +81,19 @@ export default function History({ initialMonth, initialSearch }: { initialMonth:
                 <div className="summary-pair">
                     <div className="stat-box">
                         <span className="stat-label">Tổng thu</span>
-                        <p className="stat-amount text-income">{formatMoney(data.income)}</p>
+                        <p className="stat-amount text-income">{loading ? <Skeleton width="70%" height={20} style={{ margin: '0 auto' }} /> : formatMoney(data.income)}</p>
                     </div>
                     <div className="stat-box">
                         <span className="stat-label">Tổng chi</span>
-                        <p className="stat-amount text-expense">{formatMoney(data.expense)}</p>
+                        <p className="stat-amount text-expense">{loading ? <Skeleton width="70%" height={20} style={{ margin: '0 auto' }} /> : formatMoney(data.expense)}</p>
                     </div>
                 </div>
             </section>
 
             <p className="data-status">
-                <Link href="/transactions/new">+ Ghi giao dịch</Link> · {visible.length} giao dịch trên trang {page}.
+                <Link href="/transactions/new">+ Ghi giao dịch</Link>{!loading && <> · {visible.length} giao dịch trên trang {page}.</>}
             </p>
-            {loading && <p className="data-status" role="status">Đang tải dữ liệu…</p>}
+            {loading && <div className="skeleton-page-block"><SkeletonList rows={5} /></div>}
             {error && <p className="data-status" role="alert">{error} <Link href="/login">Đăng nhập</Link></p>}
             {editing && <TransactionRevision key={editing.id} transaction={editing} close={() => setEditing(null)} />}
 

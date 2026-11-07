@@ -321,11 +321,11 @@
   text-decoration: none;
 }
 
-/* Nút Trợ lý AI nổi ở góc dưới bên trái, ngay trên thanh điều hướng:
+/* Nút Trợ lý AI nổi ở góc dưới bên phải, ngay trên thanh điều hướng:
    robot nhấp nhô, chớp mắt, đèn ăng-ten sáng và vòng sáng lan ra để dễ chú ý */
 .assistant-fab {
   position: fixed;
-  left: 16px;
+  right: 16px;
   bottom: calc(88px + env(safe-area-inset-bottom));
   z-index: 101;
   width: 56px;

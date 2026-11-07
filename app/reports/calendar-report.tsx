@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Finance } from '../lib/client-api';
 import { useFinance } from '../lib/use-finance';
+import { SkeletonList } from '../components/Skeleton';
 
 const money = (n: number) => n.toLocaleString('vi-VN') + 'đ';
 const compact = new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 });
@@ -40,7 +41,7 @@ export default function CalendarReport({ start, end, today, selected, select, da
     </section>
     <section className="calendar-transactions" aria-live="polite">
       <h2>Ngày {day.slice(8)}/{day.slice(5, 7)}/{day.slice(0, 4)}</h2>
-      {report.loading ? <p role="status">Đang tải giao dịch…</p> : report.error ? <p role="alert">{report.error}</p> : <>
+      {report.loading ? <SkeletonList rows={2} label="Đang tải giao dịch…" /> : report.error ? <p role="alert">{report.error}</p> : <>
         <p>Thu: {money(report.data.income)} · Chi: {money(report.data.expense)}</p>
         {!report.data.transactions.length && <p>Không có giao dịch trong ngày.</p>}
         {report.data.transactions.map(t => <div className="category-row" key={t.id}>

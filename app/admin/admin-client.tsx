@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CreditCard, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 import { requestJson } from '../lib/client-api';
+import { SkeletonList } from '../components/Skeleton';
 import '../styles/admin.css';
 
 type Backup = { id: number; status: 'success' | 'failed'; startedAt: string; filePath: string | null; sizeBytes: number | null; error: string | null };
@@ -62,7 +63,7 @@ export default function AdminDashboard() {
             </div>
         </nav>
         <main className="max-w-7xl mx-auto px-4 py-6 w-full space-y-5">
-            {loading && <p role="status">Đang tải dữ liệu quản trị…</p>}
+            {loading && <SkeletonList label="Đang tải dữ liệu quản trị…" />}
             {error && <p role="alert" className="text-danger">{error}</p>}
             {notice && <p role="status">{notice}</p>}
             <button type="button" className="btn-secondary" disabled={busy} onClick={() => setRevision((n) => n + 1)}><RefreshCw size={16} />Làm mới dữ liệu</button>

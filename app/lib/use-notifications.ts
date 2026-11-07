@@ -7,9 +7,11 @@ export function useNotifications() {
     const [items, setItems] = useState<AppNotification[]>([]);
     const [unread, setUnread] = useState(0);
     const [error, setError] = useState('');
+    const [loaded, setLoaded] = useState(false);
     const load = useCallback(async () => {
         try { const data = await requestJson<{ items: AppNotification[]; unread: number }>('/api/notifications'); setItems(data.items); setUnread(data.unread); setError(''); }
         catch (error) { setItems([]); setUnread(0); setError(error instanceof Error ? error.message : 'Không tải được thông báo.'); }
+        finally { setLoaded(true); }
     }, []);
     useEffect(() => {
         void Promise.resolve().then(load);
@@ -21,5 +23,5 @@ export function useNotifications() {
         try { await requestJson('/api/notifications', { id }); await load(); }
         catch (error) { setError(error instanceof Error ? error.message : 'Không cập nhật được thông báo.'); }
     }
-    return { items, unread, error, markRead };
+    return { items, unread, error, loaded, markRead };
 }
