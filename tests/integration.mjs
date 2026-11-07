@@ -450,6 +450,7 @@ try {
     check(adminPage.status === 307 && adminPage.headers.get('location') === '/profile', 'Admin page rejects ordinary users');
     if (process.argv.includes('--browser')) {
         const { chromium } = await import('playwright');
+        console.log(`PASS: ${checks} API/database checks; starting browser checks.`);
         const browser = await chromium.launch({ headless: true,
             ...(process.platform === 'win32' ? { channel: 'msedge' } : {}) });
         try {
@@ -526,6 +527,7 @@ try {
             await page.getByRole('link', { name: 'Quay lại', exact: true }).click();
             await page.getByRole('link', { name: 'Ngân sách', exact: true }).click();
             await page.waitForURL('**/budgets');
+            console.log('Checking budget editing, category creation, and cross-tab totals.');
             const totalIs = async (value) => {
                 await page.waitForFunction((expected) => document.querySelector('[data-testid=budget-total]')?.textContent === expected, value);
                 checks++;
@@ -539,8 +541,9 @@ try {
                 const card = page.getByRole('article', { name, exact: true });
                 await card.getByRole('button', { name: `Tùy chọn danh mục ${name}`, exact: true }).click();
                 await card.getByRole('button', { name: 'Sửa', exact: true }).click();
-                await card.getByRole('spinbutton', { name: `Ngân sách cho ${name}`, exact: true }).fill(value);
-                await card.getByRole('button', { name: 'Lưu ngân sách', exact: true }).click();
+                const dialog = page.getByRole('dialog', { name: `Ngân sách cho ${name}`, exact: true });
+                await dialog.getByRole('spinbutton', { name: `Ngân sách cho ${name}`, exact: true }).fill(value);
+                await dialog.getByRole('button', { name: 'Lưu ngân sách', exact: true }).click();
                 const notice = Number(value) === 0 ? `Đã bỏ đặt ngân sách cho ${name}.` : `Đã lưu ngân sách cho ${name}.`;
                 await page.getByRole('status').filter({ hasText: notice }).waitFor();
             };
@@ -621,31 +624,35 @@ try {
             const healthCard = page.getByRole('article', { name: 'Sức khỏe', exact: true });
             await healthCard.getByRole('button', { name: 'Tùy chọn danh mục Sức khỏe', exact: true }).click();
             await healthCard.getByRole('button', { name: 'Sửa', exact: true }).click();
-            await healthCard.getByRole('spinbutton').fill('0');
-            check(await healthCard.locator('form').evaluate((form) => form.checkValidity()), 'Zero budget is accepted');
-            await healthCard.getByRole('button', { name: 'Lưu ngân sách', exact: true }).click();
-            await healthCard.getByText('Chưa đặt ngân sách', { exact: true }).waitFor();
+            const healthDialog = page.getByRole('dialog', { name: 'Ngân sách cho Sức khỏe', exact: true });
+            await healthDialog.getByRole('spinbutton').fill('0');
+            check(await healthDialog.locator('form').evaluate((form) => form.checkValidity()), 'Zero budget is accepted');
+            await healthDialog.getByRole('button', { name: 'Lưu ngân sách', exact: true }).click();
             await healthCard.getByRole('button', { name: 'Đặt ngân sách', exact: true }).waitFor();
             check(await healthCard.getByRole('progressbar').count() === 0, 'Unset budget hides usage and thresholds');
             await totalIs('1.400.000đ');
             await page.reload();
             await totalIs('1.400.000đ');
-            await healthCard.getByText('Chưa đặt ngân sách', { exact: true }).waitFor();
+            await healthCard.getByRole('button', { name: 'Đặt ngân sách', exact: true }).waitFor();
             await setBudget('Sức khỏe', '150000');
             await totalIs('1.550.000đ');
             await page.route('**/api/budgets', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Không thể lưu ngân sách thử nghiệm.' }) }));
             await healthCard.getByRole('button', { name: 'Tùy chọn danh mục Sức khỏe', exact: true }).click();
             await healthCard.getByRole('button', { name: 'Sửa', exact: true }).click();
-            await healthCard.getByRole('spinbutton').fill('250000');
-            await healthCard.getByRole('button', { name: 'Lưu ngân sách', exact: true }).click();
+            await healthDialog.getByRole('spinbutton').fill('250000');
+            await healthDialog.getByRole('button', { name: 'Lưu ngân sách', exact: true }).click();
             await page.getByRole('alert').filter({ hasText: 'Không thể lưu ngân sách thử nghiệm.' }).waitFor();
             await totalIs('1.550.000đ');
             await page.unroute('**/api/budgets');
-            await healthCard.getByRole('button', { name: 'Hủy', exact: true }).click();
+            await healthDialog.getByRole('button', { name: 'Hủy', exact: true }).click();
             check(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), 'Budget layout fits mobile width');
             await page.screenshot({ path: path.join(tmpdir(), 'cnpm-budget-mobile.png'), fullPage: true });
             await page.setViewportSize({ width: 1280, height: 900 });
-            check(await page.locator('.budget-category-grid').evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(' ').length === 2), 'Budget cards use two columns on desktop');
+            check(await page.locator('.budget-category-grid').evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(' ').length >= 2), 'Budget cards use multiple columns on desktop');
+            check(await page.getByRole('article').evaluateAll(cards => cards.every(card => {
+                const box = card.getBoundingClientRect();
+                return Math.abs(box.width - box.height) < 1;
+            })), 'Budget cards retain their square layout');
             await page.screenshot({ path: path.join(tmpdir(), 'cnpm-budget-desktop.png'), fullPage: true });
             await page.setViewportSize({ width: 390, height: 844 });
             await page.goto(`${origin}/transactions/new`);

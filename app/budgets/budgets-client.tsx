@@ -141,7 +141,7 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
             {!data.categories.length && <div className="budget-empty"><Wallet size={32} /><p>Chưa có danh mục chi tiêu.</p><Link href="/transactions/new">Mở Ghi giao dịch để thêm danh mục</Link></div>}
             
             {/* GIAO DIỆN Ô VUÔNG */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px', marginTop: '16px' }}>
+            <div className="budget-category-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px', marginTop: '16px' }}>
                 {data.categories.map((category) => {
                     const budget = data.budgets.find((item) => item.categoryId === category.id);
                     const percent = budget && Number(budget.amount) > 0 ? (Number(budget.spent) / Number(budget.amount)) * 100 : 0;
@@ -195,7 +195,7 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
                                         <p style={{ fontSize: '10px', color: '#9ca3af' }}>/ {formatBudgetMoney(budget.amount)}</p>
                                     </>
                                 ) : (
-                                    <button type="button" onClick={() => editBudget(category)} style={{ marginTop: '4px', fontSize: '12px', color: '#10b981', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                    <button type="button" aria-label="Đặt ngân sách" onClick={() => editBudget(category)} style={{ marginTop: '4px', fontSize: '12px', color: '#10b981', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px' }}>
                                         <Plus size={14} /> Đặt
                                     </button>
                                 )}
@@ -208,9 +208,9 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
 
         {/* MODAL SỬA NGÂN SÁCH */}
         {editing && (
-            <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+            <div role="dialog" aria-modal="true" aria-label={`Ngân sách cho ${editing.name}`} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                 <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '350px', position: 'relative' }}>
-                    <button onClick={() => setEditing(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
+                    <button type="button" aria-label="Đóng đặt ngân sách" disabled={busy} onClick={() => setEditing(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                         <X size={24} />
                     </button>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', textAlign: 'center' }}>Đặt ngân sách</h3>
@@ -221,6 +221,7 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
                             Số tiền (VND)
                             <input 
                                 name="amount" 
+                                aria-label={`Ngân sách cho ${editing.name}`}
                                 type="number" 
                                 inputMode="decimal" 
                                 min="0" 
@@ -236,7 +237,7 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
                         </label>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button type="button" className="btn-secondary" style={{ flex: 1 }} disabled={busy} onClick={() => { setEditing(null); setError(''); }}>Hủy</button>
-                            <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu'}</button>
+                            <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu ngân sách'}</button>
                         </div>
                     </form>
                 </div>

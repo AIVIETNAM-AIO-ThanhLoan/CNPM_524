@@ -17,31 +17,33 @@ export default function GoldClient() {
   const [prices, setPrices] = useState<GoldPrice[]>([]);
   const [updatedAt, setUpdatedAt] = useState('');
   const [loading, setLoading] = useState(true);
-
-  const fetchGoldPrices = async () => {
-    try {
-      const res = await fetch('/api/market?type=gold');
-      const data = await res.json();
-      if (data.success) {
-        setPrices(data.prices);
-        setUpdatedAt(data.updatedAt);
-      }
-    } catch (error) {
-      console.error("Lỗi lấy giá vàng:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [reload, setReload] = useState(0);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchGoldPrices();
-
-    const interval = setInterval(() => {
-      fetchGoldPrices();
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
+    let controller: AbortController;
+    function refresh() {
+      controller?.abort();
+      const request = new AbortController();
+      controller = request;
+      void fetch('/api/market?type=gold', { signal: request.signal })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok || !data.success) throw new Error(data.error || 'Không lấy được giá vàng.');
+          return data;
+        })
+        .then((data) => {
+          if (!request.signal.aborted) { setPrices(data.prices); setUpdatedAt(data.updatedAt); setError(''); }
+        })
+        .catch((error: unknown) => {
+          if (!request.signal.aborted) setError(error instanceof Error ? error.message : 'Không lấy được giá vàng.');
+        })
+        .finally(() => { if (!request.signal.aborted) setLoading(false); });
+    }
+    refresh();
+    const interval = setInterval(refresh, 10000);
+    return () => { clearInterval(interval); controller?.abort(); };
+  }, [reload]);
 
   const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 
@@ -57,7 +59,8 @@ export default function GoldClient() {
           </h1>
         </div>
         <button 
-          onClick={fetchGoldPrices} 
+          onClick={() => { setLoading(true); setReload(n => n + 1); }}
+          aria-label="Làm mới giá vàng"
           disabled={loading}
           className="p-2 bg-white text-yellow-600 rounded-full shadow-sm hover:bg-yellow-50 transition"
         >
@@ -66,6 +69,7 @@ export default function GoldClient() {
       </header>
 
       <div className="px-4">
+        {error && <p role="alert" className="ledger-error">{error}</p>}
         <div className="flex justify-between items-center mb-4 px-1">
           <p className="text-sm text-gray-500 font-medium">Đơn vị: VNĐ / Lượng</p>
           {updatedAt && (
