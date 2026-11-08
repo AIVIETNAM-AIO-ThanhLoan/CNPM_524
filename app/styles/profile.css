@@ -211,7 +211,6 @@
 .theme-heading { display: flex; align-items: center; gap: 12px; }
 .theme-heading-icon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border: 1px solid var(--color-line); border-radius: 14px; background: var(--color-haze); color: var(--color-primary); }
 .theme-settings .settings-title { margin: 0; color: var(--color-ink); font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
-.theme-description { margin: 5px 0 0; color: var(--color-muted); font-size: 12px; line-height: 1.6; }
 .theme-preview { position: relative; margin-top: 20px; overflow: hidden; padding: 14px 16px 18px; border: 1px solid color-mix(in srgb, var(--color-primary) 10%, white); border-radius: 16px; background: radial-gradient(ellipse at 100% 0%, var(--color-frost), transparent 70%), var(--color-canvas); }
 .theme-preview-caption { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--color-muted); font-size: 10px; font-weight: 500; }
 .theme-current { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border: 1px solid color-mix(in srgb, var(--color-primary) 8%, white); border-radius: 20px; background: #ffffffb8; color: var(--color-primary); font-size: 10px; font-weight: 600; }
@@ -258,7 +257,6 @@
   .theme-heading { gap: 9px; }
   .theme-heading-icon { width: 36px; height: 36px; border-radius: 12px; }
   .theme-settings .settings-title { font-size: 16px; }
-  .theme-description { font-size: 11px; }
   .theme-preview { padding-inline: 12px; }
   .theme-options { gap: 3px; }
   .theme-swatch { width: 31px; height: 31px; }
