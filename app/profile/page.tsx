@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { User } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import AvatarUpload from '../components/AvatarUpload';
+import DefaultSettings from './default-settings';
 import LogoutButton from '../components/LogoutButton';
 import RecoveryCodeButton from '../components/RecoveryCodeButton';
 import { getCurrentUser } from '../lib/session';
@@ -57,6 +58,7 @@ export default async function Profile() {
         </section>
       )}
 
+      {user && <DefaultSettings key={user.id} userId={user.id} />}
       <BottomNav />
     </div>
   );

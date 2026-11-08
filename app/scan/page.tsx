@@ -6,6 +6,7 @@ import BottomNav from '../components/BottomNav';
 import ReceiveQrPanel from '../components/ReceiveQrPanel';
 import { requestJson } from '../lib/client-api';
 import { parseVietQR } from '../lib/vietqr.mjs';
+import { bankPlatform, readDefaults } from '../lib/default-preferences';
 import '../styles/scan.css';
 
 type Recipient = { bankBin: string; account: string; name: string; amount: string; note: string };
@@ -14,6 +15,7 @@ export default function Scan() {
     const video = useRef<HTMLVideoElement>(null);
     const stream = useRef<MediaStream | null>(null);
     const generation = useRef(0);
+    const defaultsUser = useRef('');
     const [platform, setPlatform] = useState('');
     const [options, setOptions] = useState<Options>({ banks: [], apps: [] });
     const [app, setApp] = useState('');
@@ -35,14 +37,14 @@ export default function Scan() {
     useEffect(() => {
         const offline = () => { setOnline(navigator.onLine); if (!navigator.onLine) { stop(); setUrl(''); } else resumeCamera(); };
         const hidden = () => { if (document.visibilityState === 'hidden') stop(); else resumeCamera(); };
-        Promise.resolve().then(() => { setOnline(navigator.onLine); setPlatform(/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'ios' : 'android'); });
+        Promise.resolve().then(() => { setOnline(navigator.onLine); setPlatform(bankPlatform()); });
         window.addEventListener('offline', offline); window.addEventListener('online', offline); document.addEventListener('visibilitychange', hidden);
         return () => { stop(); window.removeEventListener('offline', offline); window.removeEventListener('online', offline); document.removeEventListener('visibilitychange', hidden); };
     }, [stop]);
     useEffect(() => {
         if (!platform || !online) return;
         const controller = new AbortController();
-        requestJson<Options>(`/api/vietqr?platform=${platform}`, undefined, controller.signal).then((options) => { if (!controller.signal.aborted) { setOptions(options); setApp(options.apps[0]?.appId || ''); setOptionsError(''); } })
+        Promise.all([requestJson<Options>(`/api/vietqr?platform=${platform}`, undefined, controller.signal), requestJson<{ user: { id: string } | null }>('/api/auth/me', undefined, controller.signal)]).then(([options, session]) => { if (!controller.signal.aborted) { setOptions(options); defaultsUser.current = session.user?.id || ''; const defaults = session.user ? readDefaults(session.user.id) : null; const preferred = platform === 'ios' ? defaults?.iosApp : defaults?.androidApp; setApp(options.apps.find(item => item.appId === preferred)?.appId || options.apps[0]?.appId || ''); setOptionsError(''); } })
             .catch((error) => { if (!controller.signal.aborted) { setOptions({ banks: [], apps: [] }); setOptionsError(error.message); } });
         return () => controller.abort();
     }, [platform, online]);
@@ -153,6 +155,9 @@ export default function Scan() {
         if (next === 'my-qr') stop(); else if (!recipient) void start();
     }
     function manualTransfer() {
+        const defaults = readDefaults(defaultsUser.current);
+        const preferred = platform === 'ios' ? defaults.iosApp : defaults.androidApp;
+        setApp(options.apps.find(item => item.appId === preferred)?.appId || options.apps[0]?.appId || '');
         stop(); setQr(''); setAmount(''); setNote(''); setUrl(''); setReviewed(false); setError('');
         setRecipient({ bankBin: '', account: '', name: '', amount: '', note: '' });
     }

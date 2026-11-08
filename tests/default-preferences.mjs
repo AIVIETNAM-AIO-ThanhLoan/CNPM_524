@@ -1,0 +1,60 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import ts from 'typescript';
+import { chromium } from 'playwright';
+const source = await readFile('app/lib/default-preferences.ts', 'utf8');
+const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
+const {readDefaults, saveDefaults, bankPlatform} = await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {userAgent:'iPhone',platform:'iPhone',maxTouchPoints:5} });
+assert.equal(bankPlatform(),'ios');
+globalThis.navigator.userAgent='Android';
+assert.equal(bankPlatform(),'android');
+const store = new Map();
+globalThis.localStorage = {getItem: key => store.get(key) ?? null, setItem: (key,value) => store.set(key,value)};
+const values = {walletId:'second',androidApp:'bank-b',iosApp:'bank-ios'};
+saveDefaults('alice',values);
+assert.deepEqual(readDefaults('alice'),values);
+assert.equal(readDefaults('bob').walletId,'');
+store.set('cnpm-defaults:alice','invalid');
+assert.equal(readDefaults('alice').walletId,'');
+store.set('cnpm-defaults:alice',JSON.stringify({walletId:42,iosApp:'bank-ios'}));
+assert.equal(readDefaults('alice').walletId,'');
+assert.equal(readDefaults('alice').iosApp,'bank-ios');
+const browser=await chromium.launch({channel:'msedge'});
+try {
+ const page=await browser.newPage({serviceWorkers:'block',viewport:{width:390,height:844}});
+ await page.addInitScript(() => {localStorage.setItem('cnpm-defaults:alice',JSON.stringify({walletId:'second',androidApp:'bank-b',iosApp:'bank-ios'}));});
+ await page.route('**/api/**',route=> {
+  const path=new URL(route.request().url()).pathname;
+  if(path==='/api/auth/me') return route.fulfill({json:{user:{id:'alice'}}});
+  if(path==='/api/vietqr') return route.fulfill({json:{banks:[],apps:[{appId:'bank-a',appName:'Bank A'},{appId:'bank-b',appName:'Bank B'}]}});
+  return route.abort();
+ });
+ await page.goto('http://localhost:3100/scan');
+ await page.waitForResponse(response => response.url().includes('/api/vietqr')).catch(() => {});
+ await page.evaluate(() => localStorage.setItem('cnpm-defaults:alice',JSON.stringify({walletId:'second',androidApp:'bank-a',iosApp:'bank-ios'})));
+ await page.getByRole('button',{name:'Chuyển tiền',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('[aria-label="Ứng dụng ngân hàng"]')?.value==='bank-a');
+ assert.equal(await page.getByLabel('Ứng dụng ngân hàng',{exact:true}).inputValue(),'bank-a');
+ await page.getByLabel('Ứng dụng ngân hàng',{exact:true}).selectOption('bank-b');
+ assert.equal(await page.getByLabel('Ứng dụng ngân hàng',{exact:true}).inputValue(),'bank-b');
+ await page.goto('http://localhost:3100/offline');
+ await page.evaluate(async () => {
+  await new Promise((resolve,reject) => {
+   const request=indexedDB.open('cnpm-offline',1);
+   request.onupgradeneeded=()=> {request.result.createObjectStore('data');request.result.createObjectStore('outbox',{keyPath:'requestKey'});};
+   request.onerror=reject;
+   request.onsuccess=()=> {const db=request.result;const tx=db.transaction('data','readwrite');
+    tx.objectStore('data').put('alice','active');
+    tx.objectStore('data').put({userId:'alice',wallets:[{id:'first',name:'Cash',balance:'0'},{id:'second',name:'Bank',balance:'0'}],categories:[{id:'food',name:'Food',kind:'expense'}]},'account:alice');
+    tx.oncomplete=()=>{db.close();resolve();}; tx.onerror=reject;
+   };
+  });
+ });
+ await page.reload();
+ await page.waitForFunction(()=>document.querySelector('select[name="walletId"]')?.value==='second');
+ await page.locator('select[name="walletId"]').selectOption('first');
+ await page.getByLabel('Số tiền',{exact:true}).fill('25000');
+ assert.equal(await page.locator('select[name="walletId"]').inputValue(),'first');
+ console.log('Defaults: persistence, account isolation, corrupt storage, bank/wallet preselection and manual overrides passed.');
+} finally {await browser.close();}

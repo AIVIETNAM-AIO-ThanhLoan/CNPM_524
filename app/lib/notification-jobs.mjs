@@ -1,3 +1,4 @@
+import { rolloverBudgets } from './budget-rollover.mjs';
 import { randomUUID } from 'node:crypto';
 
 export const vietnamToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -24,6 +25,7 @@ export async function notify(connection, userId, eventKey, kind, title, body) {
 }
 
 export async function budgetAlerts(connection, userId) {
+    await rolloverBudgets(connection, userId, `${vietnamToday().slice(0, 7)}-01`);
     const [budgets] = await connection.execute(`SELECT b.*, c.name,
         COALESCE((SELECT SUM(IF(t.reverses_id IS NULL, t.amount, -t.amount)) FROM transactions t
             WHERE t.user_id = b.user_id AND t.category_id = b.category_id AND t.kind = 'expense'

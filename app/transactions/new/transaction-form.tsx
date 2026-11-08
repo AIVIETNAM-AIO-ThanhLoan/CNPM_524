@@ -1,22 +1,19 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Banknote, Car, Gift, House, UtensilsCrossed, Wallet as WalletIcon } from 'lucide-react';
-import { PALETTE } from '@/app/lib/colors';
+import { ArrowLeft } from 'lucide-react';
 import { type Category, requestJson, today, type Wallet } from '@/app/lib/client-api';
-import BottomNav from '@/app/components/BottomNav';
 import AddCategoryButton from '@/app/components/AddCategoryButton';
 import VoiceAssistant from '@/app/components/VoiceAssistant';
 import { notifyFinanceUpdated } from '@/app/lib/finance-updates';
 import { cacheAccount, pendingEntries, queueEntry, synchronize } from '@/app/lib/offline';
 import PendingEntries from '@/app/components/PendingEntries';
 import { useOnline } from '@/app/lib/use-online';
+import { readDefaults } from '@/app/lib/default-preferences';
 import '../../styles/ledger.css';
 import '../../styles/transaction.css';
-
-const categoryIcons = { 'Lương': Banknote, 'Ăn uống': UtensilsCrossed, 'Đi lại': Car, 'Tiền nhà': House, 'Thưởng': Gift };
 
 export default function TransactionForm({ userId, initialWallets, initialCategories }: { userId: string; initialWallets: Wallet[]; initialCategories: Category[] }) {
     const router = useRouter();
@@ -34,6 +31,12 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
     const pending = useRef<{ payload: string; key: string } | null>(null);
     const visibleCategories = categories.filter((c) => c.kind === kind);
     const categoryId = visibleCategories.find((c) => c.id === selectedCategory)?.id || visibleCategories[0]?.id || '';
+
+    useEffect(() => {
+        const wallet = formRef.current?.elements.namedItem('walletId');
+        const id = readDefaults(userId).walletId;
+        if (wallet instanceof HTMLSelectElement && initialWallets.some(w => w.id === id)) wallet.value = id;
+    }, [userId, initialWallets]);
 
     async function submit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -79,7 +82,7 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
     }
 
     return <main className={`app-page tx-page${online ? '' : ' tx-page-offline'}`}>
-        <header className="tx-header">{online && <Link href="/" className="tx-round-btn" aria-label="Quay lại"><ArrowLeft size={20} strokeWidth={1.8} /></Link>}<h1 className="tx-title">Ghi giao dịch</h1>{online && <VoiceAssistant className="btn-secondary tx-voice-btn" />}</header>
+        <header className="tx-header">{online && <Link href="/" className="tx-round-btn" aria-label="Quay lại"><ArrowLeft size={20} strokeWidth={1.8} /></Link>}<h1 className="tx-title">Ghi giao dịch</h1>{online && <VoiceAssistant className="btn-secondary voice-launcher" label="" />}</header>
         {error && <p className="ledger-error" role="alert">{error}</p>}
         {success && <p role="status">{success}</p>}
         {queued && <button className="btn-secondary" type="button" disabled={busy} onClick={() => {
@@ -88,33 +91,39 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
         }}>Ghi khoản khác</button>}
         
         <form ref={formRef} className="tx-form ledger-form" onSubmit={submit}>
-            <label>Loại giao dịch<select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="expense">Chi tiền</option><option value="income">Thu tiền</option><option value="transfer">Chuyển giữa hai ví</option></select></label>
-            <label>{kind === 'transfer' ? 'Ví nguồn' : 'Ví'}<select name="walletId" required>{wallets.map((w) => <option key={w.id} value={w.id}>{w.name} · {Number(w.balance).toLocaleString('vi-VN')}đ</option>)}</select></label>
-            {kind === 'transfer' ? <label>Ví nhận<select name="targetId" required>{wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>
-                : <section className="tx-section"><div className="tx-category-heading"><h2 className="tx-section-title">Danh mục</h2>
-                    {online && <AddCategoryButton kind={kind} disabled={busy} onAdded={(category) => { setCategories((items) => [...items, category]); setSelectedCategory(category.id); setError(''); setSuccess('Đã thêm danh mục.'); }} />}</div>
-                    <input type="hidden" name="categoryId" value={categoryId} />
-                    <div className="tx-categories">{visibleCategories.map((c) => {
-                        const Icon = categoryIcons[c.name as keyof typeof categoryIcons] || WalletIcon;
-                        const color = kind === 'income' ? PALETTE.income : PALETTE.expense;
-                        return <button type="button" key={c.id} className={`tx-category ${categoryId === c.id ? 'selected' : ''}`} aria-pressed={categoryId === c.id} onClick={() => setSelectedCategory(c.id)}>
-                            <span className="tx-category-icon" style={{ backgroundColor: `${color}24`, color }}><Icon size={20} strokeWidth={1.8} /></span><span className="tx-category-name">{c.name}</span>
-                        </button>;
-                    })}</div>
-                </section>}
-            <label className="tx-amount-box"><span className="tx-amount-label">Số tiền (VND)</span><span className="tx-amount-row"><input className="tx-amount-input" name="amount" type="number" min="0.01" max="999999999999.99" step="0.01" required inputMode="decimal" placeholder="0" aria-label="Số tiền" /><span className="tx-amount-unit">đ</span></span></label>
-            <label>Ngày giao dịch<input type="date" min="1000-01-01" max="9999-12-31" value={bookedOn} onChange={(e) => setBookedOn(e.target.value)} required /></label>
-            <label>Ghi chú<input name="note" maxLength={500} /></label>
-            <p>Chuyển giữa các ví không tính vào thu/chi. Bạn có thể ghi số dư âm để phản ánh khoản chi chưa nhập nguồn tiền.</p>
-            <button type="submit" className="btn-primary tx-save" disabled={busy || !wallets.length || (kind !== 'transfer' && !categoryId)}>{busy ? 'Đang lưu…' : online ? 'Lưu giao dịch' : 'Lưu trên thiết bị'}</button>
+            <fieldset className="tx-type-switch">
+                <legend className="tx-sr-only">Loại giao dịch</legend>
+                {([{ value: 'expense', label: 'Chi' }, { value: 'income', label: 'Thu' }, { value: 'transfer', label: 'Chuyển' }] as const).map((item) =>
+                    <label key={item.value}><input type="radio" name="kind" value={item.value} checked={kind === item.value} onChange={() => setKind(item.value)} /><span>{item.label}</span></label>)}
+            </fieldset>
+            <label className="tx-amount-box"><span className="tx-amount-label">{kind === 'expense' ? 'Số tiền chi' : kind === 'income' ? 'Số tiền thu' : 'Số tiền chuyển'}</span><span className="tx-amount-row"><input className="tx-amount-input" name="amount" type="number" min="0.01" max="999999999999.99" step="0.01" required inputMode="decimal" placeholder="0" aria-label="Số tiền" /><span className="tx-amount-unit">đ</span></span></label>
+            <div className="tx-details">
+                {kind !== 'transfer' && <label className="tx-detail"><span>Danh mục</span><select name="categoryId" aria-label="Danh mục" value={categoryId} onChange={(e) => setSelectedCategory(e.target.value)}>
+                    {!visibleCategories.length && <option value="">Chưa có danh mục</option>}
+                    {visibleCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select></label>}
+                <label className="tx-detail"><span>{kind === 'transfer' ? 'Ví nguồn' : kind === 'income' ? 'Nhận vào' : 'Nguồn chi'}</span><select name="walletId" aria-label="Ví" required>
+                    {wallets.map((w) => <option key={w.id} value={w.id}>{w.name} · {Number(w.balance).toLocaleString('vi-VN')}đ</option>)}
+                </select></label>
+                {kind === 'transfer' && <label className="tx-detail"><span>Ví nhận</span><select name="targetId" aria-label="Ví nhận" required>{wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}
+                <label className="tx-detail"><span>Ngày</span><input aria-label="Ngày giao dịch" type="date" min="1000-01-01" max="9999-12-31" value={bookedOn} onChange={(e) => setBookedOn(e.target.value)} required /></label>
+                <label className="tx-detail"><span>Ghi chú</span><input name="note" aria-label="Ghi chú" placeholder="Không bắt buộc" maxLength={500} /></label>
+            </div>
+            <button type="submit" className="btn-primary tx-save" disabled={busy || !wallets.length || (kind !== 'transfer' && !categoryId)}>{busy ? 'Đang lưu…' : kind === 'expense' ? 'Lưu khoản chi' : kind === 'income' ? 'Lưu khoản thu' : 'Lưu chuyển tiền'}</button>
+            {(!wallets.length || (kind !== 'transfer' && !categoryId)) && <p role="status">Thêm ví và danh mục bên dưới để bắt đầu ghi giao dịch.</p>}
+            <details className="tx-help"><summary>Lưu ý khi ghi giao dịch</summary><p>Chuyển giữa các ví không tính vào thu/chi. Bạn có thể ghi số dư âm để phản ánh khoản chi chưa nhập nguồn tiền.</p></details>
+
         </form>
         
-        <PendingEntries userId={userId} />
-        {online && <><p className="data-status"><Link href="/manage">Quản lý ví và danh mục</Link></p>
-        <details className="card tx-extra"><summary>Thêm ví (cần mạng)</summary><form className="ledger-form" onSubmit={(e) => addOption(e, 'wallets')}>
+        {online && <div className="tx-tools">
+            {kind !== 'transfer' && <AddCategoryButton kind={kind} disabled={busy} onAdded={(category) => { setCategories((items) => [...items, category]); setSelectedCategory(category.id); setError(''); setSuccess('Đã thêm danh mục.'); }} />}
+            <Link href="/manage">Quản lý ví</Link>
+        </div>}
+        <PendingEntries userId={userId} hideWhenEmpty />
+
+        {online && <details className="card tx-extra"><summary>Thêm ví (cần mạng)</summary><form className="ledger-form" onSubmit={(e) => addOption(e, 'wallets')}>
             <label>Tên ví<input name="name" maxLength={100} required /></label><p>Ví mới bắt đầu từ 0đ.</p><button className="btn-secondary" disabled={busy}>Thêm ví</button>
-        </form></details></>}
+        </form></details>}
         
-        <BottomNav />
     </main>;
 }

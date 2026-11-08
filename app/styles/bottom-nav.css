@@ -52,22 +52,25 @@
   cursor: pointer;
 }
 
-/* Chấm nhỏ dưới icon đang chọn */
-.nav-item.nav-active::after {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background-color: var(--color-brand);
-}
-
 @media (max-width: 767px) {
   .bottom-nav { padding: 4px 8px calc(4px + env(safe-area-inset-bottom)); box-shadow: none; gap: 4px; }
   .nav-item { min-height: 56px; border-radius: 12px; gap: 3px; }
   .nav-item.nav-active { background: var(--color-haze); color: #0b5cad; font-weight: 700; }
-  .nav-item.nav-active::after { display: none; }
   .nav-qr { width: 48px; height: 48px; margin-top: 0; border-radius: 12px; box-shadow: none; }
   .bottom-nav a:focus-visible { outline: 2px solid #0b5cad; outline-offset: 2px; }
 }
 
 .nav-qr[aria-current="page"] { outline: 2px solid var(--color-ink); outline-offset: 3px; }
+
+/* The active mark animates once; it never changes navigation item size. */
+.bottom-nav > a { position: relative; }
+.bottom-nav > a[aria-current="page"]::after { content: ''; position: absolute; bottom: 1px; left: calc(50% - 11px); width: 22px; height: 3px; border-radius: 3px; background: #0b5cad; animation: nav-mark-enter 180ms cubic-bezier(.16, 1, .3, 1); }
+.bottom-nav > .nav-qr[aria-current="page"]::after { background: white; bottom: 3px; }
+.nav-item svg { transition: transform 140ms ease-out; }
+.nav-item:active svg { transform: scale(.92); }
+@keyframes nav-mark-enter { from { opacity: .4; transform: scaleX(.35); } to { opacity: 1; transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .bottom-nav > a[aria-current="page"]::after { animation: none; }
+  .nav-item svg { transition: none; }
+  .nav-item:active svg { transform: none; }
+}
