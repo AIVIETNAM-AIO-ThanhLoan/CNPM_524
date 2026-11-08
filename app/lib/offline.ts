@@ -7,10 +7,26 @@ export type OfflineAccount = { userId: string; wallets: Wallet[]; categories: Ca
 const CHANGED = 'cnpm:offline';
 function open(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
+        let settled = false;
+        const fail = (message: string) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            reject(new Error(message));
+        };
+        const timer = setTimeout(() => fail('Bộ nhớ thiết bị chưa phản hồi. Hãy đóng các cửa sổ Ting Ting khác rồi thử lại.'), 8000);
         const request = indexedDB.open('cnpm-offline', 1);
         request.onupgradeneeded = () => { request.result.createObjectStore('data'); request.result.createObjectStore('outbox', { keyPath: 'requestKey' }); };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(new Error('Không mở được bộ nhớ ngoại tuyến. Chưa lưu giao dịch.'));
+        request.onsuccess = () => {
+            const db = request.result;
+            if (settled) { db.close(); return; }
+            settled = true;
+            clearTimeout(timer);
+            db.onversionchange = () => db.close();
+            resolve(db);
+        };
+        request.onerror = () => fail('Không mở được bộ nhớ ngoại tuyến. Chưa lưu giao dịch.');
+        request.onblocked = () => fail('Bộ nhớ đang được cửa sổ Ting Ting khác sử dụng. Hãy đóng cửa sổ đó rồi thử lại.');
     });
 }
 async function operation<T>(store: string, mode: IDBTransactionMode, run: (store: IDBObjectStore) => IDBRequest): Promise<T> {

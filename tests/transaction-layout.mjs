@@ -118,7 +118,6 @@ try {
     });
     await page.getByRole('button', { name: 'Thử đồng bộ', exact: true }).click();
     await page.locator('.pending-list').waitFor({ state: 'detached' });
-    await page.getByRole('button', { name: 'Ghi khoản khác', exact: true }).click();
     const entryUrl = page.url();
     for (const [mode, kind] of [['Chi', 'expense'], ['Chi', 'expense'], ['Thu', 'income'], ['Chuyển', 'transfer']]) {
         await page.locator('.tx-type-switch').getByText(mode, { exact: true }).click();

@@ -14,7 +14,7 @@ import { spendingSourceOptions } from '@/app/lib/spending-source-options';
 import '../../styles/ledger.css';
 import '../../styles/transaction.css';
 
-export default function TransactionForm({ userId, initialWallets, initialCategories }: { userId: string; initialWallets: Wallet[]; initialCategories: Category[] }) {
+export default function TransactionForm({ userId, initialWallets, initialCategories, onBack }: { userId: string; initialWallets: Wallet[]; initialCategories: Category[]; onBack?: () => void }) {
     const online = useOnline();
     const [wallets, setWallets] = useState(initialWallets);
     const categories = initialCategories;
@@ -25,7 +25,6 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [busy, setBusy] = useState(false);
-    const [queued, setQueued] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const [bookedOn, setBookedOn] = useState(today);
     const pending = useRef<{ payload: string; key: string } | null>(null);
@@ -77,32 +76,29 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
             await queueEntry({ userId, requestKey: pending.current.key, payload, state: 'pending', error: '', createdAt: new Date().toISOString() });
             await synchronize(userId).catch(() => undefined);
             const remaining = (await pendingEntries(userId)).find((item) => item.requestKey === pending.current?.key);
-            if (remaining) {
-                setQueued(true);
-                if (remaining.state === 'failed') setError(remaining.error);
-                else setSuccess('Đã lưu trên thiết bị, chờ đồng bộ khi có mạng và đăng nhập đúng tài khoản.');
+            if (remaining?.state === 'failed') {
+                setError(remaining.error);
                 return;
             }
             pending.current = null;
-            setQueued(false);
-            setSuccess('Ghi giao dịch thành công.');
+            setSuccess(remaining
+                ? 'Đã lưu trên thiết bị, chờ đồng bộ khi có mạng và đăng nhập đúng tài khoản.'
+                : 'Ghi giao dịch thành công.');
             for (const name of ['amount', 'note'] as const) {
                 const input = formRef.current?.elements.namedItem(name);
                 if (input instanceof HTMLInputElement && input.value === payload[name]) input.value = '';
             }
-            notifyFinanceUpdated();
+            if (!remaining) notifyFinanceUpdated();
         } catch (error) { setError(error instanceof Error ? error.message : 'Không thể lưu giao dịch.'); }
         finally { setBusy(false); }
     }
 
     return <main className={`app-page tx-page${online ? '' : ' tx-page-offline'}`}>
-        <header className="tx-header">{online && <Link href="/" className="tx-round-btn" aria-label="Quay lại"><ArrowLeft size={20} strokeWidth={1.8} /></Link>}<h1 className="tx-title">Ghi giao dịch</h1>{online && <VoiceAssistant className="btn-secondary voice-launcher" label="" />}</header>
+        <header className="tx-header">{onBack
+            ? <button type="button" className="tx-round-btn" aria-label="Về trang chủ" onClick={onBack}><ArrowLeft size={20} strokeWidth={1.8} /></button>
+            : <Link href="/" className="tx-round-btn" aria-label="Quay lại"><ArrowLeft size={20} strokeWidth={1.8} /></Link>}<h1 className="tx-title">Ghi giao dịch</h1>{online && <VoiceAssistant className="btn-secondary voice-launcher" label="" />}</header>
         {error && <p className="ledger-error" role="alert">{error}</p>}
         {success && <p className="tx-feedback" role="status"><CheckCircle2 size={20} aria-hidden="true" /><span>{success}</span></p>}
-        {queued && <button className="btn-secondary" type="button" disabled={busy} onClick={() => {
-            pending.current = null; setSuccess(''); setError(''); setQueued(false);
-            formRef.current?.reset();
-        }}>Ghi khoản khác</button>}
         
         <form ref={formRef} className="tx-form ledger-form" onSubmit={submit}>
             <fieldset className="tx-type-switch">
