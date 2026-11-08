@@ -32,5 +32,4 @@ yarn-debug.log*
 pnpm-debug.log*
 
 .archify/
-AGENTS.md
-CLAUDE.md
+.next-pwa-review/

@@ -2,11 +2,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { House, Plus, WifiOff } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import { activeAccount, onOfflineChange, type OfflineAccount } from '../lib/offline';
 import { useOnline } from '../lib/use-online';
 import TransactionForm from '../transactions/new/transaction-form';
-import PendingEntries from '../components/PendingEntries';
+import OfflineOverview from './offline-overview';
 
 export default function OfflinePage() {
     const online = useOnline();
@@ -21,16 +21,7 @@ export default function OfflinePage() {
         window.history.pushState(null, '', path);
         window.scrollTo(0, 0);
     }
-    if (account && pathname === '/') return <main className="app-page offline-page offline-home">
-        <header className="offline-home-header"><House size={24} aria-hidden="true" /><h1>Trang chủ</h1></header>
-        <section className="card offline-wallets" aria-labelledby="offline-wallet-title">
-            <h2 id="offline-wallet-title">Số dư đã lưu trên thiết bị</h2>
-            <ul>{account.wallets.map(wallet => <li key={wallet.id}><span>{wallet.name}</span><strong>{Number(wallet.balance).toLocaleString('vi-VN', { style: 'currency', currency: wallet.currency || 'VND' })}</strong></li>)}</ul>
-        </section>
-        <button className="btn-primary offline-home-entry" onClick={() => navigateOffline('/transactions/new')}><Plus size={20} aria-hidden="true" />Ghi giao dịch</button>
-        <PendingEntries userId={account.userId} hideWhenEmpty />
-        {online && <button className="btn-secondary offline-home-entry" onClick={() => window.location.reload()}>Cập nhật trang chủ</button>}
-    </main>;
+    if (account && pathname !== '/offline' && pathname !== '/transactions/new') return <OfflineOverview account={account} pathname={pathname} navigate={navigateOffline} online={online} />;
     return account ? <TransactionForm key={account.userId} userId={account.userId} initialWallets={account.wallets} initialCategories={account.categories}
         onBack={() => online ? router.push('/') : navigateOffline('/')} />
         : <main className="app-page offline-page"><section className="offline-empty" aria-busy={!loaded}>

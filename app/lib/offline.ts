@@ -1,9 +1,10 @@
 'use client';
-import { requestJson, type Wallet, type Category } from './client-api';
+import { requestJson, type Wallet, type Category, type Finance } from './client-api';
 import { notifyFinanceUpdated } from './finance-updates';
 
 export type PendingEntry = { requestKey: string; userId: string; payload: Record<string, unknown>; state: 'pending' | 'failed'; error: string; createdAt: string };
-export type OfflineAccount = { userId: string; wallets: Wallet[]; categories: Category[] };
+export type OfflineSnapshot = { savedAt: string; start: string; end: string; finance: Finance; budgets: { categoryId: string; name: string; amount: string; spent: string }[]; goals: { id: string; name: string; targetAmount: string; savedAmount: string; dueOn: string | null; status: string }[] };
+export type OfflineAccount = { userId: string; wallets: Wallet[]; categories: Category[]; snapshot?: OfflineSnapshot };
 const CHANGED = 'cnpm:offline';
 function open(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -54,7 +55,16 @@ export async function activeAccount(): Promise<OfflineAccount | null> {
 }
 export const accountRevision = () => { try { return localStorage.getItem('cnpm:logout') || ''; } catch { return ''; } };
 export async function cacheAccount(account: OfflineAccount, activate = false, revision = accountRevision()) {
-    await operation('data', 'readwrite', (store) => store.put(account, `account:${account.userId}`));
+    const db = await open();
+    await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('data', 'readwrite');
+        const store = tx.objectStore('data');
+        const key = `account:${account.userId}`;
+        const previous = store.get(key);
+        previous.onsuccess = () => store.put({ ...previous.result, ...account }, key);
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onabort = tx.onerror = () => { db.close(); reject(new Error('Không lưu được dữ liệu ngoại tuyến.')); };
+    });
     if (activate) await operation('data', 'readwrite', (store) => revision === accountRevision() ? store.put(account.userId, 'active') : store.get('active'));
     changed();
 }

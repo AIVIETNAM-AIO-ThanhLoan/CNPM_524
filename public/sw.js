@@ -1,5 +1,5 @@
 /* global self, caches, indexedDB */
-const CACHE = 'tingting-static-v8';
+const CACHE = 'tingting-static-v9';
 let preparingOffline;
 function prepareOffline() {
     if (preparingOffline) return preparingOffline;
