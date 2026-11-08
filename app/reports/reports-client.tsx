@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { dateKey } from '../lib/client-api';
 import { useFinance } from '../lib/use-finance';
@@ -51,6 +51,26 @@ export default function Reports({ initialDate }: { initialDate: string }) {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
   const [tab, setTab] = useState<'expense' | 'income'>('expense');
   const [anchor, setAnchor] = useState(() => new Date(`${initialDate}T12:00:00`));
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('cnpm:reports-view') || 'null');
+        const validDate = (value: unknown) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && dateKey(new Date(`${value}T12:00:00`)) === value;
+        if (saved?.today === initialDate && (saved.screen === 'calendar' || saved.screen === 'details') && (saved.viewMode === 'week' || saved.viewMode === 'month') && (saved.tab === 'expense' || saved.tab === 'income') && validDate(saved.selected) && validDate(saved.anchor)) {
+          setScreen(saved.screen); setViewMode(saved.viewMode); setTab(saved.tab); setSelected(saved.selected); setAnchor(new Date(`${saved.anchor}T12:00:00`));
+        }
+      } catch { /* Storage may be unavailable or contain invalid data. */ }
+      setRestored(true);
+    });
+    return () => { active = false; };
+  }, [initialDate]);
+  useEffect(() => {
+    if (!restored) return;
+    try { sessionStorage.setItem('cnpm:reports-view', JSON.stringify({ today: initialDate, screen, selected, viewMode, tab, anchor: dateKey(anchor) })); } catch { /* Navigation still works without storage. */ }
+  }, [restored, initialDate, screen, selected, viewMode, tab, anchor]);
   const from = new Date(anchor);
   const to = new Date(anchor);
   if (screen === 'calendar' || viewMode === 'month') {
