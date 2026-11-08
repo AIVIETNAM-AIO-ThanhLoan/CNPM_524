@@ -3,8 +3,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { discardFailed, onOfflineChange, pendingEntries, queueEntry, synchronize, type PendingEntry } from '../lib/offline';
 import { useOnline } from '../lib/use-online';
 
-export default function PendingEntries({ userId }: { userId: string }) {
+export default function PendingEntries({ userId, hideWhenEmpty = false }: { userId: string; hideWhenEmpty?: boolean }) {
     const online = useOnline();
+
     const [items, setItems] = useState<PendingEntry[]>([]);
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
@@ -17,6 +18,7 @@ export default function PendingEntries({ userId }: { userId: string }) {
         catch (error) { setError(error instanceof Error ? error.message : 'Không đồng bộ được.'); }
         finally { setBusy(false); }
     }
+    if (hideWhenEmpty && !items.length && !error) return null;
     return <section className="card ledger-form pending-list" aria-label="Giao dịch chưa gửi">
         <h2>Giao dịch chưa gửi ({items.length})</h2>
         <p>{items.length ? 'Không xóa dữ liệu trình duyệt khi còn giao dịch chờ đồng bộ.' : 'Chưa có giao dịch chờ đồng bộ.'}</p>

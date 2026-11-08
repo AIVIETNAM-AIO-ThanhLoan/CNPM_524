@@ -7,6 +7,9 @@ import { useFinance } from '../lib/use-finance';
 import { Skeleton, SkeletonStatus } from '../components/Skeleton';
 import {
   Banknote,
+  CalendarDays,
+  ChartNoAxesColumn,
+  LocateFixed,
   Car,
   ChevronLeft,
   ChevronRight,
@@ -66,7 +69,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
     : new Date(old.getFullYear(), old.getMonth(), old.getDate() + delta * 7, 12));
 
   const period = {
-    label: screen === 'calendar' || viewMode === 'month' ? `Tháng ${anchor.getMonth() + 1}/${anchor.getFullYear()}` : 'Tuần này',
+    label: screen === 'calendar' || viewMode === 'month' ? `Tháng ${anchor.getMonth() + 1}/${anchor.getFullYear()}` : `Tuần ${startDate.slice(8)}/${startDate.slice(5, 7)} – ${endDate.slice(8)}/${endDate.slice(5, 7)}/${endDate.slice(0, 4)}`,
     range: `${startDate.slice(8)}/${startDate.slice(5, 7)} – ${endDate.slice(8)}/${endDate.slice(5, 7)}`,
     income: data.breakdown.filter((c) => c.kind === 'income').map((c): Category => ({ name: c.name, amount: Number(c.amount) })),
     expense: data.breakdown.filter((c) => c.kind === 'expense').map((c): Category => ({ name: c.name, amount: Number(c.amount) })),
@@ -95,30 +98,20 @@ export default function Reports({ initialDate }: { initialDate: string }) {
           .join(', ')})`;
 
   return (
-    <div className="app-page">
-      <header className="page-header reports-header">
-        <div className="segmented">
-          <button type="button" className={`segmented-btn ${screen === 'calendar' ? 'active' : ''}`} aria-pressed={screen === 'calendar'} onClick={() => setScreen('calendar')}>Lịch</button>
-          <button type="button" className={`segmented-btn ${screen === 'details' ? 'active' : ''}`} aria-pressed={screen === 'details'} onClick={() => { setScreen('details'); setViewMode('month'); }}>Chi tiết</button>
+    <div className="app-page reports-page">
+      <header className="report-navigation">
+        <h1 className="report-sr-only">Báo cáo</h1>
+        <div className="report-view-switch" data-view={screen} role="group" aria-label="Chế độ báo cáo">
+          <button type="button" className={`report-view-button ${screen === 'calendar' ? 'active' : ''}`} aria-pressed={screen === 'calendar'} onClick={() => setScreen('calendar')}><CalendarDays size={15} aria-hidden="true" />Lịch</button>
+          <button type="button" className={`report-view-button ${screen === 'details' ? 'active' : ''}`} aria-pressed={screen === 'details'} onClick={() => setScreen('details')}><ChartNoAxesColumn size={15} aria-hidden="true" />Chi tiết</button>
         </div>
-        {screen === 'details' &&
-        <div className="segmented">
-          <button
-            type="button"
-            className={`segmented-btn ${viewMode === 'week' ? 'active' : ''}`}
-            onClick={() => setViewMode('week')}
-          >
-            Tuần
-          </button>
-          <button
-            type="button"
-            className={`segmented-btn ${viewMode === 'month' ? 'active' : ''}`}
-            onClick={() => setViewMode('month')}
-          >
-            Tháng
-          </button>
+        <div className="report-toolbar">
+          {screen === 'details' ? <div className="report-range-switch" role="group" aria-label="Khoảng báo cáo">
+            <button type="button" aria-pressed={viewMode === 'week'} onClick={() => setViewMode('week')}>Tuần</button>
+            <button type="button" aria-pressed={viewMode === 'month'} onClick={() => setViewMode('month')}>Tháng</button>
+          </div> : <span className="report-calendar-caption">Lịch giao dịch</span>}
+          <button type="button" className="report-today" aria-label="Hôm nay" title="Hôm nay" onClick={() => { setAnchor(new Date(`${initialDate}T12:00:00`)); setSelected(initialDate); }}><LocateFixed size={14} aria-hidden="true" /></button>
         </div>
-        }
       </header>
 
       <div className="period-box">
@@ -127,7 +120,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
         </button>
         <div className="period-center">
           <span className="period-text">{period.label}</span>
-          <span className="period-range">({period.range})</span>
+          <span className="period-range">{period.range}</span>
         </div>
         <button type="button" className="period-btn" aria-label="Kỳ sau" onClick={() => shift(1)}>
           <ChevronRight size={20} />
@@ -138,7 +131,8 @@ export default function Reports({ initialDate }: { initialDate: string }) {
       {error && <p className="data-status" role="alert">{error} <Link href="/login">Đăng nhập</Link></p>}
       {!loading && !error && !data.breakdown.length && <p className="data-status">Chưa có thu/chi trong kỳ này.</p>}
 
-      {screen === 'calendar' ? <CalendarReport key={startDate} start={startDate} end={endDate} today={initialDate} selected={selected} select={setSelected} data={data} loading={loading} error={error} /> : <>
+      <div className="report-view-panel" key={screen}>
+      {screen === 'calendar' ? <CalendarReport key={startDate} start={startDate} end={endDate} today={initialDate} selected={selected} select={day => { setSelected(day); setAnchor(new Date(`${day}T12:00:00`)); }} data={data} loading={loading} error={error} /> : <>
       <div className="stat-pair">
         <div className="stat-card stat-expense">
           <span className="stat-label">Chi tiêu</span>
@@ -218,6 +212,7 @@ export default function Reports({ initialDate }: { initialDate: string }) {
       </section>
 
       </>}
+      </div>
       <BottomNav />
     </div>
   );

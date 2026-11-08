@@ -13,4 +13,5 @@ export const MIGRATIONS = [
     ['012_core_pwa', '../database/migrations/012-core-pwa.sql'],
     ['013_receive_qr_images', '../database/migrations/013-receive-qr-images.sql'],
     ['014_user_avatars', '../database/migrations/014-user-avatars.sql'],
+    ['015_budget_rollovers', '../database/migrations/015-budget-rollovers.sql'],
 ];

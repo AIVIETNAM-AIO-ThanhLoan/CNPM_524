@@ -1,52 +1,54 @@
 .budgets-page { width: 100%; max-width: 960px; margin: 0 auto; }
-.budget-total-card { display: flex; flex-direction: column; gap: 8px; margin: 20px 16px 16px; padding: 26px 22px; border-radius: 22px; background: linear-gradient(125deg, #0b5cad, #3c98e6); color: white; }
-.budget-total-label { font-size: 14px; font-weight: 500; }
-.budget-total { font-size: clamp(30px, 7vw, 44px); line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
-.budget-count { align-self: flex-start; margin-top: 8px; padding: 5px 10px; border-radius: 20px; background: #ffffff24; font-size: 12px; }
-.budget-month-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 0 16px 20px; border-bottom: 1px solid var(--color-line); }
+.budget-total-card { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 20px 16px 8px; color: var(--color-ink); }
+.budget-total-card h1 { margin: 0; font-size: 22px; font-weight: 700; }
+.budget-total { font-size: 18px; line-height: 1.3; font-weight: 600; overflow-wrap: anywhere; text-align: right; }
+.budget-month-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 0 16px 8px; }
 .budget-month-controls label { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 8px; font-size: 13px; color: var(--color-muted); }
 .budget-month-controls input { min-width: 0; max-width: 170px; padding: 8px; border: 1px solid var(--color-line); border-radius: 9px; color: var(--color-ink); background: white; }
-.budget-categories { padding: 20px 16px; }
-.budget-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.budget-section-heading h2 { font-size: 20px; font-weight: 650; }
-.budget-category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.budget-category-card { min-width: 0; padding: 20px; border: 1px solid var(--color-line); border-radius: 17px; background: white; }
+.budget-categories { padding: 4px 16px 20px; }
+.budget-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+.budget-section-heading h2 { font-size: 14px; font-weight: 600; }
+.budget-category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.budget-category-card { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 164px; padding: 14px; border-radius: 16px; background: white; --budget-accent: #20834b; }
+.budget-border { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; fill: none; }
+.budget-border-track { stroke: #e2e9e5; stroke-width: 2; }
+.budget-border-fill { stroke: var(--budget-accent); stroke-width: 3; stroke-linecap: butt; transition: stroke-dasharray 400ms ease-out, stroke 200ms ease-out; }
+.budget-category-card.is-full { --budget-accent: #c43232; background: #fffafa; }
+.budget-category-card.is-unset { background: #fafcfb; }
+.budget-spending { margin-top: 10px; color: #607068; font-size: 13px; }
+.budget-usage { margin-top: auto; padding-top: 12px; padding-right: 32px; color: var(--budget-accent); }
+.budget-usage strong { font-size: 20px; line-height: 1.4; font-weight: 700; }
+.budget-usage small { margin-left: 1px; font-size: 13px; }
+.budget-category-card { font-variant-numeric: tabular-nums; }
+.budget-category-card.is-editing { grid-column: 1 / -1; }
+.budget-category-card.is-editing .budget-card-menu { bottom: auto; top: 6px; }
+.budget-category-card.is-editing .budget-category-heading { padding-right: 32px; }
+@media (prefers-reduced-motion: reduce) { .budget-border-fill { transition: none; } }
 .budget-category-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .budget-category-title { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
-.budget-card-menu { position: relative; flex-shrink: 0; }
+.budget-card-menu { position: absolute; right: 5px; bottom: 5px; }
 .budget-menu-toggle { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--color-muted); cursor: pointer; }
 .budget-menu-toggle:hover, .budget-menu-toggle[aria-expanded="true"] { background: #f3f4f6; color: var(--color-ink); }
 .budget-menu-toggle:focus-visible, .budget-menu-options button:focus-visible { outline: 2px solid #0b5cad; outline-offset: 2px; }
-.budget-menu-options { position: absolute; top: calc(100% + 4px); right: 0; z-index: 5; min-width: 148px; padding: 5px; border: 1px solid var(--color-line); border-radius: 12px; background: white; box-shadow: 0 8px 24px #0f172a1a; }
+.budget-menu-options { position: absolute; bottom: calc(100% + 4px); right: 0; z-index: 5; min-width: 148px; padding: 5px; border: 1px solid var(--color-line); border-radius: 12px; background: white; box-shadow: 0 8px 24px #0f172a1a; }
 .budget-menu-options button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--color-ink); text-align: left; font-size: 14px; cursor: pointer; }
 .budget-menu-options button:hover { background: #f3f4f6; }
 .budget-menu-options .budget-menu-delete { color: var(--color-danger); }
 .budget-menu-toggle:disabled, .budget-menu-options button:disabled { opacity: 0.45; cursor: not-allowed; }
-.budget-category-card progress { display: block; appearance: none; width: 100%; height: 8px; margin-top: 10px; overflow: hidden; border: 0; border-radius: 999px; background: #f1f3f5; accent-color: #d1d5db; }
-.budget-category-card progress::-webkit-progress-bar { border-radius: 999px; background: #f1f3f5; }
-.budget-category-card progress::-webkit-progress-value { border-radius: 999px; background: #d1d5db; }
-.budget-category-card progress::-moz-progress-bar { border-radius: 999px; background: #d1d5db; }
-.budget-category-title h3 { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
-.budget-category-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: var(--color-haze); color: #0b5cad; }
-.budget-category-amount { margin: 16px 0; color: var(--color-ink); font-size: 24px; font-weight: 650; overflow-wrap: anywhere; }
-.budget-category-amount.is-unset { color: var(--color-muted); font-size: 14px; font-weight: 400; }
-.budget-set-button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 9px 0; color: #0b5cad; font-size: 13px; font-weight: 600; cursor: pointer; }
+.budget-category-title h3 { margin: 0; line-height: 1.4; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.budget-category-amount { margin: 3px 0; color: var(--color-ink); font-size: 19px; font-weight: 650; overflow-wrap: anywhere; }
+.budget-set-button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: auto; margin-bottom: 32px; padding: 9px 0; color: #0b5cad; font-size: 13px; font-weight: 600; cursor: pointer; }
 .budget-editor { margin-top: 12px; font-size: 13px; }
 .budget-editor-actions { display: flex; gap: 8px; }
 .budget-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 16px; padding: 12px; color: #0b5cad; border-radius: 10px; background: var(--color-haze); font-size: 14px; }
 .budget-error { color: var(--color-danger); }
 .budget-feedback .btn-secondary { flex: initial; }
 .budget-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 10px; color: var(--color-muted); font-size: 14px; }
-@media (max-width: 540px) { .budget-category-grid { grid-template-columns: 1fr; } }
-
-@media (max-width: 767px) {
-  .budget-total-card { margin: 12px 16px; padding: 16px; gap: 4px; border-radius: 14px; }
-  .budget-total { font-size: 30px; }
-  .budget-count { margin-top: 4px; }
-  .budget-month-controls { padding-bottom: 10px; }
-  .budget-categories { padding-top: 14px; }
-  .budget-section-heading h2 { font-size: 18px; }
-  .budget-category-grid { grid-template-columns: 1fr; gap: 10px; }
-  .budget-category-card { padding: 12px; border-radius: 12px; }
-  .budget-category-amount { margin: 8px 0 0; font-size: 21px; }
+@media (max-width: 359px) {
+  .budget-category-card { padding: 12px; }
+  .budget-category-amount { font-size: 17px; }
+  .budget-total { font-size: 15px; }
+  .budget-spending { font-size: 12px; }
 }
+
+.budget-auto-note { margin: 0 0 12px; color: var(--color-muted); font-size: 12px; }

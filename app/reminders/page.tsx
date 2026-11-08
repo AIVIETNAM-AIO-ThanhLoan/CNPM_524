@@ -34,7 +34,6 @@ export default function RemindersPage() {
     }
     return <main className="app-page ledger-page">
         <header className="page-header"><Link href="/">← Trang chủ</Link><h1>Lời nhắc thanh toán</h1></header>
-        <p>Nhắc từ ngày đến hạn theo giờ Việt Nam (UTC+7). Chỉ ghi chi sau khi bạn xác nhận đã thanh toán. Cần mạng để quản lý.</p>
         {error && <p role="alert" className="ledger-error">{error}</p>}
         <form className="card ledger-form" key={editing?.id || 'new'} onSubmit={(event) => { event.preventDefault(); void save({ ...Object.fromEntries(new FormData(event.currentTarget)), ...(editing ? { id: editing.id } : {}) }); }}>
             <h2>{editing ? 'Sửa khoản định kỳ' : 'Thêm khoản định kỳ'}</h2>
