@@ -24,8 +24,7 @@ export default function ThemeSettings() {
     return <section className="card settings-card theme-settings" aria-labelledby="theme-settings-title">
         <div className="theme-heading">
             <span className="theme-heading-icon" aria-hidden="true"><Palette size={21} strokeWidth={1.7} /></span>
-            <div><h2 id="theme-settings-title" className="settings-title">Màu giao diện</h2>
-                <p className="theme-description">Một chút màu sắc, mang dấu ấn của bạn.</p></div>
+            <div><h2 id="theme-settings-title" className="settings-title">Màu giao diện</h2></div>
         </div>
         <div className="theme-preview" role="img" aria-label={`Xem trước giao diện màu ${activeTheme.name.toLocaleLowerCase('vi-VN')}`}>
             <div className="theme-preview-caption"><span>Xem trước</span><span className="theme-current"><i />{activeTheme.name}</span></div>

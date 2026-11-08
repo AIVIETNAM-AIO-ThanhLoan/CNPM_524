@@ -405,7 +405,7 @@
   .period-nav { margin-top: 8px; padding: 2px; }
   .period-nav-btn { width: 44px; height: 44px; }
   .stats-row { margin: 12px 0; gap: 6px; }
-  .stat-value { font-size: 14px; overflow-wrap: anywhere; }
+  .stat-value, .stat-value.stat-main { font-size: 14px; overflow-wrap: anywhere; }
   .action-buttons { margin-top: 12px; gap: 8px; }
   .suggestions-section { margin-top: 18px; }
   .suggestion-grid { gap: 8px; }
