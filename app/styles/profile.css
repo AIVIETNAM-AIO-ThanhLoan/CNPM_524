@@ -191,6 +191,43 @@
 .default-settings a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
 .defaults-note { color: var(--color-muted); font-size: 12px; line-height: 1.6; }
 
+.spending-sources { min-width: 0; border-bottom: 1px solid var(--color-line); }
+.sources-trigger { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) 16px; align-items: center; gap: 8px; width: 100%; min-height: 64px; padding: 10px 0; border: 0; background: transparent; color: var(--color-ink); text-align: left; font-size: 14px; cursor: pointer; }
+.sources-summary { overflow: hidden; color: var(--color-muted); text-align: right; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.sources-trigger > svg { color: var(--color-muted); transition: transform 160ms; }
+.sources-trigger[aria-expanded="true"] > svg { transform: rotate(180deg); }
+.sources-panel { display: flex; flex-direction: column; min-width: 0; max-height: min(440px, 65dvh); margin: 0 0 14px; overflow: hidden; border: 1px solid var(--color-line); border-radius: 16px; background: white; box-shadow: 0 5px 18px #22354a08; }
+.sources-panel-header { display: flex; flex-shrink: 0; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; background: var(--color-canvas); }
+.sources-panel-header h3 { margin: 0; color: var(--color-ink); font-size: 15px; font-weight: 700; }
+.sources-panel-header h3:focus { outline: none; }
+.sources-panel-header p { margin-top: 3px; color: var(--color-muted); font-size: 11px; }
+.sources-done { min-width: 62px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: var(--color-haze); color: var(--color-primary); font-size: 13px; font-weight: 700; cursor: pointer; }
+.sources-search { display: flex; flex-shrink: 0; align-items: center; gap: 7px; margin: 10px 12px 8px; padding: 0 10px; border: 1px solid var(--color-line); border-radius: 10px; color: var(--color-muted); }
+.sources-search input { width: 100%; min-width: 0; min-height: 42px; padding: 8px 0; border: 0; outline: none; background: transparent; color: var(--color-ink); font-size: 16px; }
+.sources-search input:focus-visible { outline: none; }
+.sources-search:focus-within { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+.sources-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 10px; scrollbar-width: thin; }
+.source-group + .source-group { margin-top: 8px; }
+.source-group h4 { margin: 0; padding: 9px 0 5px; color: var(--color-muted); font-size: 11px; font-weight: 650; letter-spacing: .02em; }
+.source-option { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; min-height: 58px; padding: 8px 0; border: 0; border-bottom: 1px solid #f0f3f6; background: transparent; color: var(--color-ink); text-align: left; cursor: pointer; }
+.source-option:last-child { border-bottom: 0; }
+.source-option-icon { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 10px; background: var(--color-haze); color: var(--color-primary); }
+.source-option-icon-ewallet { background: #f3ecf9; color: #8150a8; }
+.source-option-text { flex: 1; min-width: 0; }
+.source-option-text strong { display: block; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.source-option-text small { display: block; margin-top: 3px; color: var(--color-muted); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+.source-switch { flex: none; width: 36px; height: 22px; padding: 3px; border-radius: 20px; background: #d7dfe7; transition: background 160ms; }
+.source-switch > span { display: block; width: 16px; height: 16px; border-radius: 50%; background: white; box-shadow: 0 1px 3px #16314d1a; transition: transform 160ms; }
+.source-option[aria-checked="true"] .source-switch { background: var(--color-primary); }
+.source-option[aria-checked="true"] .source-switch > span { transform: translateX(14px); }
+.sources-error, .sources-directory-error { padding: 8px 12px; color: var(--color-danger); font-size: 12px; line-height: 1.5; }
+.sources-error { margin: 0; }
+.sources-directory-error { padding-inline: 0; }
+.sources-directory-error button { min-height: 44px; margin-top: 4px; border: 0; background: transparent; color: var(--color-primary); font-weight: 600; cursor: pointer; }
+.sources-loading { padding: 12px 0; color: var(--color-muted); font-size: 12px; line-height: 1.5; }
+.sources-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sources-trigger:focus-visible, .sources-done:focus-visible, .source-option:focus-visible, .sources-scroll:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
 /* Personal settings share a quiet canvas, with the palette as the focal point. */
 .profile-page { width: 100%; max-width: 680px; margin-inline: auto; background: #f7f8fa; }
 .profile-page .profile-header { padding: 26px 22px 20px; border: 0; background: transparent; }

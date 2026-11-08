@@ -14,4 +14,5 @@ export const MIGRATIONS = [
     ['013_receive_qr_images', '../database/migrations/013-receive-qr-images.sql'],
     ['014_user_avatars', '../database/migrations/014-user-avatars.sql'],
     ['015_budget_rollovers', '../database/migrations/015-budget-rollovers.sql'],
+    ['016_wallet_sources', '../database/migrations/016-wallet-sources.sql'],
 ];

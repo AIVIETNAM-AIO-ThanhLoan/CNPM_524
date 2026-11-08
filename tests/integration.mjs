@@ -189,7 +189,7 @@ try {
         const response = await fetch(`${origin}${route}`, { headers: { Cookie: cookieB } });
         check(response.status === 200, `${route} renders for authenticated user`);
         const markup = await response.text();
-        check(markup.includes(route === '/profile' ? b.name : 'Lưu giao dịch'), `${route} displays database-backed content`);
+        check(markup.includes(route === '/profile' ? b.name : 'Lưu khoản chi'), `${route} displays database-backed content`);
     }
     const walletsB = (await api('/api/wallets', { cookie: cookieB })).json.wallets;
     check((await api(financeUrl, { cookie: cookieB })).json.transactions.length === 0, 'Other user cannot read transactions');

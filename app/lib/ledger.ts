@@ -4,6 +4,7 @@ import type { PoolConnection, RowDataPacket } from 'mysql2/promise';
 import { atomic, rows } from './db';
 import { date, HttpError, money, text, uuid } from './http';
 import { budgetAlerts } from './notification-jobs.mjs';
+import { providerSource, resolveWalletSource } from './wallet-source';
 
 export async function seedUser(connection: PoolConnection, userId: string): Promise<void> {
     for (const name of ['Tiền mặt', 'Ngân hàng']) {
@@ -17,10 +18,10 @@ export async function seedUser(connection: PoolConnection, userId: string): Prom
 }
 
 export async function wallets(userId: string) {
-    return rows<RowDataPacket & { id: string; name: string; currency: string; balance: string }>(`SELECT a.id, a.name, a.currency,
+    return rows<RowDataPacket & { id: string; name: string; currency: string; balance: string; sourceKey: string | null }>(`SELECT a.id, a.name, a.currency, a.source_key AS sourceKey,
         COALESCE(SUM(e.amount), 0) AS balance
         FROM accounts a LEFT JOIN transaction_entries e ON e.account_id = a.id AND e.user_id = a.user_id
-        WHERE a.user_id = ? AND a.kind = 'wallet' AND a.archived = FALSE GROUP BY a.id, a.name, a.currency ORDER BY a.created_at, a.id`, [userId]);
+        WHERE a.user_id = ? AND a.kind = 'wallet' AND a.archived = FALSE GROUP BY a.id, a.name, a.currency, a.source_key ORDER BY a.created_at, a.id`, [userId]);
 }
 
 export async function categories(userId: string) {
@@ -33,13 +34,17 @@ export async function postTransaction(userId: string, body: Record<string, unkno
     const amount = money(body.amount);
     const bookedOn = date(body.bookedOn);
     const note = text(body.note ?? '', 'Ghi chú', 500, false);
-    const walletId = uuid(body.walletId);
+    const source = providerSource(body.walletSource);
+    const suppliedWalletId = source ? null : uuid(body.walletId);
     const requestKey = uuid(body.requestKey);
     const categoryId = kind === 'transfer' ? null : uuid(body.categoryId);
-    const targetId = kind === 'transfer' ? uuid(body.targetId) : null;
-    if (targetId === walletId) throw new HttpError(400, 'Hai ví chuyển tiền phải khác nhau.');
+    const targetSource = kind === 'transfer' ? providerSource(body.targetSource) : null;
+    const suppliedTargetId = kind === 'transfer' && !targetSource ? uuid(body.targetId) : null;
     const post = async (connection: PoolConnection) => {
         await connection.execute('SELECT id FROM users WHERE id = ? FOR UPDATE', [userId]);
+        const walletId = source ? await resolveWalletSource(connection, userId, source) : suppliedWalletId!;
+        const targetId = targetSource ? await resolveWalletSource(connection, userId, targetSource) : suppliedTargetId;
+        if (targetId === walletId) throw new HttpError(400, 'Hai ví chuyển tiền phải khác nhau.');
         const [existing] = await connection.execute<RowDataPacket[]>(`SELECT t.*, e.account_id AS wallet_id, e2.account_id AS target_id
             FROM transactions t JOIN transaction_entries e ON e.transaction_id = t.id AND e.user_id = t.user_id
             JOIN accounts a ON a.id = e.account_id AND a.user_id = t.user_id AND a.kind = 'wallet'

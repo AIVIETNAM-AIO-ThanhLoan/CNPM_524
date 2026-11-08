@@ -7,7 +7,7 @@ export async function requestJson<T>(url: string, body?: unknown, signal?: Abort
     return data as T;
 }
 
-export type Wallet = { id: string; name: string; currency: string; balance: string };
+export type Wallet = { id: string; name: string; currency: string; balance: string; sourceKey?: string | null };
 export type Category = { id: string; name: string; kind: 'income' | 'expense'; archived?: boolean | number };
 export type Transaction = { id: string; kind: 'income' | 'expense' | 'transfer'; amount: string; bookedOn: string; note: string; category: string | null; wallet: string; target: string | null; walletId: string; categoryId: string | null; targetId: string | null; reversesId: string | null; replacesId: string | null; reversed: boolean | number; reason: string };
 export type Finance = { daily: { date: string; income: string; expense: string }[]; income: number; expense: number; budget: number; budgetAmount: number; budgetSpent: number; transactions: Transaction[]; hasMore: boolean; breakdown: { name: string; kind: 'income' | 'expense'; amount: string }[] };

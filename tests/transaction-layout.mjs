@@ -93,6 +93,72 @@ try {
     assert.equal(entries[0].payload.amount, '45000');
     assert.equal(entries[0].payload.note, 'Bữa trưa');
     console.log('Modes, keyboard navigation, category selection, unobstructed save and offline queue passed.');
+
+    // Use API fixtures to exercise confirmed saves through the shared form, without database writes.
+    const posts = [];
+    let rejectNext = false;
+    let fixtureBalance = '4950000';
+    await page.unroute('**/api/**');
+    await page.route('**/api/**', route => {
+        const path = new URL(route.request().url()).pathname;
+        if (path === '/api/auth/me') return route.fulfill({ json: { user: { id: 'layout-test' } } });
+        if (path === '/api/wallets') return route.fulfill({ json: { wallets: [
+            { id: '1', name: 'Tiền mặt', balance: fixtureBalance },
+            { id: '2', name: 'Tài khoản ngân hàng', balance: '10000000' },
+        ] } });
+        if (path === '/api/transactions') {
+            posts.push(route.request().postDataJSON());
+            if (rejectNext) {
+                rejectNext = false;
+                return route.fulfill({ status: 400, json: { error: 'Giao dịch thử bị từ chối.' } });
+            }
+            return route.fulfill({ status: 201, json: { id: `saved-${posts.length}` } });
+        }
+        return route.abort();
+    });
+    await page.getByRole('button', { name: 'Thử đồng bộ', exact: true }).click();
+    await page.locator('.pending-list').waitFor({ state: 'detached' });
+    await page.getByRole('button', { name: 'Ghi khoản khác', exact: true }).click();
+    const entryUrl = page.url();
+    for (const [mode, kind] of [['Chi', 'expense'], ['Chi', 'expense'], ['Thu', 'income'], ['Chuyển', 'transfer']]) {
+        await page.locator('.tx-type-switch').getByText(mode, { exact: true }).click();
+        await page.getByLabel('Ví', { exact: true }).selectOption('1');
+        if (kind === 'transfer') await page.getByLabel('Ví nhận', { exact: true }).selectOption('2');
+        else await page.getByLabel('Danh mục', { exact: true }).selectOption(kind === 'income' ? 'salary' : '6');
+        await page.getByLabel('Ngày giao dịch', { exact: true }).fill('2026-11-05');
+        await page.getByLabel('Số tiền', { exact: true }).fill('50000');
+        await page.getByLabel('Ghi chú', { exact: true }).fill('Giao dịch đã ghi');
+        const count = posts.length;
+        await page.locator('.tx-save').click();
+        await page.getByRole('status').filter({ hasText: 'Ghi giao dịch thành công.' }).waitFor();
+        assert.equal(page.url(), entryUrl, 'Successful save keeps the current entry page');
+        assert.equal(posts.length, count + 1);
+        assert.equal(posts.at(-1).kind, kind);
+        assert.equal(await page.getByLabel('Số tiền', { exact: true }).inputValue(), '', 'Clear saved amount to prevent accidental repeat');
+        assert.equal(await page.getByLabel('Ghi chú', { exact: true }).inputValue(), '');
+        assert.equal(await page.getByLabel('Ví', { exact: true }).inputValue(), '1');
+        assert.equal(await page.getByLabel('Ngày giao dịch', { exact: true }).inputValue(), '2026-11-05');
+        if (kind === 'transfer') assert.equal(await page.getByLabel('Ví nhận', { exact: true }).inputValue(), '2');
+        else assert.equal(await page.getByLabel('Danh mục', { exact: true }).inputValue(), kind === 'income' ? 'salary' : '6');
+        await page.waitForFunction(() => document.querySelector('select[name="walletId"]')?.textContent.includes('4.950.000'));
+    }
+    assert.equal(new Set(posts.map(post => post.requestKey)).size, posts.length, 'Each confirmed entry receives a new request key');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: join(tmpdir(), 'transaction-save-success.png'), fullPage: true });
+    fixtureBalance = '4800000';
+    await page.evaluate(() => window.dispatchEvent(new Event('cnpm-finance-updated')));
+    await page.waitForFunction(() => document.querySelector('select[name="walletId"]')?.textContent.includes('4.800.000'));
+    await page.locator('.tx-type-switch').getByText('Chi', { exact: true }).click();
+    await page.getByLabel('Số tiền', { exact: true }).fill('30000');
+    await page.getByLabel('Ghi chú', { exact: true }).fill('Giữ lại khi bị từ chối');
+    rejectNext = true;
+    await page.locator('.tx-save').click();
+    await page.getByRole('alert').filter({ hasText: 'Giao dịch thử bị từ chối.' }).first().waitFor();
+    assert.equal(await page.getByText('Ghi giao dịch thành công.', { exact: true }).count(), 0, 'A rejected save must not show success');
+    assert.equal(page.url(), entryUrl);
+    assert.equal(await page.getByLabel('Số tiền', { exact: true }).inputValue(), '30000');
+    assert.equal(await page.getByLabel('Ghi chú', { exact: true }).inputValue(), 'Giữ lại khi bị từ chối');
+    console.log('Confirmed expense/income/transfer saves stay on the form, clear saved fields, preserve selections, refresh balances and distinguish rejected submissions.');
 } finally {
     await browser.close();
 }
