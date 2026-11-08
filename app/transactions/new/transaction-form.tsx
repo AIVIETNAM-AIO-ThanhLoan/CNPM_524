@@ -102,7 +102,7 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
                         </button>;
                     })}</div>
                 </section>}
-            <label className="tx-amount-box"><span className="tx-amount-label">Số tiền (VND)</span><span className="tx-amount-row"><input className="tx-amount-input" name="amount" type="number" min="0.01" max="999999999999.99" step="0.01" required inputMode="decimal" placeholder="0" aria-label="Số tiền" /><span className="tx-amount-unit">đ</span></span></label>
+            <label className="tx-amount-box"><span className="tx-amount-label">Số tiền (VND)</span><span className="tx-amount-row"><input className="tx-amount-input" name="amount" type="number" min="1" max="999999999999" step="1" required inputMode="numeric" placeholder="0" aria-label="Số tiền" /><span className="tx-amount-unit">đ</span></span></label>
             <label>Ngày giao dịch<input type="date" min="1000-01-01" max="9999-12-31" value={bookedOn} onChange={(e) => setBookedOn(e.target.value)} required /></label>
             <label>Ghi chú<input name="note" maxLength={500} /></label>
             <p>Chuyển giữa các ví không tính vào thu/chi. Bạn có thể ghi số dư âm để phản ánh khoản chi chưa nhập nguồn tiền.</p>

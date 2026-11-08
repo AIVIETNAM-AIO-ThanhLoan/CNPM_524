@@ -42,5 +42,5 @@ export async function POST(request: Request) {
         const name = text(body.name, 'Tên ví', 100);
         await database().execute("INSERT INTO accounts (id, user_id, name, kind) VALUES (?, ?, ?, 'wallet')", [id, user.id, name]);
         return Response.json({ id }, { status: 201 });
-    });
+    }, 'Tên ví này đã có. Hãy chọn tên khác.');
 }

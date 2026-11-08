@@ -40,7 +40,7 @@ export default function TransactionRevision({ transaction, close }: { transactio
                 <label>Ví<select name="walletId" required defaultValue={transaction.walletId}>{wallets.map((w) => <option value={w.id} key={w.id}>{w.name}</option>)}</select></label>
                 {kind === 'transfer' ? <label>Ví nhận<select name="targetId" required defaultValue={transaction.targetId || ''}>{wallets.map((w) => <option value={w.id} key={w.id}>{w.name}</option>)}</select></label>
                     : <label>Danh mục<select name="categoryId" required defaultValue={transaction.categoryId || ''}>{categories.filter((c) => c.kind === kind).map((c) => <option value={c.id} key={c.id}>{c.name}</option>)}</select></label>}
-                <label>Số tiền (VND)<input name="amount" type="number" min="0.01" max="999999999999.99" step="0.01" defaultValue={transaction.amount} required /></label>
+                <label>Số tiền (VND)<input name="amount" type="number" min="1" max="999999999999" step="1" defaultValue={transaction.amount} required /></label>
                 <label>Ngày giao dịch<input name="bookedOn" type="date" min="1000-01-01" max="9999-12-31" defaultValue={transaction.bookedOn} required /></label>
                 <label>Ghi chú<input name="note" maxLength={500} defaultValue={transaction.note} /></label>
             </>}

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
             await connection.execute('INSERT INTO categories (id, user_id, account_id, name, kind) VALUES (?, ?, ?, ?, ?)', [id, user.id, accountId, name, kind]);
         });
         return Response.json({ id }, { status: 201 });
-    });
+    }, 'Danh mục này đã có. Hãy chọn tên khác.');
 }
 
 export async function DELETE(request: Request) {
