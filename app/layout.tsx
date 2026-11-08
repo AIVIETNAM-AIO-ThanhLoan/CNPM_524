@@ -2,7 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./styles/ledger.css";
+import "./styles/themes.css";
+import Script from 'next/script';
 import PwaRuntime from './components/PwaRuntime';
+import ThemeRuntime from './components/ThemeRuntime';
+import { themeInitScript } from './lib/theme';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#7a0c2e",
+  themeColor: "#0b5cad",
   viewportFit: "cover",
 };
 
@@ -34,9 +38,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="vi"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col"><PwaRuntime />{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Script id="app-theme" strategy="beforeInteractive">{themeInitScript}</Script>
+        <ThemeRuntime /><PwaRuntime />{children}
+      </body>
     </html>
   );
 }

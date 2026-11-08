@@ -11,5 +11,5 @@
   .admin-page main .flex.justify-between { flex-wrap: wrap; gap: 12px; }
   .admin-page .overflow-x-auto { max-width: 100%; overscroll-behavior-x: contain; }
   .admin-page table { min-width: 560px; }
-  .admin-page :is(button, input):focus-visible { outline: 2px solid #0b5cad; outline-offset: 3px; }
+  .admin-page :is(button, input):focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 }

@@ -1,0 +1,84 @@
+:root {
+  --color-primary: #0b5cad;
+  --color-canvas: #f5f8fa;
+  --color-control: #e5edf3;
+}
+
+:root[data-theme="green"], .theme-option[data-theme="green"] {
+  --color-primary: #16704a;
+  --color-brand: #27966a;
+  --color-sky: #46aa80;
+  --color-sky-soft: #a2d9bf;
+  --color-ink: #163e30;
+  --color-muted: #557366;
+  --color-frost: #d8eee2;
+  --color-haze: #ecf7f0;
+  --color-line: #cfe4d8;
+  --color-canvas: #f4f9f5;
+  --color-control: #e1eee5;
+}
+
+:root[data-theme="purple"], .theme-option[data-theme="purple"] {
+  --color-primary: #7040af;
+  --color-brand: #9563cd;
+  --color-sky: #ab86db;
+  --color-sky-soft: #d5bfed;
+  --color-ink: #392550;
+  --color-muted: #756386;
+  --color-frost: #eadff7;
+  --color-haze: #f4eefa;
+  --color-line: #e1d3ed;
+  --color-canvas: #f9f6fc;
+  --color-control: #ede5f4;
+}
+
+:root[data-theme="rose"], .theme-option[data-theme="rose"] {
+  --color-primary: #ac3668;
+  --color-brand: #ce5b8d;
+  --color-sky: #df85aa;
+  --color-sky-soft: #efbfd3;
+  --color-ink: #53273b;
+  --color-muted: #866273;
+  --color-frost: #f6dfE9;
+  --color-haze: #fcf0f5;
+  --color-line: #edd3df;
+  --color-canvas: #fdf7fa;
+  --color-control: #f4e5ec;
+}
+
+:root[data-theme="orange"], .theme-option[data-theme="orange"] {
+  --color-primary: #a34e10;
+  --color-brand: #cf7a32;
+  --color-sky: #df9b60;
+  --color-sky-soft: #efccaa;
+  --color-ink: #53351e;
+  --color-muted: #826d59;
+  --color-frost: #f7e6d2;
+  --color-haze: #fcf3e8;
+  --color-line: #edddc9;
+  --color-canvas: #fdf9f3;
+  --color-control: #f3e9db;
+}
+
+:root[data-theme="slate"], .theme-option[data-theme="slate"] {
+  --color-primary: #475569;
+  --color-brand: #64748b;
+  --color-sky: #94a3b8;
+  --color-sky-soft: #cbd5e1;
+  --color-ink: #263445;
+  --color-muted: #647182;
+  --color-frost: #e2e8f0;
+  --color-haze: #f1f5f9;
+  --color-line: #d9e1ea;
+  --color-canvas: #f8fafc;
+  --color-control: #e7ecf2;
+}
+
+/* Keep the blue swatch blue while another palette is active. */
+.theme-option[data-theme="blue"] {
+  --color-primary: #0b5cad;
+  --color-brand: #3c98e6;
+  --color-ink: #0b2f4f;
+  --color-haze: #eaf4fb;
+  --color-line: #d6e6f2;
+}

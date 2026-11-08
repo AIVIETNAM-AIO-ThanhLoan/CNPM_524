@@ -34,7 +34,7 @@
 }
 
 .reminder-form input:focus {
-  border-color: #0b5cad;
+  border-color: var(--color-primary);
 }
 
 .reminder-form .btn-primary:disabled {

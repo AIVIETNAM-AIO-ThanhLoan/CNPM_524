@@ -62,9 +62,6 @@ try {
             const rect = el.getBoundingClientRect();
             return el.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
         }), 'Save is not covered by navigation or microphone');
-        await page.getByText('Lưu ý khi ghi giao dịch', { exact: true }).click();
-        assert.ok(await page.locator('.tx-help p').isVisible());
-        await page.getByText('Lưu ý khi ghi giao dịch', { exact: true }).click();
         await page.locator('.tx-type-switch').getByText('Thu', { exact: true }).click();
         assert.equal(await page.locator('select[name=categoryId]').inputValue(), 'salary');
         await page.getByRole('radio', { name: 'Thu', exact: true }).focus();

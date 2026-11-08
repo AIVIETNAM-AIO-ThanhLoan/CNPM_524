@@ -68,8 +68,8 @@
   overflow: hidden;
   margin: 16px 16px 0;
   padding: 20px;
-  background: linear-gradient(135deg, #0b5cad 0%, #3c98e6 100%);
-  box-shadow: 0 8px 20px rgba(11, 92, 173, 0.3);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-brand) 100%);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary) 30%, transparent);
   color: #ffffff;
 }
 
@@ -257,13 +257,13 @@
 }
 
 .action-buttons .btn-primary {
-  background-color: #073e7a;
+  background-color: color-mix(in srgb, var(--color-primary) 85%, black);
 }
 
 .action-buttons .btn-secondary {
   background-color: transparent;
-  border-color: #0b5cad;
-  color: #0b5cad;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .suggestions-section {
@@ -334,7 +334,7 @@
 }
 
 .assistant-fab:focus-visible {
-  outline: 2px solid #0b5cad;
+  outline: 2px solid var(--color-primary);
   outline-offset: 3px;
 }
 
