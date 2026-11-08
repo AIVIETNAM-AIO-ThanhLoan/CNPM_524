@@ -220,7 +220,7 @@
 
 .tx-icon-transfer {
   background-color: var(--color-frost);
-  color: #0b5cad;
+  color: var(--color-primary);
 }
 
 @media (max-width: 767px) {

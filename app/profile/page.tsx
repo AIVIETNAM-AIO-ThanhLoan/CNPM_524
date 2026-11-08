@@ -3,6 +3,7 @@ import { User } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import AvatarUpload from '../components/AvatarUpload';
 import DefaultSettings from './default-settings';
+import ThemeSettings from './theme-settings';
 import LogoutButton from '../components/LogoutButton';
 import RecoveryCodeButton from '../components/RecoveryCodeButton';
 import { getCurrentUser } from '../lib/session';
@@ -15,24 +16,21 @@ export default async function Profile() {
   const avatars = user ? await rows<RowDataPacket>('SELECT updated_at FROM user_avatars WHERE user_id = ?', [user.id]) : [];
 
   return (
-    <div className="app-page">
-      {user && (
-        <header className="profile-header">
-          <LogoutButton className="profile-logout" />
-        </header>
-      )}
+    <div className="app-page profile-page">
+      <header className="profile-header">
+        <div><p className="profile-eyebrow">Cài đặt cá nhân</p><h1>Tôi</h1></div>
+        {user && <LogoutButton className="profile-logout" />}
+      </header>
 
       {!user && (
-        <>
           <section className="card guest-card">
             <div className="guest-icon">
               <User size={36} strokeWidth={1.6} />
             </div>
-            <h2 className="guest-title">Bạn chưa đăng nhập</h2>
+            <div className="guest-details"><h2 className="guest-title">Tài khoản của bạn</h2>
             <p className="guest-text">
               Đăng nhập để lưu và đồng bộ thu chi của bạn trên mọi thiết bị.
-            </p>
-          </section>
+            </p></div>
 
           <div className="profile-actions">
             <Link href="/login" className="btn-primary">
@@ -42,7 +40,7 @@ export default async function Profile() {
               Tạo tài khoản
             </Link>
           </div>
-        </>
+          </section>
       )}
 
       {user && (
@@ -50,6 +48,8 @@ export default async function Profile() {
           <AvatarUpload key={user.id} name={user.name} initialSrc={avatars.length ? `/api/avatar?v=${encodeURIComponent(`${user.id}:${avatars[0].updated_at}`)}` : null} />
         </section>
       )}
+
+      <ThemeSettings />
 
       {user && (
         <section className="card settings-card">

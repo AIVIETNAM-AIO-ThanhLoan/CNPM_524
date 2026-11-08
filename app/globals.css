@@ -90,7 +90,7 @@ body {
 }
 
 .segmented-btn.active {
-  background-color: var(--color-brand);
+  background-color: var(--color-primary);
   color: #ffffff;
 }
 
@@ -113,7 +113,7 @@ body {
 
 .btn-primary {
   border: none;
-  background-color: var(--color-brand);
+  background-color: var(--color-primary);
   color: #ffffff;
 }
 
@@ -178,10 +178,10 @@ body {
   :is(.page-header, .tx-header, .notif-header, .chat-header) { padding-top: max(10px, env(safe-area-inset-top)); }
   .page-header > a { display: inline-flex; align-items: center; min-height: 44px; }
   :is(.btn-primary, .btn-secondary) { text-align: center; overflow-wrap: anywhere; }
-  :is(.app-page, .tx-page, .auth-container, .chat-page, .notif-page) :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid #0b5cad; outline-offset: 3px; }
+  :is(.app-page, .tx-page, .auth-container, .chat-page, .notif-page) :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
   .text-income { color: #14754e; }
   .text-expense { color: #b53c1b; }
-  .segmented-btn.active, .btn-primary, .auth-submit { background-color: #0b5cad; }
+  .segmented-btn.active, .btn-primary, .auth-submit { background-color: var(--color-primary); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

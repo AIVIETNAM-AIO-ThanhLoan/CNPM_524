@@ -130,7 +130,6 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
                 }} />
             </div>
             {!data.categories.length && <div className="budget-empty"><Wallet size={32} /><p>Chưa có danh mục chi tiêu.</p><Link href="/transactions/new">Mở Ghi giao dịch để thêm danh mục</Link></div>}
-            <p className="budget-auto-note">Tự động dùng lại hạn mức khi sang tháng mới.</p>
             <div className="budget-category-grid">{data.categories.map((category) => {
                 const budget = data.budgets.find((item) => item.categoryId === category.id);
                 const usage = budget ? Math.max(0, Number(budget.spent) / Number(budget.amount) * 100) : 0;

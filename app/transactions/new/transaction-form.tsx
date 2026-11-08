@@ -111,8 +111,6 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
             </div>
             <button type="submit" className="btn-primary tx-save" disabled={busy || !wallets.length || (kind !== 'transfer' && !categoryId)}>{busy ? 'Đang lưu…' : kind === 'expense' ? 'Lưu khoản chi' : kind === 'income' ? 'Lưu khoản thu' : 'Lưu chuyển tiền'}</button>
             {(!wallets.length || (kind !== 'transfer' && !categoryId)) && <p role="status">Thêm ví và danh mục bên dưới để bắt đầu ghi giao dịch.</p>}
-            <details className="tx-help"><summary>Lưu ý khi ghi giao dịch</summary><p>Chuyển giữa các ví không tính vào thu/chi. Bạn có thể ghi số dư âm để phản ánh khoản chi chưa nhập nguồn tiền.</p></details>
-
         </form>
         
         {online && <div className="tx-tools">

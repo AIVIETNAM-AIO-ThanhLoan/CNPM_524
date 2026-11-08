@@ -1,6 +1,6 @@
 .scan-tabs { margin-bottom: 4px; }
 /* Xanh đậm giống nút ở trang chủ để chữ dễ đọc trên nền trắng */
-.scan-page .btn-secondary { border-color: #0b5cad; color: #0b5cad; }
+.scan-page .btn-secondary { border-color: var(--color-primary); color: var(--color-primary); }
 .scan-actions { display: flex; gap: 8px; }
 .scan-upload { position: relative; cursor: pointer; font-size: 14px; }
 .scan-file { position: absolute; width: 1px; height: 1px; opacity: 0; }

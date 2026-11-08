@@ -29,7 +29,7 @@
 .budget-card-menu { position: absolute; right: 5px; bottom: 5px; }
 .budget-menu-toggle { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--color-muted); cursor: pointer; }
 .budget-menu-toggle:hover, .budget-menu-toggle[aria-expanded="true"] { background: #f3f4f6; color: var(--color-ink); }
-.budget-menu-toggle:focus-visible, .budget-menu-options button:focus-visible { outline: 2px solid #0b5cad; outline-offset: 2px; }
+.budget-menu-toggle:focus-visible, .budget-menu-options button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .budget-menu-options { position: absolute; bottom: calc(100% + 4px); right: 0; z-index: 5; min-width: 148px; padding: 5px; border: 1px solid var(--color-line); border-radius: 12px; background: white; box-shadow: 0 8px 24px #0f172a1a; }
 .budget-menu-options button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--color-ink); text-align: left; font-size: 14px; cursor: pointer; }
 .budget-menu-options button:hover { background: #f3f4f6; }
@@ -37,10 +37,10 @@
 .budget-menu-toggle:disabled, .budget-menu-options button:disabled { opacity: 0.45; cursor: not-allowed; }
 .budget-category-title h3 { margin: 0; line-height: 1.4; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .budget-category-amount { margin: 3px 0; color: var(--color-ink); font-size: 19px; font-weight: 650; overflow-wrap: anywhere; }
-.budget-set-button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: auto; margin-bottom: 32px; padding: 9px 0; color: #0b5cad; font-size: 13px; font-weight: 600; cursor: pointer; }
+.budget-set-button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: auto; margin-bottom: 32px; padding: 9px 0; color: var(--color-primary); font-size: 13px; font-weight: 600; cursor: pointer; }
 .budget-editor { margin-top: 12px; font-size: 13px; }
 .budget-editor-actions { display: flex; gap: 8px; }
-.budget-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 16px; padding: 12px; color: #0b5cad; border-radius: 10px; background: var(--color-haze); font-size: 14px; }
+.budget-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 16px; padding: 12px; color: var(--color-primary); border-radius: 10px; background: var(--color-haze); font-size: 14px; }
 .budget-error { color: var(--color-danger); }
 .budget-feedback .btn-secondary { flex: initial; }
 .budget-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 10px; color: var(--color-muted); font-size: 14px; }
@@ -50,5 +50,3 @@
   .budget-total { font-size: 15px; }
   .budget-spending { font-size: 12px; }
 }
-
-.budget-auto-note { margin: 0 0 12px; color: var(--color-muted); font-size: 12px; }
