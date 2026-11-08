@@ -22,6 +22,10 @@ Yêu cầu Node.js 20.9+, MySQL 8+ hoặc MariaDB 10.4+. XAMPP đã kèm MariaDB
 | 012 | Archive flags, recurring confirmations, account notifications, Web Push subscriptions and retry deliveries |
 | 013 | `receive_qr_images` ảnh QR nhận tiền của từng người (PNG/JPEG/WebP, tối đa 2 MB, tối đa 10 ảnh), một ảnh được đánh dấu `is_primary` |
 | 014 | `user_avatars` ảnh đại diện theo tài khoản; PNG/JPEG/WebP tối đa 2 MB, một ảnh mỗi người, tự cập nhật khi thay ảnh |
+| 015 | `budget_rollovers` theo dõi việc chuyển hạn mức ngân sách giữa các tháng |
+| 016 | `accounts.source_key` gắn ngân hàng/ví điện tử với ví ghi chép của từng người dùng, chống tạo trùng nguồn |
+
+Nguồn chi được chọn trong **Tôi → Cài đặt mặc định** và lưu riêng theo tài khoản trên trình duyệt. Khi đã cấu hình, màn hình ghi giao dịch chỉ hiện các nguồn đang bật; tắt tất cả sẽ yêu cầu chọn lại nguồn trước khi lưu. Với ngân hàng/ví điện tử, ví ghi chép được tạo khi ghi giao dịch đầu tiên, trong cùng transaction với bút toán. Ví trùng tên được dùng lại, giữ số dư; `source_key` giữ liên kết khi đổi tên ví. Tắt một nguồn không xóa hay lưu trữ ví, không đổi số dư và lịch sử. Giao dịch ngoại tuyến giữ thông tin nguồn trong outbox và tạo/đối chiếu ví khi đồng bộ. Đây là ví ghi chép trong ứng dụng, không phải kết nối lấy số dư ngân hàng thật.
 
 Chạy lại `npm.cmd run db:setup` sau khi lấy code mới để áp dụng migration còn thiếu. MySQL DDL tự commit: nếu lần đầu bị lỗi giữa chừng, kiểm tra nguyên nhân và các bảng đã tạo trước khi tiếp tục; script chủ động dừng khi phát hiện bảng `users` không có migration, không xóa bảng để thử lại. Thay đổi schema đã áp dụng cần migration mới.
 

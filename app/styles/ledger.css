@@ -30,7 +30,6 @@ body:has(.tx-page-offline, .offline-page) .offline-status a { display: none; }
 .offline-empty :is(button, a):focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 .pending-list { overflow-wrap: anywhere; }
 details[open] summary { margin-bottom: 16px; }
-.tx-extra { margin: 0 16px 16px; }
 .tx-form .tx-amount-input { padding: 0; border: none; background: transparent; border-radius: 0; }
 
 @media (max-width: 767px) {

@@ -101,7 +101,6 @@ export default function ReceiveQrPanel() {
     const addForm = <>
         <label>Tên ảnh (không bắt buộc)<input ref={labelInput} maxLength={60} placeholder="Ví dụ: Vietcombank" /></label>
         <button type="button" className="btn-primary" disabled={busy || images.length >= 10} onClick={() => addInput.current?.click()}>{busy ? 'Đang xử lý...' : 'Chọn ảnh QR'}</button>
-        <p>Tối đa 10 ảnh, mỗi ảnh tối đa 2 MB. Có thể dùng ảnh chụp màn hình QR từ app ngân hàng.</p>
         <input ref={addInput} type="file" accept="image/*" hidden onChange={add} />
     </>;
 
@@ -133,7 +132,6 @@ export default function ReceiveQrPanel() {
             ? <details className="card ledger-form receive-qr-add"><summary>Thêm ảnh QR khác</summary><div className="ledger-form">{addForm}</div></details>
             : <section className="card ledger-form">
                 <h2>Bạn chưa lưu ảnh QR nào</h2>
-                <p>Lưu ảnh QR tài khoản ngân hàng để đưa người khác quét khi nhận tiền.</p>
                 {addForm}
             </section>)}
     </>;

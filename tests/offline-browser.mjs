@@ -87,7 +87,7 @@ try {
         assert.equal(posted[0].requestKey, first.requestKey);
         assert.equal(posted[0].expectedUserId, account.userId);
         await page.getByRole('button', { name: 'Lưu giao dịch', exact: true }).waitFor();
-        assert.equal(await page.getByRole('button', { name: 'Thêm danh mục', exact: true }).isVisible(), true);
+        assert.equal(await page.getByRole('button', { name: 'Thêm danh mục', exact: true }).count(), 0);
         assert.equal(await page.getByRole('navigation', { name: 'Điều hướng chính' }).isVisible(), true);
 
         // Without an active cached account, offer online sign-in only after reconnection.

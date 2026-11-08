@@ -8,9 +8,9 @@ import { wallets } from '@/app/lib/ledger';
 export async function GET(request: Request) {
     return api(async () => {
         const user = await requireUser();
-        if (new URL(request.url).searchParams.get('all') === '1') return Response.json({ wallets: await rows<RowDataPacket>(`SELECT a.id, a.name, a.currency, a.archived, COALESCE(SUM(e.amount), 0) AS balance
+        if (new URL(request.url).searchParams.get('all') === '1') return Response.json({ wallets: await rows<RowDataPacket>(`SELECT a.id, a.name, a.currency, a.archived, a.source_key AS sourceKey, COALESCE(SUM(e.amount), 0) AS balance
             FROM accounts a LEFT JOIN transaction_entries e ON e.user_id = a.user_id AND e.account_id = a.id
-            WHERE a.user_id = ? AND a.kind = 'wallet' GROUP BY a.id, a.name, a.currency, a.archived ORDER BY a.created_at, a.id`, [user.id]) });
+            WHERE a.user_id = ? AND a.kind = 'wallet' GROUP BY a.id, a.name, a.currency, a.archived, a.source_key ORDER BY a.created_at, a.id`, [user.id]) });
         return Response.json({ wallets: await wallets(user.id) });
     });
 }

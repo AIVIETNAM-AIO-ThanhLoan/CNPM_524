@@ -1,5 +1,5 @@
 /* global self, caches, indexedDB */
-const CACHE = 'tingting-static-v4';
+const CACHE = 'tingting-static-v6';
 self.addEventListener('install', (event) => {
     event.waitUntil((async () => {
         const cache = await caches.open(CACHE);
