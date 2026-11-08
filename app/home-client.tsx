@@ -1,6 +1,6 @@
 'use client';
 import VoiceAssistant from './components/VoiceAssistant';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { dateKey } from './lib/client-api';
@@ -50,6 +50,27 @@ export default function Home({ initialDate }: { initialDate: string }) {
   const [viewMode, setViewMode] = useState<'month' | 'day'>('month');
   const [month, setMonth] = useState(() => new Date(`${initialDate.slice(0, 7)}-01T12:00:00`));
   const [day, setDay] = useState(() => new Date(`${initialDate}T12:00:00`));
+  const [restored, setRestored] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('cnpm:home-view') || 'null');
+        const validDate = (value: unknown) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && dateKey(new Date(`${value}T12:00:00`)) === value;
+        if (saved?.today === initialDate && (saved.viewMode === 'month' || saved.viewMode === 'day') && validDate(saved.month) && validDate(saved.day)) {
+          setViewMode(saved.viewMode); setMonth(new Date(`${saved.month}T12:00:00`)); setDay(new Date(`${saved.day}T12:00:00`));
+        }
+      } catch { /* Storage may be unavailable or contain invalid data. */ }
+      setRestored(true);
+    });
+    return () => { active = false; };
+  }, [initialDate]);
+  useEffect(() => {
+    if (!restored) return;
+    try { sessionStorage.setItem('cnpm:home-view', JSON.stringify({ today: initialDate, viewMode, month: dateKey(month), day: dateKey(day) })); } catch { /* Navigation still works without storage. */ }
+  }, [restored, initialDate, viewMode, month, day]);
 
   const shiftMonth = (delta: number) =>
     setMonth((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
