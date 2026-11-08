@@ -1,6 +1,7 @@
+import { readBudgets } from '@/app/lib/budgets-read';
 import { randomUUID } from 'node:crypto';
 import type { RowDataPacket } from 'mysql2/promise';
-import { atomic, rows } from '@/app/lib/db';
+import { atomic } from '@/app/lib/db';
 import { api, date, HttpError, jsonBody, money, uuid } from '@/app/lib/http';
 import { requireUser } from '@/app/lib/session';
 import { sumBudgetAmounts } from '@/app/lib/budget-money';
@@ -18,12 +19,7 @@ export async function GET(request: Request) {
         const user = await requireUser();
         const month = monthStart(new URL(request.url).searchParams.get('month'));
         await atomic(connection => rolloverBudgets(connection, user.id, `${vietnamToday().slice(0, 7)}-01`));
-        const budgets = await rows<RowDataPacket>(`SELECT b.category_id AS categoryId, c.name, b.amount,
-            COALESCE((SELECT SUM(IF(t.reverses_id IS NULL, t.amount, -t.amount)) FROM transactions t WHERE t.user_id = b.user_id
-                AND t.category_id = b.category_id AND t.kind = 'expense' AND t.booked_on >= b.month_start
-                AND t.booked_on < DATE_ADD(b.month_start, INTERVAL 1 MONTH)), 0) AS spent
-            FROM budgets b JOIN categories c ON c.id = b.category_id AND c.user_id = b.user_id
-            WHERE b.user_id = ? AND b.month_start = ? ORDER BY c.name`, [user.id, month]);
+        const budgets = await readBudgets(user.id, month);
         return Response.json({ budgets, totalAmount: sumBudgetAmounts(budgets.map((budget) => budget.amount)) });
     });
 }

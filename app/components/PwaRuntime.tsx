@@ -13,6 +13,21 @@ export default function PwaRuntime() {
     const [error, setError] = useState('');
     const lastUser = useRef<string | null>(null);
     useEffect(() => {
+        // Offline navigation must reach the worker's HTML shell, not request an RSC payload.
+        const navigate = (event: MouseEvent) => {
+            if (navigator.onLine || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            const link = event.target instanceof Element ? event.target.closest('a') : null;
+            if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+            const url = new URL(link.href);
+            if (url.origin !== location.origin || (url.pathname === location.pathname && url.hash)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            location.assign(url.href);
+        };
+        document.addEventListener('click', navigate, true);
+        return () => document.removeEventListener('click', navigate, true);
+    }, []);
+    useEffect(() => {
         let stopped = false;
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }).catch(() => { if (!stopped) setError('Chưa sẵn sàng ngoại tuyến. Hãy mở ứng dụng qua HTTPS hoặc localhost.'); });
         async function refresh() {
@@ -40,8 +55,10 @@ export default function PwaRuntime() {
     }, [pathname]);
     return <>{!online && <aside className="offline-status" role="status">
         <WifiOff size={22} aria-hidden="true" />
-        <div><strong>Bạn đang ngoại tuyến</strong><p>Giao dịch được lưu trên thiết bị và tự đồng bộ khi có mạng, đúng tài khoản.</p>
-            {pathname !== '/offline' && pathname !== '/transactions/new' && <a href="/offline">Ghi giao dịch ngoại tuyến</a>}
+        <div><strong>Bạn đang ngoại tuyến</strong><p>Xem dữ liệu đã lưu hoặc ghi giao dịch chờ đồng bộ khi có mạng.</p>
+            {/* A full navigation loads the cached offline shell. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a href="/">Xem dữ liệu ngoại tuyến</a>
         </div>
     </aside>}{error && <p role="status" className="offline-status">{error}</p>}</>;
 }

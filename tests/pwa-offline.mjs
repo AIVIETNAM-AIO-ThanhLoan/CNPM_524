@@ -1,12 +1,21 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
 // Isolated origin and account: exercise real built assets without changing application data.
 const upstream = process.env.TRANSACTION_TEST_ORIGIN || 'http://localhost:3000';
 const account = { userId: 'offline-test', wallets: [{ id: '1', name: 'Tiền mặt', balance: '100000' }],
     categories: [{ id: '1', name: 'Ăn uống', kind: 'expense' }] };
+account.snapshot = { savedAt: '2026-11-08T10:00:00Z', start: '2026-11-01', end: '2026-11-08',
+    finance: { income: 5000000, expense: 120000, budget: 12, budgetAmount: 1000000, budgetSpent: 120000,
+        daily: [], hasMore: true, breakdown: [{ name: 'Ăn uống', kind: 'expense', amount: '120000' }],
+        transactions: [{ id: 'tx1', kind: 'expense', amount: '120000', bookedOn: '2026-11-07', note: 'Bữa trưa đã lưu', wallet: 'Tiền mặt', category: 'Ăn uống' }] },
+    budgets: [{ categoryId: '1', name: 'Ăn uống', amount: '1000000', spent: '120000' }],
+    goals: [{ id: 'g1', name: 'Quỹ du lịch', savedAmount: '500000', targetAmount: '3000000', dueOn: '2026-12-31', status: 'active' }] };
+let signedIn = true;
+let acceptTransactions = false;
+const posted = [];
 let revision = 'initial';
 let missingAssets = false;
 let failedAssets = 0;
@@ -19,9 +28,13 @@ const server = createServer(async (request, response) => {
             response.end(await readFile(new URL('../public/sw.js', import.meta.url))); return;
         }
         if (path.startsWith('/api/')) {
-            if (path === '/api/transactions') { response.writeHead(503); response.end(); return; }
+            if (path === '/api/transactions') {
+                let body = ''; for await (const chunk of request) body += chunk;
+                if (acceptTransactions) posted.push(JSON.parse(body));
+                response.writeHead(acceptTransactions ? 201 : 503, { 'Content-Type': 'application/json' }); response.end('{}'); return;
+            }
             response.writeHead(200, { 'Content-Type': 'application/json' });
-            response.end(JSON.stringify(path === '/api/auth/me' ? { user: { id: account.userId } }
+            response.end(JSON.stringify(path === '/api/auth/me' ? { user: signedIn ? { id: account.userId } : null }
                 : path === '/api/offline' ? account : { wallets: account.wallets })); return;
         }
         if (missingAssets && path.startsWith('/_next/static/')) {
@@ -38,6 +51,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ channel: 'msedge' });
 try {
+    await mkdir('outputs', { recursive: true });
     const context = await browser.newContext();
     const page = await context.newPage();
     const errors = [];
@@ -76,7 +90,31 @@ try {
         await page.getByRole('button', { name: 'Về trang chủ', exact: true }).click();
         await page.getByRole('heading', { name: 'Trang chủ', exact: true }).waitFor();
     }
-    console.log('Offline startup, transaction entry and durable reload passed.');
+    // Snapshot survives transaction-form cache writes and is available on never-visited routes.
+    for (const [path, heading, content] of [
+        ['/history', 'Lịch sử', 'Bữa trưa đã lưu'], ['/wallets', 'Ví', 'Tiền mặt'],
+        ['/reports', 'Báo cáo', 'Tổng thu'], ['/budgets', 'Ngân sách', 'Ăn uống'], ['/goals', 'Mục tiêu', 'Quỹ du lịch'],
+    ]) {
+        await page.goto(`${origin}${path}`);
+        await page.getByRole('heading', { name: heading, exact: true }).waitFor();
+        await page.getByText(content, { exact: true }).first().waitFor();
+        await page.reload();
+        await page.getByText(content, { exact: true }).first().waitFor();
+        for (const width of [320, 390, 1280]) {
+            await page.setViewportSize({ width, height: 844 });
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${path} overflow at ${width}`);
+            await page.screenshot({ path: `outputs/offline-${path.slice(1)}-${width}.png`, fullPage: true });
+        }
+    }
+    await page.getByRole('button', { name: 'Lịch sử', exact: true }).click();
+    await page.getByLabel('Tìm trong lịch sử đã lưu').fill('no match');
+    await page.getByText('Không có giao dịch phù hợp trong dữ liệu đã lưu.').waitFor();
+    await page.getByLabel('Tìm trong lịch sử đã lưu').fill('Bữa trưa');
+    await page.getByText('Bữa trưa đã lưu', { exact: true }).waitFor();
+    await page.getByText(/Chỉ lưu 200 giao dịch/).waitFor();
+    await page.goBack();
+    await page.getByRole('heading', { name: 'Mục tiêu', exact: true }).waitFor();
+    console.log('Offline startup, all six views, search, back, responsive layouts and snapshot preservation passed.');
 
     // A subsequent online visit refreshes the offline document even if sw.js has not changed.
     revision = 'updated';
@@ -87,7 +125,7 @@ try {
     await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
     missingAssets = true;
     await page.goto(`${origin}/disconnected`);
-    await page.getByRole('heading', { name: 'Ghi giao dịch', exact: true }).waitFor();
+    await page.getByRole('heading', { name: 'Dữ liệu ngoại tuyến', exact: true }).waitFor();
     assert.ok(failedAssets > 0, 'Old asset 404s were exercised');
     assert.deepEqual(errors, [], 'Cached scripts hydrate despite removed server assets');
     console.log('Offline shell refresh and cached asset recovery after server 404s passed.');
@@ -108,6 +146,24 @@ try {
     await page.getByRole('button', { name: 'Thử lại', exact: true }).click();
     await page.getByRole('heading', { name: 'Giao dịch chưa gửi (1)', exact: true }).waitFor();
     console.log('IndexedDB timeout, retry and pending transaction preservation passed.');
+    acceptTransactions = true;
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    const syncDeadline = Date.now() + 15000;
+    while (posted.length === 0 && Date.now() < syncDeadline) await new Promise(resolve => setTimeout(resolve, 100));
+    await page.getByRole('heading', { name: 'Giao dịch chưa gửi (1)', exact: true }).waitFor({ state: 'hidden' });
+    assert.equal(posted.length, 1);
+    assert.equal(posted[0].expectedUserId, account.userId);
+    assert.ok(posted[0].requestKey);
+    signedIn = false;
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await page.getByRole('heading', { name: 'Chưa có dữ liệu ngoại tuyến', exact: true }).waitFor();
+    await context.setOffline(true);
+    // Remove the blocked-DB simulation for a fresh page.
+    const cleanPage = await context.newPage();
+    await cleanPage.goto(`${origin}/history`);
+    await cleanPage.getByRole('heading', { name: 'Chưa có dữ liệu ngoại tuyến', exact: true }).waitFor();
+    assert.equal(await cleanPage.getByText('Bữa trưa đã lưu', { exact: true }).count(), 0);
+    console.log('Reconnect sync and signed-out snapshot isolation passed (fixtures; no application DB writes).');
 } finally {
     await browser.close();
     server.closeAllConnections();

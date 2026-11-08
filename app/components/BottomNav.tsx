@@ -20,7 +20,9 @@ const rightItems = navItems.slice(2);
 export default function BottomNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const online = useOnline();
-  if (!online) return null;
+  if (!online) return <nav className="bottom-nav" aria-label="Điều hướng ngoại tuyến">
+    {[['/', 'Trang chủ'], ['/history', 'Lịch sử'], ['/wallets', 'Ví'], ['/budgets', 'Ngân sách'], ['/reports', 'Báo cáo']].map(([href, label]) => <a key={href} className="nav-item" href={href} onClick={onNavigate} aria-current={pathname === href ? 'page' : undefined}>{label}</a>)}
+  </nav>;
 
   const renderItem = ({ href, label, Icon }: (typeof navItems)[number]) => (
     <Link
