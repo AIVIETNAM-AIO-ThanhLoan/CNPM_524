@@ -25,5 +25,5 @@ export async function POST(request: Request) {
             await seedUser(connection, id);
         });
         return Response.json({ message: 'Tạo tài khoản thành công. Bạn có thể đăng nhập.', recoveryCode }, { status: 201 });
-    });
+    }, 'Tài khoản này đã được đăng ký. Hãy đăng nhập hoặc dùng email/số điện thoại khác.');
 }

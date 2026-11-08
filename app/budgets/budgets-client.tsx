@@ -223,10 +223,10 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
                                 name="amount" 
                                 aria-label={`Ngân sách cho ${editing.name}`}
                                 type="number" 
-                                inputMode="decimal" 
+                                inputMode="numeric" 
                                 min="0" 
-                                max="999999999999.99" 
-                                step="0.01" 
+                                max="999999999999" 
+                                step="1" 
                                 required 
                                 autoFocus 
                                 value={amount} 
