@@ -28,6 +28,15 @@ body:has(.tx-page-offline, .offline-page) .offline-status a { display: none; }
 .offline-empty :is(button, a) { flex: none; min-height: 48px; font-size: 16px; }
 .offline-empty .btn-primary { background: var(--color-primary); }
 .offline-empty :is(button, a):focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.offline-home { gap: 20px; padding-top: 24px; }
+.offline-home-header { display: flex; align-items: center; gap: 12px; color: var(--color-primary); }
+.offline-home-header h1 { font-size: 24px; font-weight: 700; }
+.offline-wallets h2 { font-size: 14px; color: var(--color-muted); margin-bottom: 8px; }
+.offline-wallets ul { list-style: none; }
+.offline-wallets li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding-block: 12px; overflow-wrap: anywhere; }
+.offline-wallets li + li { border-top: 1px solid var(--color-line); }
+.offline-home-entry { flex: none; min-height: 48px; }
+.offline-home button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 .pending-list { overflow-wrap: anywhere; }
 details[open] summary { margin-bottom: 16px; }
 .tx-form .tx-amount-input { padding: 0; border: none; background: transparent; border-radius: 0; }

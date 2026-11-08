@@ -21,7 +21,7 @@ export default function PendingEntries({ userId, hideWhenEmpty = false }: { user
     if (hideWhenEmpty && !items.length && !error) return null;
     return <section className="card ledger-form pending-list" aria-label="Giao dịch chưa gửi">
         <h2>Giao dịch chưa gửi ({items.length})</h2>
-        <p>{items.length ? 'Không xóa dữ liệu trình duyệt khi còn giao dịch chờ đồng bộ.' : 'Chưa có giao dịch chờ đồng bộ.'}</p>
+        {!items.length && <p>Chưa có giao dịch chờ đồng bộ.</p>}
         {error && <p role="alert">{error}</p>}
         {items.map((item) => <article key={item.requestKey}>
             <p>{String(item.payload.note || 'Giao dịch')} · {String(item.payload.amount)}đ · {item.state === 'failed' ? 'Gửi thất bại' : 'Chờ đồng bộ'}</p>
