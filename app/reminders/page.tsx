@@ -40,7 +40,7 @@ export default function RemindersPage() {
             <label>Tên khoản thanh toán<input name="name" maxLength={100} required defaultValue={editing?.name} /></label>
             <label>Ví<select name="walletId" required defaultValue={editing?.walletId}>{wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>
             <label>Danh mục<select name="categoryId" required defaultValue={editing?.categoryId}>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-            <label>Số tiền (VND)<input name="amount" type="number" min="0.01" max="999999999999.99" step="0.01" required defaultValue={editing?.amount} /></label>
+            <label>Số tiền (VND)<input name="amount" type="number" min="1" max="999999999999" step="1" required defaultValue={editing?.amount} /></label>
             <label>Ngày đến hạn<input name="nextDueOn" type="date" min="1000-01-01" max="9999-12-31" required defaultValue={editing?.nextDueOn || today()} /></label>
             <label>Chu kỳ<select name="frequency" defaultValue={editing?.frequency || 'monthly'}><option value="weekly">Hàng tuần</option><option value="monthly">Hàng tháng</option><option value="yearly">Hàng năm</option></select></label>
             <button className="btn-primary" disabled={busy}>Lưu khoản định kỳ</button>

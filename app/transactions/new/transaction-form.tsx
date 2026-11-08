@@ -96,7 +96,7 @@ export default function TransactionForm({ userId, initialWallets, initialCategor
                 {([{ value: 'expense', label: 'Chi' }, { value: 'income', label: 'Thu' }, { value: 'transfer', label: 'Chuyển' }] as const).map((item) =>
                     <label key={item.value}><input type="radio" name="kind" value={item.value} checked={kind === item.value} onChange={() => setKind(item.value)} /><span>{item.label}</span></label>)}
             </fieldset>
-            <label className="tx-amount-box"><span className="tx-amount-label">{kind === 'expense' ? 'Số tiền chi' : kind === 'income' ? 'Số tiền thu' : 'Số tiền chuyển'}</span><span className="tx-amount-row"><input className="tx-amount-input" name="amount" type="number" min="0.01" max="999999999999.99" step="0.01" required inputMode="decimal" placeholder="0" aria-label="Số tiền" /><span className="tx-amount-unit">đ</span></span></label>
+            <label className="tx-amount-box"><span className="tx-amount-label">{kind === 'expense' ? 'Số tiền chi' : kind === 'income' ? 'Số tiền thu' : 'Số tiền chuyển'}</span><span className="tx-amount-row"><input className="tx-amount-input" name="amount" type="number" min="1" max="999999999999" step="1" required inputMode="numeric" placeholder="0" aria-label="Số tiền" /><span className="tx-amount-unit">đ</span></span></label>
             <div className="tx-details">
                 {kind !== 'transfer' && <label className="tx-detail"><span>Danh mục</span><select name="categoryId" aria-label="Danh mục" value={categoryId} onChange={(e) => setSelectedCategory(e.target.value)}>
                     {!visibleCategories.length && <option value="">Chưa có danh mục</option>}

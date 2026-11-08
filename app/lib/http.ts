@@ -75,14 +75,15 @@ export function money(value: unknown): string {
     return `${whole}.${fraction.padEnd(2, '0')}`;
 }
 
-export async function api(work: () => Promise<Response>): Promise<Response> {
+// duplicate: thông báo khi vi phạm khóa duy nhất, nói rõ cái gì bị trùng thay cho câu chung.
+export async function api(work: () => Promise<Response>, duplicate = 'Thông tin đã tồn tại hoặc giao dịch đã được ghi. Hãy tải lại để kiểm tra.'): Promise<Response> {
     try {
         const response = await work();
         response.headers.set('Cache-Control', 'no-store');
         return response;
     } catch (error) {
         if (error instanceof HttpError) return Response.json({ error: error.message }, { status: error.status, headers: { 'Cache-Control': 'no-store' } });
-        if (error && typeof error === 'object' && 'code' in error && error.code === 'ER_DUP_ENTRY') return Response.json({ error: 'Thông tin đã tồn tại hoặc giao dịch đã được ghi. Hãy tải lại để kiểm tra.' }, { status: 409 });
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'ER_DUP_ENTRY') return Response.json({ error: duplicate }, { status: 409 });
         console.error('Backend request failed:', error instanceof Error ? error.name : 'UnknownError');
         return Response.json({ error: 'Không thể xử lý yêu cầu. Kiểm tra MySQL và cấu hình database.' }, { status: 503 });
     }

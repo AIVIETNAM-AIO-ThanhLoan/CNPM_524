@@ -67,7 +67,7 @@ export default function GoalsPage() {
         <form className="card ledger-form" onSubmit={create}>
             <h2>Tạo mục tiêu</h2>
             <label>Tên mục tiêu<input name="name" maxLength={100} required /></label>
-            <label>Số tiền mục tiêu (VND)<input name="targetAmount" type="number" min="0.01" max="999999999999.99" step="0.01" required /></label>
+            <label>Số tiền mục tiêu (VND)<input name="targetAmount" type="number" min="1" max="999999999999" step="1" required /></label>
             <label>Ngày dự kiến<input name="dueOn" type="date" /></label>
             <button className="btn-primary" disabled={busy}>Tạo mục tiêu</button>
         </form>
@@ -81,7 +81,7 @@ export default function GoalsPage() {
                     : <button className="btn-secondary" disabled={busy} onClick={() => changeStatus(goal, 'active')}>Mở lại mục tiêu</button>}</div>
             {contributions[goal.id] && <ul>{contributions[goal.id].map((item) => <li key={item.id}>{Number(item.amount).toLocaleString('vi-VN')}đ · {formatDateTime(item.createdAt)}</li>)}</ul>}
             {goal.status === 'active' && <form className="ledger-form" onSubmit={(event) => contribute(event, goal.id)}>
-                <label>Số tiền góp (VND)<input name="amount" type="number" min="0.01" max="999999999999.99" step="0.01" required /></label>
+                <label>Số tiền góp (VND)<input name="amount" type="number" min="1" max="999999999999" step="1" required /></label>
                 <button className="btn-secondary" disabled={busy}>Ghi khoản góp</button>
             </form>}
         </section>)}

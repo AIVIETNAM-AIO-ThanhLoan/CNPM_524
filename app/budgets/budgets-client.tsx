@@ -165,7 +165,7 @@ export default function Budgets({ initialMonth }: { initialMonth: string }) {
                         </div>
                     </> : null}
                     {editing === category.id ? <form className="ledger-form budget-editor" onSubmit={(event) => save(event, category)}>
-                        <label>Số tiền (VND)<input name="amount" aria-label={`Ngân sách cho ${category.name}`} type="number" inputMode="decimal" min="0" max="999999999999.99" step="0.01" required autoFocus value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} /></label>
+                        <label>Số tiền (VND)<input name="amount" aria-label={`Ngân sách cho ${category.name}`} type="number" inputMode="numeric" min="0" max="999999999999" step="1" required autoFocus value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} /></label>
                         <div className="budget-editor-actions"><button type="button" className="btn-secondary" disabled={busy} onClick={() => { setEditing(null); setError(''); }}>Hủy</button><button type="submit" className="btn-primary" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu ngân sách'}</button></div>
                     </form> : !budget && <button type="button" className="budget-set-button" disabled={busy} onClick={() => editBudget(category)}>
                         <Plus size={16} aria-hidden="true" />Đặt ngân sách
