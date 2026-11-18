@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 16px;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
 }
 
 .auth-content {
@@ -58,14 +58,14 @@
   align-items: center;
   height: 56px;
   padding: 0 16px;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   border: 1px solid var(--color-line);
   border-radius: 12px;
 }
 
 .auth-field:focus-within {
   border-color: var(--color-sky);
-  box-shadow: 0 0 0 3px rgba(181, 72, 92, 0.2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
 }
 
 .auth-field-icon {
@@ -113,7 +113,7 @@
 .auth-error {
   padding: 10px 12px;
   border-radius: 10px;
-  background-color: #fbeae8;
+  background-color: var(--color-danger-soft);
   color: var(--color-danger);
   font-size: 14px;
 }
@@ -125,7 +125,7 @@
   border: none;
   border-radius: 12px;
   background-color: var(--color-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-size: 18px;
   font-weight: 600;
   cursor: pointer;
@@ -164,7 +164,7 @@
   gap: 12px;
   border: 1px solid var(--color-line);
   border-radius: 12px;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   color: var(--color-ink);
   font-size: 16px;
   white-space: nowrap;

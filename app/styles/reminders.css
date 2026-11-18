@@ -29,7 +29,7 @@
   border-radius: 12px;
   font-size: 15px;
   color: var(--color-ink);
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   outline: none;
 }
 

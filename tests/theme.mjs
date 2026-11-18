@@ -18,7 +18,7 @@ assert.equal(readTheme(), DEFAULT_THEME);
 globalThis.localStorage.getItem = () => { throw new Error('Storage denied'); };
 assert.equal(readTheme(), DEFAULT_THEME);
 
-const browser = await chromium.launch({ channel: 'msedge' });
+const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge' });
 const origin = process.env.THEME_TEST_ORIGIN || 'http://localhost:3000';
 const colors = { blue: '#0b5cad', green: '#16704a', purple: '#7040af', rose: '#ac3668', orange: '#a34e10', slate: '#475569' };
 try {

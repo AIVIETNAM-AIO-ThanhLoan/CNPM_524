@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const origin = process.env.VOICE_TEST_ORIGIN || 'http://localhost:3000';
-const browser = await chromium.launch({ channel: 'msedge' });
+const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge' });
 const wallets = [{ id: 'cash', name: 'Tiền mặt', currency: 'VND', balance: '0.00' }];
 const categories = [{ id: 'food', name: 'Ăn uống', kind: 'expense' }, { id: 'salary', name: 'Lương', kind: 'income' }];
 const posted = [];
@@ -65,6 +65,11 @@ try {
     const open = () => page.getByRole('button', { name: 'Nhập giao dịch bằng giọng nói', exact: true }).click();
     const close = () => page.getByRole('button', { name: 'Đóng trợ lý giọng nói', exact: true }).click();
     const record = page.getByRole('button', { name: 'Bắt đầu ghi âm', exact: true });
+    // Giao dịch nhận diện được phải hiện thẻ xem lại; chỉ lưu khi bấm nút Lưu.
+    const confirmSave = async (label = 'Lưu khoản chi') => {
+        await page.getByRole('region', { name: 'Kiểm tra giao dịch' }).waitFor();
+        await page.getByRole('button', { name: label, exact: true }).click();
+    };
     const speak = (text) => page.evaluate((transcript) => {
         const recognition = window.voiceRecognition;
         const result = recognition.onresult;
@@ -88,6 +93,10 @@ try {
     await page.evaluate(() => { window.voiceScenario = 'normal'; });
     await record.click();
     await speak('Ăn uống 50 nghìn');
+    await page.getByRole('region', { name: 'Kiểm tra giao dịch' }).waitFor();
+    assert.equal(posted.length, 0, 'Recognized speech must wait for review before saving');
+    await page.getByRole('region', { name: 'Kiểm tra giao dịch' }).getByText('50.000đ').waitFor();
+    await confirmSave();
     await page.getByRole('status').filter({ hasText: 'Đã ghi' }).waitFor();
     await close();
     assert.equal(posted.length, 1, 'Duplicate results must not create duplicate transactions');
@@ -100,6 +109,7 @@ try {
     await open();
     await record.click();
     await speak('Nhận được 1,5 triệu');
+    await confirmSave('Lưu khoản thu');
     await page.getByRole('status').filter({ hasText: 'Đã ghi' }).waitFor();
     await close();
     assert.equal(posted[1].kind, 'income');
@@ -136,15 +146,33 @@ try {
     await open();
     await record.click();
     await speak('Ăn uống 50 nghìn');
+    await confirmSave();
     await page.getByRole('alert').filter({ hasText: 'Không lưu được giao dịch thử nghiệm' }).waitFor();
     assert.equal(posted.length, 2);
     rejectSave = false;
     const failedKey = attempts.at(-1).requestKey;
-    await record.click();
-    await speak('Ăn uống 50 nghìn');
+    // Lưu lỗi thì thẻ xem lại vẫn còn; bấm Lưu lần nữa dùng lại đúng mã yêu cầu.
+    await confirmSave();
     await page.getByRole('status').filter({ hasText: 'Đã ghi' }).waitFor();
     assert.equal(attempts.at(-1).requestKey, failedKey, 'Retry must reuse the request key');
     await close();
+
+    // Nói lại: bỏ thẻ xem lại, không gửi gì.
+    await open();
+    const beforeDiscard = attempts.length;
+    await record.click();
+    await speak('Ăn uống 70 nghìn');
+    await page.getByRole('button', { name: 'Nói lại', exact: true }).click();
+    await record.waitFor();
+    assert.equal(attempts.length, beforeDiscard, 'Discarding the review must not save');
+
+    // Esc đóng hộp thoại mà không lưu (nguyên lý Ít gây bất ngờ).
+    await record.click();
+    await speak('Ăn uống 80 nghìn');
+    await page.getByRole('region', { name: 'Kiểm tra giao dịch' }).waitFor();
+    await page.keyboard.press('Escape');
+    await page.getByRole('dialog', { name: 'Trợ lý giọng nói' }).waitFor({ state: 'detached' });
+    assert.equal(attempts.length, beforeDiscard, 'Escape must close without saving');
 
     // Opening again must see categories created elsewhere since the last open.
     categories.push({ id: 'travel', name: 'Du lịch', kind: 'expense' });
@@ -152,6 +180,7 @@ try {
     await open();
     await page.getByRole('textbox', { name: 'Nhập giao dịch bằng chữ' }).fill('Du lịch 200k');
     await page.getByRole('button', { name: 'Ghi', exact: true }).click();
+    await confirmSave();
     await page.getByRole('status').filter({ hasText: 'Đã ghi' }).waitFor();
     assert.ok(categoryReads > readsBefore);
     assert.equal(posted.at(-1).categoryId, 'travel');
@@ -160,6 +189,7 @@ try {
     await open();
     await page.getByRole('textbox', { name: 'Nhập giao dịch bằng chữ' }).fill('Ăn uống 1 triệu và 500 nghìn');
     await page.getByRole('button', { name: 'Ghi', exact: true }).click();
+    await confirmSave();
     await page.getByRole('status').filter({ hasText: 'Đã ghi' }).waitFor();
     assert.equal(posted.at(-1).amount, '1500000.00');
     await close();
@@ -213,5 +243,5 @@ try {
     await insecure.getByRole('button', { name: 'Bắt đầu ghi âm', exact: true }).click();
     await insecure.getByRole('alert').filter({ hasText: 'HTTPS hoặc localhost' }).waitFor();
     assert.deepEqual(pageErrors, []);
-    console.log('PASS: voice UI with simulated recognition: permissions, unsupported browser, insecure origin, service errors, retry, expense/income payloads, duplicate results, cancellation, save failure, idempotent retry, refreshed categories, connected amounts, negative rejection. Actual microphone/service availability is not tested.');
+    console.log('PASS: voice UI with simulated recognition: review before save, discard, Escape closes without saving, permissions, unsupported browser, insecure origin, service errors, retry, expense/income payloads, duplicate results, cancellation, save failure, idempotent retry, refreshed categories, connected amounts, negative rejection. Actual microphone/service availability is not tested.');
 } finally { await browser.close(); }

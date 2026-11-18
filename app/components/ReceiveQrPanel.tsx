@@ -5,12 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Skeleton, SkeletonStatus } from './Skeleton';
 import { requestJson } from '../lib/client-api';
+import { askConfirm } from './ConfirmDialog';
 import '../styles/ledger.css';
 import '../styles/receive-qr.css';
 
 type QrImage = { id: string; label: string; isPrimary: boolean | number; updatedAt: string };
 
 const IMAGE_LIMIT = 2 * 1024 * 1024;
+const LOGIN_REQUIRED = 'Bạn cần đăng nhập.';
 // updatedAt chỉ chính xác đến giây; version tăng sau mỗi thao tác để ảnh vừa thay luôn được tải lại.
 const imageUrl = (image: QrImage, version: number) => `/api/receive-qr?id=${image.id}&v=${encodeURIComponent(image.updatedAt)}-${version}`;
 
@@ -94,8 +96,11 @@ export default function ReceiveQrPanel() {
         if (selected) void run(async () => (await send('PATCH', '/api/receive-qr', { id: selected.id, primary: true })).id);
     }
 
-    function remove() {
-        if (selected && confirm(`Xóa ảnh "${selected.label}"?`)) void run(async () => { await send('DELETE', '/api/receive-qr', { id: selected.id }); return undefined; });
+    async function remove() {
+        if (!selected) return;
+        const target = selected;
+        if (!await askConfirm({ title: `Xóa ảnh "${target.label}"?`, message: 'Ảnh QR này sẽ bị xóa khỏi tài khoản. Thao tác không thể hoàn tác.', confirmLabel: 'Xóa ảnh', danger: true })) return;
+        void run(async () => { await send('DELETE', '/api/receive-qr', { id: target.id }); return undefined; });
     }
 
     const addForm = <>
@@ -105,7 +110,8 @@ export default function ReceiveQrPanel() {
     </>;
 
     return <>
-        {error && <p role="alert" className="ledger-error">{error} <Link href="/login">Đăng nhập</Link></p>}
+        {/* Chỉ gợi ý Đăng nhập khi lỗi đúng là do hết phiên, giống trang Quét mã; các lỗi khác (ảnh quá lớn...) không kèm link gây hiểu nhầm. */}
+        {error && <p role="alert" className="ledger-error">{error} {error === LOGIN_REQUIRED && <Link href="/login">Đăng nhập</Link>}</p>}
 
         {!loaded && <section className="card receive-qr-main"><SkeletonStatus label="Đang tải ảnh QR…" /><Skeleton width={240} height={240} /><Skeleton width={120} /></section>}
 

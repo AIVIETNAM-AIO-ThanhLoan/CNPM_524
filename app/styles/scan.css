@@ -12,7 +12,7 @@
 .scan-recipient dt { color: var(--color-muted); font-size: 14px; }
 .scan-recipient dd { margin: 4px 0 0; font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
 .scan-page #transfer-amount { font-size: 24px; font-weight: 600; }
-.scan-page video { border-radius: 12px; background: #111; }
+.scan-page video { border-radius: 12px; background: var(--color-ink); }
 
 @media (max-width: 767px) {
   .scan-page video { max-height: 40dvh !important; object-fit: contain; }

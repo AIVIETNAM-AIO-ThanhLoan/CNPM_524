@@ -4,18 +4,18 @@
 .budget-total { font-size: 18px; line-height: 1.3; font-weight: 600; overflow-wrap: anywhere; text-align: right; }
 .budget-month-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 0 16px 8px; }
 .budget-month-controls label { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 8px; font-size: 13px; color: var(--color-muted); }
-.budget-month-controls input { min-width: 0; max-width: 170px; padding: 8px; border: 1px solid var(--color-line); border-radius: 9px; color: var(--color-ink); background: white; }
+.budget-month-controls input { min-width: 0; max-width: 170px; padding: 8px; border: 1px solid var(--color-line); border-radius: 9px; color: var(--color-ink); background: var(--color-surface); }
 .budget-categories { padding: 4px 16px 20px; }
 .budget-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
 .budget-section-heading h2 { font-size: 14px; font-weight: 600; }
 .budget-category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.budget-category-card { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 164px; padding: 14px; border-radius: 16px; background: white; --budget-accent: #20834b; }
+.budget-category-card { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 164px; padding: 14px; border-radius: 16px; background: var(--color-surface); --budget-accent: var(--color-income); }
 .budget-border { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; fill: none; }
-.budget-border-track { stroke: #e2e9e5; stroke-width: 2; }
+.budget-border-track { stroke: var(--color-line); stroke-width: 2; }
 .budget-border-fill { stroke: var(--budget-accent); stroke-width: 3; stroke-linecap: butt; transition: stroke-dasharray 400ms ease-out, stroke 200ms ease-out; }
-.budget-category-card.is-full { --budget-accent: #c43232; background: #fffafa; }
-.budget-category-card.is-unset { background: #fafcfb; }
-.budget-spending { margin-top: 10px; color: #607068; font-size: 13px; }
+.budget-category-card.is-full { --budget-accent: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 4%, var(--color-surface)); }
+.budget-category-card.is-unset { background: var(--color-canvas); }
+.budget-spending { margin-top: 10px; color: var(--color-muted); font-size: 13px; }
 .budget-usage { margin-top: auto; padding-top: 12px; padding-right: 32px; color: var(--budget-accent); }
 .budget-usage strong { font-size: 20px; line-height: 1.4; font-weight: 700; }
 .budget-usage small { margin-left: 1px; font-size: 13px; }
@@ -28,11 +28,11 @@
 .budget-category-title { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .budget-card-menu { position: absolute; right: 5px; bottom: 5px; }
 .budget-menu-toggle { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--color-muted); cursor: pointer; }
-.budget-menu-toggle:hover, .budget-menu-toggle[aria-expanded="true"] { background: #f3f4f6; color: var(--color-ink); }
+.budget-menu-toggle:hover, .budget-menu-toggle[aria-expanded="true"] { background: var(--color-control); color: var(--color-ink); }
 .budget-menu-toggle:focus-visible, .budget-menu-options button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-.budget-menu-options { position: absolute; bottom: calc(100% + 4px); right: 0; z-index: 5; min-width: 148px; padding: 5px; border: 1px solid var(--color-line); border-radius: 12px; background: white; box-shadow: 0 8px 24px #0f172a1a; }
+.budget-menu-options { position: absolute; bottom: calc(100% + 4px); right: 0; z-index: 5; min-width: 148px; padding: 5px; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-surface); box-shadow: var(--shadow-md); }
 .budget-menu-options button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--color-ink); text-align: left; font-size: 14px; cursor: pointer; }
-.budget-menu-options button:hover { background: #f3f4f6; }
+.budget-menu-options button:hover { background: var(--color-control); }
 .budget-menu-options .budget-menu-delete { color: var(--color-danger); }
 .budget-menu-toggle:disabled, .budget-menu-options button:disabled { opacity: 0.45; cursor: not-allowed; }
 .budget-category-title h3 { margin: 0; line-height: 1.4; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
