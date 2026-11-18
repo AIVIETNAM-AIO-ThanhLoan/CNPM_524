@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { requestJson } from '../lib/client-api';
+import { askConfirm } from './ConfirmDialog';
 import { activeAccount, clearActiveAccount, pendingEntries } from '../lib/offline';
 
 export default function LogoutButton({ className = 'btn-secondary' }: { className?: string }) {
@@ -15,7 +16,7 @@ export default function LogoutButton({ className = 'btn-secondary' }: { classNam
         try {
             const account = await activeAccount();
             const pending = account ? await pendingEntries(account.userId) : [];
-            if (pending.length && !window.confirm(`Còn ${pending.length} giao dịch chưa gửi. Đăng xuất và giữ các khoản này trên thiết bị? Đăng nhập lại đúng tài khoản để đồng bộ. Không xóa dữ liệu trình duyệt.`)) return;
+            if (pending.length && !await askConfirm({ title: 'Đăng xuất khi còn giao dịch chưa gửi?', message: `Còn ${pending.length} giao dịch chưa gửi. Các khoản này vẫn được giữ trên thiết bị; đăng nhập lại đúng tài khoản để đồng bộ. Không xóa dữ liệu trình duyệt.`, confirmLabel: 'Đăng xuất', cancelLabel: 'Ở lại', danger: true })) return;
             const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
             const subscription = await registration?.pushManager?.getSubscription();
             await requestJson('/api/auth/logout', { endpoint: subscription?.endpoint });

@@ -8,9 +8,9 @@
   align-items: center;
   justify-content: space-around;
   padding: 6px 8px calc(12px + env(safe-area-inset-bottom));
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   border-top: 1px solid var(--color-line);
-  box-shadow: 0 -2px 8px rgba(74, 14, 28, 0.06);
+  box-shadow: 0 -2px 8px color-mix(in srgb, var(--color-ink) 6%, transparent);
 }
 
 .nav-item {
@@ -47,7 +47,7 @@
   border: none;
   border-radius: 16px;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-brand) 100%);
-  color: #ffffff;
+  color: var(--color-on-primary);
   box-shadow: 0 6px 16px color-mix(in srgb, var(--color-brand) 40%, transparent);
   cursor: pointer;
 }
@@ -65,7 +65,7 @@
 /* The active mark animates once; it never changes navigation item size. */
 .bottom-nav > a { position: relative; }
 .bottom-nav > a[aria-current="page"]::after { content: ''; position: absolute; bottom: 1px; left: calc(50% - 11px); width: 22px; height: 3px; border-radius: 3px; background: var(--color-primary); animation: nav-mark-enter 180ms cubic-bezier(.16, 1, .3, 1); }
-.bottom-nav > .nav-qr[aria-current="page"]::after { background: white; bottom: 3px; }
+.bottom-nav > .nav-qr[aria-current="page"]::after { background: var(--color-surface); bottom: 3px; }
 .nav-item svg { transition: transform 140ms ease-out; }
 .nav-item:active svg { transform: scale(.92); }
 @keyframes nav-mark-enter { from { opacity: .4; transform: scaleX(.35); } to { opacity: 1; transform: scaleX(1); } }

@@ -11,7 +11,7 @@
 .tx-type-switch label { position: relative; min-width: 0; cursor: pointer; }
 .tx-type-switch input, .tx-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .tx-type-switch span { display: grid; place-items: center; min-height: 44px; border-radius: 9px; color: var(--color-muted); font-weight: 600; }
-.tx-type-switch input:checked + span { background: white; color: var(--color-primary); box-shadow: 0 2px 4px color-mix(in srgb, var(--color-ink) 7%, transparent); }
+.tx-type-switch input:checked + span { background: var(--color-surface); color: var(--color-primary); box-shadow: 0 2px 4px color-mix(in srgb, var(--color-ink) 7%, transparent); }
 .tx-type-switch input:focus-visible + span { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .tx-form .tx-amount-box { align-items: center; gap: 4px; padding: 8px 0 12px; }
 .tx-amount-label { font-size: 14px; color: var(--color-muted); text-align: center; }
@@ -19,7 +19,7 @@
 .tx-form .tx-amount-input { grid-column: 2; min-width: 0; width: 100%; min-height: 58px; padding: 0; border: 0; background: transparent; text-align: center; font-size: clamp(32px, 8vw, 44px); font-weight: 650; font-variant-numeric: tabular-nums; }
 .tx-amount-input::-webkit-inner-spin-button, .tx-amount-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .tx-amount-unit { grid-column: 3; font-size: 26px; color: var(--color-muted); }
-.tx-details { padding: 0 12px; border: 1px solid var(--color-line); border-radius: 16px; background: white; }
+.tx-details { padding: 0 12px; border: 1px solid var(--color-line); border-radius: 16px; background: var(--color-surface); }
 .tx-form .tx-detail { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 56px; }
 .tx-detail + .tx-detail { border-top: 1px solid var(--color-line); }
 .tx-detail > span { font-size: 14px; color: var(--color-muted); }

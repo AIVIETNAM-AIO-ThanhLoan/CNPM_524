@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { discardFailed, onOfflineChange, pendingEntries, queueEntry, synchronize, type PendingEntry } from '../lib/offline';
 import { useOnline } from '../lib/use-online';
+import { askConfirm } from './ConfirmDialog';
 
 export default function PendingEntries({ userId, hideWhenEmpty = false }: { userId: string; hideWhenEmpty?: boolean }) {
     const online = useOnline();
@@ -28,7 +29,7 @@ export default function PendingEntries({ userId, hideWhenEmpty = false }: { user
             {item.error && <p role="alert">{item.error}</p>}
             <div className="action-row"><button type="button" className="btn-secondary" disabled={busy || !online} onClick={() => retry(item)}>Thử đồng bộ</button>
                 {item.state === 'failed' && <button type="button" className="btn-secondary" disabled={busy} onClick={async () => {
-                    if (window.confirm('Xóa khoản bị từ chối này khỏi thiết bị để nhập lại?')) {
+                    if (await askConfirm({ title: 'Xóa khoản bị từ chối?', message: 'Khoản này sẽ bị xóa khỏi thiết bị để bạn nhập lại. Thao tác không thể hoàn tác.', confirmLabel: 'Xóa khoản lỗi', danger: true })) {
                         try { await discardFailed(item); } catch (error) { setError(error instanceof Error ? error.message : 'Không xóa được.'); }
                     }
                 }}>Xóa khoản lỗi để nhập lại</button>}</div>

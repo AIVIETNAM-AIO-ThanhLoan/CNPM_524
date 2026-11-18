@@ -7,7 +7,7 @@ import { join } from 'node:path';
 const origin = process.env.MOBILE_TEST_ORIGIN || 'http://localhost:3000';
 const output = join(tmpdir(), 'cnpm-mobile-review');
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ channel: 'msedge' });
+const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge' });
 const failures = [];
 const redirects = new Set();
 try {

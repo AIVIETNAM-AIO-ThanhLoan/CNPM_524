@@ -35,16 +35,16 @@ export default function AddCategoryButton({ kind, onAdded, disabled = false }: {
         <button type="button" className="add-category-button" disabled={disabled} onClick={() => { setError(''); setOpen(true); }}>
             <Plus size={17} aria-hidden="true" /> Thêm danh mục
         </button>
-        {open && createPortal(<dialog ref={dialog} className="category-dialog" aria-labelledby="category-dialog-title"
+        {open && createPortal(<dialog ref={dialog} className="app-dialog" aria-labelledby="category-dialog-title"
             onCancel={(event) => { if (busy) event.preventDefault(); else setOpen(false); }} onClose={() => setOpen(false)}>
-            <div className="category-dialog-header"><h2 id="category-dialog-title">Thêm danh mục</h2>
+            <div className="app-dialog-header"><h2 id="category-dialog-title">Thêm danh mục</h2>
                 <button type="button" className="icon-btn" aria-label="Đóng" disabled={busy} onClick={() => setOpen(false)}><X size={20} /></button>
             </div>
-            <p>Danh mục {kind === 'expense' ? 'chi tiêu' : 'thu nhập'} này sẽ có trong phần Ghi giao dịch{kind === 'expense' ? ' và Ngân sách' : ''}.</p>
+            <p className="app-dialog-text">Danh mục {kind === 'expense' ? 'chi tiêu' : 'thu nhập'} này sẽ có trong phần Ghi giao dịch{kind === 'expense' ? ' và Ngân sách' : ''}.</p>
             <form className="ledger-form" onSubmit={submit}>
                 <label>Tên danh mục<input name="name" maxLength={80} placeholder="Ví dụ: Sức khỏe" required autoFocus /></label>
                 {error && <p className="category-error" role="alert">{error}</p>}
-                <div className="category-dialog-actions"><button type="button" className="btn-secondary" disabled={busy} onClick={() => setOpen(false)}>Hủy</button>
+                <div className="app-dialog-actions"><button type="button" className="btn-secondary" disabled={busy} onClick={() => setOpen(false)}>Hủy</button>
                     <button type="submit" className="btn-primary" disabled={busy}>{busy ? 'Đang thêm…' : 'Tạo danh mục'}</button></div>
             </form>
         </dialog>, document.body)}
