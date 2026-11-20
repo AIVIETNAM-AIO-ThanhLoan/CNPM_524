@@ -50,18 +50,18 @@ export default function GoldClient() {
     <div className="app-page pb-24">
       <header className="page-header flex items-center justify-between p-4 mb-2">
         <div className="flex items-center gap-3">
-          <Link href="/" className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition">
+          <Link href="/" className="p-2 bg-surface rounded-full shadow-sm hover:bg-haze transition">
             <ArrowLeft size={20} />
           </Link>
-          <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <Coins className="text-yellow-500" /> Giá Vàng Thị Trường
+          <h1 className="text-xl font-bold text-ink flex items-center gap-2">
+            <Coins className="text-highlight" /> Giá Vàng Thị Trường
           </h1>
         </div>
         <button 
           onClick={() => { setLoading(true); setReload(n => n + 1); }}
           aria-label="Làm mới giá vàng"
           disabled={loading}
-          className="p-2 bg-white text-yellow-600 rounded-full shadow-sm hover:bg-yellow-50 transition"
+          className="p-2 bg-surface text-highlight rounded-full shadow-sm hover:bg-highlight-soft transition"
         >
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
         </button>
@@ -70,10 +70,10 @@ export default function GoldClient() {
       <div className="px-4">
         {error && <p role="alert" className="ledger-error">{error}</p>}
         <div className="flex justify-between items-center mb-4 px-1">
-          <p className="text-sm text-gray-500 font-medium">Đơn vị: VNĐ / Lượng</p>
+          <p className="text-sm text-muted font-medium">Đơn vị: VNĐ / Lượng</p>
           {updatedAt && (
-            <p className="text-xs text-green-600 font-medium flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <p className="text-xs text-income font-medium flex items-center gap-1">
+              <span className="w-2 h-2 bg-income rounded-full animate-pulse"></span>
               Cập nhật: {updatedAt}
             </p>
           )}
@@ -81,35 +81,35 @@ export default function GoldClient() {
 
         <div className="space-y-4">
           {loading && prices.length === 0 ? (
-             <div className="text-center text-gray-500 py-10 animate-pulse">Đang kết nối dữ liệu thị trường...</div>
+             <div className="text-center text-muted py-10 animate-pulse">Đang kết nối dữ liệu thị trường...</div>
           ) : prices.length === 0 ? (
-             <div className="text-center text-gray-500 py-10">Không có dữ liệu.</div>
+             <div className="text-center text-muted py-10">Không có dữ liệu.</div>
           ) : (
             prices.map((gold) => (
-              <div key={gold.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-                <div className="bg-gradient-to-r from-yellow-50 to-white p-4 border-b border-gray-100 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center shrink-0">
+              <div key={gold.id} className="bg-surface rounded-2xl shadow-sm border border-line overflow-hidden hover:shadow-md transition">
+                <div className="bg-highlight-soft/40 p-4 border-b border-line flex items-center gap-3">
+                  <div className="w-10 h-10 bg-highlight-soft text-highlight rounded-full flex items-center justify-center shrink-0">
                     <Coins size={20} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-lg uppercase">{gold.brand}</h3>
-                    <p className="text-xs text-gray-500 font-medium">{gold.type}</p>
+                    <h3 className="font-bold text-ink text-lg uppercase">{gold.brand}</h3>
+                    <p className="text-xs text-muted font-medium">{gold.type}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 divide-x divide-gray-100 p-2">
+                <div className="grid grid-cols-2 divide-x divide-line p-2">
                   <div className="p-3 text-center">
-                    <p className="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
-                      <TrendingDown size={14} className="text-green-500" /> Mua vào
+                    <p className="text-xs text-muted mb-1 flex items-center justify-center gap-1">
+                      <TrendingDown size={14} className="text-income" /> Mua vào
                     </p>
-                    <p className="text-lg font-bold text-green-600 transition-all duration-500">{formatMoney(gold.buy)}</p>
+                    <p className="text-lg font-bold text-income transition-all duration-500">{formatMoney(gold.buy)}</p>
                   </div>
                   
                   <div className="p-3 text-center">
-                    <p className="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
-                      <TrendingUp size={14} className="text-red-500" /> Bán ra
+                    <p className="text-xs text-muted mb-1 flex items-center justify-center gap-1">
+                      <TrendingUp size={14} className="text-expense" /> Bán ra
                     </p>
-                    <p className="text-lg font-bold text-red-600 transition-all duration-500">{formatMoney(gold.sell)}</p>
+                    <p className="text-lg font-bold text-expense transition-all duration-500">{formatMoney(gold.sell)}</p>
                   </div>
                 </div>
               </div>
@@ -117,8 +117,8 @@ export default function GoldClient() {
           )}
         </div>
 
-        <div className="mt-6 p-4 bg-yellow-50 rounded-xl border border-yellow-100 mb-6">
-          <p className="text-xs text-yellow-700 text-center">
+        <div className="mt-6 p-4 bg-highlight-soft/40 rounded-xl border border-highlight-soft mb-6">
+          <p className="text-xs text-warning text-center">
             * Dữ liệu được cập nhật trực tiếp từ thị trường (vang.today).
           </p>
         </div>

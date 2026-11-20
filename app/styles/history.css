@@ -13,7 +13,7 @@
   padding: 0 16px;
   border: 1px solid var(--color-line);
   border-radius: 12px;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   color: var(--color-muted);
 }
 
@@ -52,7 +52,7 @@
 .summary-pair .stat-box {
   padding: 14px 12px;
   border-radius: 12px;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   text-align: center;
 }
 
@@ -183,7 +183,7 @@
   justify-content: center;
   border: none;
   border-radius: 50%;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   color: var(--color-ink);
   cursor: pointer;
 }
@@ -209,13 +209,13 @@
 
 /* Bộ lọc loại giao dịch */
 .tx-icon-income {
-  background-color: #dff5ea;
-  color: #1f9d6b;
+  background-color: var(--color-income-soft);
+  color: var(--color-income);
 }
 
 .tx-icon-expense {
-  background-color: #fde6df;
-  color: #e4572e;
+  background-color: var(--color-expense-soft);
+  color: var(--color-expense);
 }
 
 .tx-icon-transfer {

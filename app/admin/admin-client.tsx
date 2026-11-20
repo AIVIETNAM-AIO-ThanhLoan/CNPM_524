@@ -49,8 +49,8 @@ export default function AdminDashboard() {
     }
 
     const backups = data?.stats.backups ?? [];
-    return <div className="admin-page min-h-screen bg-white text-ink flex flex-col">
-        <header className="bg-ink text-white">
+    return <div className="admin-page min-h-screen bg-surface text-ink flex flex-col">
+        <header className="bg-ink text-on-primary">
             <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
                 <h1 className="font-bold flex items-center gap-2"><ShieldCheck size={22} />Quản trị Ting Ting</h1>
                 <Link href="/profile" className="underline">Về tài khoản</Link>

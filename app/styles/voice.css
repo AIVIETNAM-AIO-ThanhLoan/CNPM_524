@@ -1,0 +1,28 @@
+/* Trợ lý giọng nói: dùng khung .app-dialog chung, mọi màu lấy từ biến nên đổi theo chủ đề. */
+.voice-center { text-align: center; }
+.voice-hint { margin: 4px 0 20px; padding: 14px 16px; border-radius: 12px; background: var(--color-haze); color: var(--color-muted); font-size: 14px; line-height: 1.6; text-align: center; }
+.voice-hint strong { color: var(--color-primary); font-weight: 650; }
+.voice-retry { width: 100%; margin-bottom: 12px; }
+.voice-notice { margin-bottom: 16px; padding: 10px 12px; border-radius: 8px; background: var(--color-warning-soft); color: var(--color-warning); font-size: 13px; text-align: center; }
+.voice-saved { margin-bottom: 16px; color: var(--color-income); font-size: 14px; font-weight: 600; text-align: center; }
+.voice-transcript { margin-bottom: 16px; color: var(--color-muted); font-style: italic; text-align: center; }
+
+.voice-mic-area { display: flex; flex-direction: column; align-items: center; }
+.voice-mic { display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; border: none; border-radius: 50%; background: var(--color-frost); color: var(--color-primary); cursor: pointer; transition: background-color 0.3s, box-shadow 0.3s; }
+.voice-mic.is-listening { background: var(--color-danger); color: var(--color-on-primary); box-shadow: 0 0 20px color-mix(in srgb, var(--color-danger) 60%, transparent); }
+.voice-mic:disabled { opacity: 0.5; cursor: not-allowed; }
+.voice-status { margin-top: 16px; font-size: 14px; font-weight: 500; text-align: center; }
+
+.voice-typed { display: flex; gap: 8px; margin-top: 16px; }
+.voice-typed input { flex: 1; min-width: 0; padding: 12px; border: 1px solid var(--color-line); border-radius: 8px; background: var(--color-surface); color: var(--color-ink); font-size: 16px; }
+.voice-typed .btn-primary { flex: none; padding-inline: 18px; }
+
+/* Thẻ xem lại giao dịch trước khi lưu: số tiền to nhất, các dòng thông tin canh thẳng trục. */
+.voice-review-card { margin-bottom: 16px; padding: 16px; border: 1px solid var(--color-line); border-radius: 14px; }
+.voice-review-kind { color: var(--color-muted); font-size: 13px; }
+.voice-review-amount { margin: 2px 0 12px; font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.voice-review-card dl > div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 8px; padding: 8px 0; border-top: 1px solid var(--color-line); font-size: 14px; }
+.voice-review-card dt { color: var(--color-muted); }
+.voice-review-card dd { color: var(--color-ink); font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.voice-warning-icon { color: var(--color-highlight); margin-bottom: 12px; }
+.voice-question { margin-bottom: 6px; color: var(--color-ink); font-size: 16px; font-weight: 600; text-align: center; }

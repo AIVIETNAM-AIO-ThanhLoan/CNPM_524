@@ -6,6 +6,7 @@ import "./styles/themes.css";
 import Script from 'next/script';
 import PwaRuntime from './components/PwaRuntime';
 import ThemeRuntime from './components/ThemeRuntime';
+import { ConfirmHost } from './components/ConfirmDialog';
 import { themeInitScript } from './lib/theme';
 
 const geistSans = Geist({
@@ -43,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Script id="app-theme" strategy="beforeInteractive">{themeInitScript}</Script>
-        <ThemeRuntime /><PwaRuntime />{children}
+        <ThemeRuntime /><PwaRuntime />{children}<ConfirmHost />
       </body>
     </html>
   );

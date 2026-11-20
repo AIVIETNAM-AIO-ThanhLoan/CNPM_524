@@ -2,9 +2,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Mic, X, PlusCircle, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { requestJson, type Wallet, type Category, today } from '@/app/lib/client-api';
+import { formatDate, requestJson, type Wallet, type Category, today } from '@/app/lib/client-api';
 import { notifyFinanceUpdated } from '@/app/lib/finance-updates';
 import { parseVoiceAmount, removeVoiceAmount } from '@/app/lib/voice-amount.mjs';
+import '@/app/styles/voice.css';
 
 
 type Recognition = {
@@ -54,11 +55,18 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
 
   const [pendingPayload, setPendingPayload] = useState<VoicePayload | null>(null);
   const [missingCategoryName, setMissingCategoryName] = useState('');
+  // Giao dịch đã nhận diện, chờ người dùng xem lại rồi mới lưu (nguyên lý Ít gây bất ngờ).
+  const [review, setReview] = useState<{ payload: VoicePayload; categoryName: string } | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const recognitionRef = useRef<Recognition | null>(null);
   const dataRequest = useRef<AbortController | null>(null);
   const openRef = useRef(false);
   const processing = useRef(false);
   const retryRequest = useRef<{ fingerprint: string; requestKey: string } | null>(null);
+
+  useEffect(() => {
+    if (isOpen && dialogRef.current && !dialogRef.current.open) dialogRef.current.showModal();
+  }, [isOpen]);
 
   useEffect(() => () => {
     openRef.current = false;
@@ -82,7 +90,7 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
     dataRequest.current = controller;
     openRef.current = true;
     setIsOpen(true); setIsDataLoaded(false); setError(''); setSaved('');
-    setTranscript(''); setTyped(''); setPendingPayload(null); setMissingCategoryName('');
+    setTranscript(''); setTyped(''); setPendingPayload(null); setMissingCategoryName(''); setReview(null);
     setIsHomeScreenIos((navigator as Navigator & { standalone?: boolean }).standalone === true);
     try {
       const [wRes, cRes] = await Promise.all([
@@ -121,7 +129,7 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
       if (!openRef.current) return;
       const walletName = wallets.find(w => w.id === payload.walletId)?.name;
       setSaved(`Đã ghi ${payload.kind === 'income' ? 'khoản thu' : 'khoản chi'} ${Number(payload.amount).toLocaleString('vi-VN')}đ · ${categoryName} · ${walletName}`);
-      setPendingPayload(null); setMissingCategoryName(''); setTyped('');
+      setPendingPayload(null); setMissingCategoryName(''); setTyped(''); setReview(null);
     } catch (error) {
       if (openRef.current) setError(errorMessage(error, 'Lỗi khi lưu giao dịch.'));
     }
@@ -140,7 +148,7 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
   async function processVoiceText(text: string) {
     if (!openRef.current || processing.current || !isDataLoaded) return;
     processing.current = true;
-    setLoading(true); setError(''); setSaved(''); setTranscript(text);
+    setLoading(true); setError(''); setSaved(''); setTranscript(text); setReview(null);
     try {
       const wallet = wallets.find(w => text.includes(w.name.normalize('NFC').toLowerCase())) || wallets[0];
       if (!wallet) throw new Error('Bạn cần tạo ví trước khi ghi giao dịch.');
@@ -155,7 +163,7 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
       const payload: VoicePayload = { requestKey: crypto.randomUUID(), kind, walletId: wallet.id,
         targetId: null, categoryId: category?.id || '', amount: amount.toFixed(2), bookedOn: today(), note: `Ghi âm: ${text}`.slice(0, 500) };
       if (category) {
-        await executeSave(payload, category.name);
+        setReview({ payload, categoryName: category.name });
       } else {
         const guessedName = extractCategoryName(text);
         if (guessedName.length > 1 && guessedName !== 'Khác') {
@@ -164,7 +172,7 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
           const fallback = available.find(c => c.kind === kind && c.name.toLowerCase().includes('khác'))
             || available.find(c => c.kind === kind);
           if (!fallback) throw new Error('Không tìm thấy danh mục phù hợp để lưu.');
-          await executeSave({ ...payload, categoryId: fallback.id }, fallback.name);
+          setReview({ payload: { ...payload, categoryId: fallback.id }, categoryName: fallback.name });
         }
       }
     } catch (error) {
@@ -175,13 +183,28 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
     }
   }
 
+  async function saveReview() {
+    if (!review || processing.current || !openRef.current) return;
+    processing.current = true; setLoading(true); setError('');
+    try { await executeSave(review.payload, review.categoryName); }
+    finally {
+      processing.current = false;
+      if (openRef.current) setLoading(false);
+    }
+  }
+
+  function discardReview() {
+    if (processing.current) return;
+    setReview(null); setError(''); setTranscript('');
+  }
+
   function toggleListening() {
     if (!isDataLoaded || processing.current || !openRef.current) return;
     if (isListening) { recognitionRef.current?.stop(); return; }
     if (isStarting) { stopRecognition(); return; }
     stopRecognition();
     setError(''); setSaved(''); setTranscript('');
-    setPendingPayload(null); setMissingCategoryName('');
+    setPendingPayload(null); setMissingCategoryName(''); setReview(null);
     if (!window.isSecureContext) {
       setError('Micro chỉ hoạt động trên HTTPS hoặc localhost. Hãy mở ứng dụng bằng địa chỉ HTTPS.'); return;
     }
@@ -250,6 +273,9 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
     }
   }
 
+  const reviewWallet = review ? wallets.find(w => w.id === review.payload.walletId)?.name : '';
+  const saveLabel = review?.payload.kind === 'income' ? 'Lưu khoản thu' : 'Lưu khoản chi';
+
   return (
     <>
       <button
@@ -264,107 +290,100 @@ export default function VoiceAssistant({ className = 'btn-secondary', label = 'G
       </button>
 
       {isOpen && (
-        <div role="dialog" aria-modal="true" aria-label="Trợ lý giọng nói" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', position: 'relative' }}>
-            <button type="button" aria-label="Đóng trợ lý giọng nói" disabled={loading} onClick={closeAssistant} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
-              <X size={24} />
-            </button>
-            
-            <h2 style={{ fontSize: '20px', fontWeight: 'bold', textAlign: 'center', marginBottom: '12px' }}>Trợ lý giọng nói</h2>
-            
-            {/* MÀN HÌNH GHI ÂM CHÍNH */}
-            {!pendingPayload && (
-              <>
-                <div style={{ backgroundColor: '#f3f4f6', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
-                  <p style={{ fontSize: '14px', color: '#4b5563', textAlign: 'center', lineHeight: '1.5' }}>
-                    Bạn có thể nói:<br/>
-                    <strong style={{ color: '#047857' }}>&quot;Ăn uống 50 nghìn&quot;</strong><br/>
-                    <strong style={{ color: '#047857' }}>&quot;Mua sách 200k&quot;</strong> (Hỏi tạo danh mục)<br/>
-                    <strong style={{ color: '#047857' }}>&quot;50 nghìn&quot;</strong> (Tự vào danh mục Khác)<br/>
-                  </p>
-                </div>
-
-                {error && <p role="alert" style={{ color: '#ef4444', fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{error}</p>}
-                {error && !isDataLoaded && <button type="button" className="btn-secondary" onClick={openAssistant}>Thử lại</button>}
-                {isHomeScreenIos && <p style={{ color: '#92400e', backgroundColor: '#fef3c7', padding: '10px 12px', borderRadius: '8px', fontSize: '13px', textAlign: 'center', marginBottom: '16px' }}>App cài trên iPhone có thể không nhận giọng được. Hãy bấm ô nhập bên dưới, rồi dùng micro của bàn phím để đọc.</p>}
-                {saved && <p role="status" style={{ color: '#047857', fontWeight: 600, fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{saved}</p>}
-                {transcript && <p style={{ textAlign: 'center', fontStyle: 'italic', color: '#4b5563', marginBottom: '16px' }}>Bạn đã nói: &quot;{transcript}&quot;</p>}
-
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    aria-label={isListening ? 'Dừng ghi âm' : isStarting ? 'Hủy bật micro' : 'Bắt đầu ghi âm'}
-                    onClick={toggleListening}
-                    disabled={loading || !isDataLoaded}
-                    style={{
-                      width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: isListening ? '#ef4444' : '#d1fae5', color: isListening ? 'white' : '#10b981',
-                      border: 'none', cursor: loading || !isDataLoaded ? 'not-allowed' : 'pointer', transition: 'all 0.3s',
-                      boxShadow: isListening ? '0 0 20px rgba(239, 68, 68, 0.6)' : 'none', opacity: loading || !isDataLoaded ? 0.5 : 1
-                    }}
-                  >
-                    <Mic size={32} />
-                  </button>
-                  <p role="status" style={{ marginTop: '16px', fontSize: '14px', fontWeight: '500' }}>
-                    {loading ? 'Đang xử lý...' : isListening ? 'Đang nghe...' : isStarting ? 'Đang bật micro... Nếu trình duyệt hỏi quyền, hãy chọn Cho phép.' : 'Bấm Micro để nói'}
-                  </p>
-                </div>
-
-                <form onSubmit={submitTyped} style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                  <input
-                    value={typed}
-                    onChange={(e) => setTyped(e.target.value)}
-                    aria-label="Nhập giao dịch bằng chữ"
-                    placeholder="Hoặc nhập: ăn uống 50 nghìn"
-                    enterKeyHint="done"
-                    style={{ flex: 1, minWidth: 0, padding: '12px', fontSize: '16px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading || !isDataLoaded || !typed.trim()}
-                    style={{ padding: '12px 16px', borderRadius: '8px', border: 'none', backgroundColor: '#047857', color: 'white', fontWeight: 600, cursor: 'pointer', opacity: loading || !isDataLoaded || !typed.trim() ? 0.5 : 1 }}
-                  >
-                    Ghi
-                  </button>
-                </form>
-              </>
-            )}
-
-            {/* MÀN HÌNH HỎI XÁC NHẬN TẠO DANH MỤC */}
-            {pendingPayload && missingCategoryName && (
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-                  <AlertCircle size={48} color="#f59e0b" />
-                </div>
-                <p style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', marginBottom: '8px' }}>
-                  Danh mục &quot;{missingCategoryName}&quot; chưa tồn tại!
-                </p>
-                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px' }}>
-                  Bạn có muốn tạo danh mục mới và lưu giao dịch này không?
-                </p>
-                {error && <p role="alert" style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{error}</p>}
-                
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={() => setPendingPayload(null)}
-                    disabled={loading}
-                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: 'white', fontWeight: '600', color: '#4b5563', cursor: loading ? 'not-allowed' : 'pointer' }}
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    onClick={handleCreateCategory}
-                    disabled={loading}
-                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#10b981', fontWeight: '600', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
-                  >
-                    {loading ? 'Đang lưu...' : <><PlusCircle size={18}/> Tạo & Lưu</>}
-                  </button>
-                </div>
-              </div>
-            )}
-
+        <dialog ref={dialogRef} className="app-dialog voice-dialog" aria-label="Trợ lý giọng nói"
+          // Esc luôn đóng hộp thoại mà không lưu; chỉ chờ khi một yêu cầu lưu đang được gửi.
+          onCancel={(event) => { event.preventDefault(); closeAssistant(); }}>
+          <div className="app-dialog-header">
+            <h2>Trợ lý giọng nói</h2>
+            <button type="button" className="icon-btn" aria-label="Đóng trợ lý giọng nói" disabled={loading} onClick={closeAssistant}><X size={22} /></button>
           </div>
-        </div>
+
+          {/* MÀN HÌNH GHI ÂM CHÍNH */}
+          {!pendingPayload && !review && (
+            <>
+              <div className="voice-hint">
+                <p>Bạn có thể nói:</p>
+                <p><strong>&quot;Ăn uống 50 nghìn&quot;</strong></p>
+                <p><strong>&quot;Mua sách 200k&quot;</strong> (hỏi tạo danh mục)</p>
+                <p><strong>&quot;50 nghìn&quot;</strong> (vào danh mục Khác)</p>
+              </div>
+
+              {error && <p role="alert" className="app-dialog-error voice-center">{error}</p>}
+              {error && !isDataLoaded && <button type="button" className="btn-secondary voice-retry" onClick={openAssistant}>Thử lại</button>}
+              {isHomeScreenIos && <p className="voice-notice">App cài trên iPhone có thể không nhận giọng được. Hãy bấm ô nhập bên dưới, rồi dùng micro của bàn phím để đọc.</p>}
+              {saved && <p role="status" className="voice-saved">{saved}</p>}
+              {transcript && <p className="voice-transcript">Bạn đã nói: &quot;{transcript}&quot;</p>}
+
+              <div className="voice-mic-area">
+                <button
+                  type="button"
+                  className={`voice-mic${isListening ? ' is-listening' : ''}`}
+                  aria-label={isListening ? 'Dừng ghi âm' : isStarting ? 'Hủy bật micro' : 'Bắt đầu ghi âm'}
+                  onClick={toggleListening}
+                  disabled={loading || !isDataLoaded}
+                >
+                  <Mic size={32} />
+                </button>
+                <p role="status" className="voice-status">
+                  {loading ? 'Đang xử lý...' : isListening ? 'Đang nghe...' : isStarting ? 'Đang bật micro... Nếu trình duyệt hỏi quyền, hãy chọn Cho phép.' : 'Bấm Micro để nói'}
+                </p>
+              </div>
+
+              <form onSubmit={submitTyped} className="voice-typed">
+                <input
+                  value={typed}
+                  onChange={(e) => setTyped(e.target.value)}
+                  aria-label="Nhập giao dịch bằng chữ"
+                  placeholder="Hoặc nhập: ăn uống 50 nghìn"
+                  enterKeyHint="done"
+                />
+                <button type="submit" className="btn-primary" disabled={loading || !isDataLoaded || !typed.trim()}>Ghi</button>
+              </form>
+            </>
+          )}
+
+          {/* MÀN HÌNH XEM LẠI: chỉ lưu khi người dùng bấm Lưu */}
+          {review && (
+            <section aria-label="Kiểm tra giao dịch" className="voice-review">
+              <p className="app-dialog-text">Kiểm tra lại trước khi lưu. Nếu ứng dụng nghe nhầm, bấm Nói lại.</p>
+              <div className="voice-review-card">
+                <p className="voice-review-kind">{review.payload.kind === 'income' ? 'Khoản thu' : 'Khoản chi'}</p>
+                <p className={`voice-review-amount ${review.payload.kind === 'income' ? 'text-income' : 'text-expense'}`}>
+                  {Number(review.payload.amount).toLocaleString('vi-VN')}đ
+                </p>
+                <dl>
+                  <div><dt>Danh mục</dt><dd>{review.categoryName}</dd></div>
+                  <div><dt>{review.payload.kind === 'income' ? 'Nhận vào' : 'Nguồn chi'}</dt><dd>{reviewWallet}</dd></div>
+                  <div><dt>Ngày</dt><dd>{formatDate(review.payload.bookedOn)}</dd></div>
+                </dl>
+              </div>
+              {transcript && <p className="voice-transcript">Bạn đã nói: &quot;{transcript}&quot;</p>}
+              {error && <p role="alert" className="app-dialog-error">{error}</p>}
+              <div className="app-dialog-actions">
+                <button type="button" className="btn-secondary" disabled={loading} onClick={discardReview}>Nói lại</button>
+                <button type="button" className="btn-primary" disabled={loading} onClick={saveReview} autoFocus>{loading ? 'Đang lưu...' : saveLabel}</button>
+              </div>
+            </section>
+          )}
+
+          {/* MÀN HÌNH HỎI XÁC NHẬN TẠO DANH MỤC */}
+          {pendingPayload && missingCategoryName && (
+            <section aria-label="Tạo danh mục mới" className="voice-review">
+              <div className="voice-center"><AlertCircle size={44} className="voice-warning-icon" aria-hidden="true" /></div>
+              <p className="voice-question">Danh mục &quot;{missingCategoryName}&quot; chưa tồn tại</p>
+              <p className="app-dialog-text voice-center">
+                Tạo danh mục mới và lưu khoản {pendingPayload.kind === 'income' ? 'thu' : 'chi'} {Number(pendingPayload.amount).toLocaleString('vi-VN')}đ?
+              </p>
+              {error && <p role="alert" className="app-dialog-error">{error}</p>}
+              <div className="app-dialog-actions">
+                <button type="button" className="btn-secondary" onClick={() => setPendingPayload(null)} disabled={loading}>Hủy</button>
+                <button type="button" className="btn-primary" onClick={handleCreateCategory} disabled={loading}>
+                  {loading ? 'Đang lưu...' : <><PlusCircle size={18} aria-hidden="true" /> Tạo & Lưu</>}
+                </button>
+              </div>
+            </section>
+          )}
+        </dialog>
       )}
     </>
   );

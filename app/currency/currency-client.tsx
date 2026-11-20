@@ -32,6 +32,7 @@ export default function CurrencyClient() {
   const [loading, setLoading] = useState(true);
   const [rateError, setRateError] = useState('');
   const [historyError, setHistoryError] = useState('');
+  const [saveError, setSaveError] = useState('');
   // Tăng các số này để tải lại tỷ giá (nút làm mới) hoặc lịch sử (sau khi lưu)
   const [rateReload, setRateReload] = useState(0);
   const [historyReload, setHistoryReload] = useState(0);
@@ -100,6 +101,7 @@ export default function CurrencyClient() {
 
   const handleSaveHistory = async () => {
     if (!Number.isFinite(convertedAmount) || convertedAmount <= 0 || !activeRate || activeRate <= 0) return;
+    setSaveError('');
     try {
       // Gọi API POST để lưu
       const res = await fetch('/api/currency', {
@@ -115,52 +117,53 @@ export default function CurrencyClient() {
       setHistoryReload((n) => n + 1);
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Lỗi khi lưu!');
+      // Báo lỗi ngay dưới nút, cùng kiểu với các trang khác, thay cho hộp alert của trình duyệt.
+      setSaveError(error instanceof Error ? error.message : 'Lỗi khi lưu!');
     }
   };
 
   return (
     <div className="app-page currency-page pb-24">
       <header className="page-header flex items-center gap-3 p-4 mb-2">
-        <Link href="/" className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition">
+        <Link href="/" className="p-2 bg-surface rounded-full shadow-sm hover:bg-haze transition">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="text-xl font-bold text-gray-800">Chuyển đổi tiền tệ</h1>
+        <h1 className="text-xl font-bold text-ink">Chuyển đổi tiền tệ</h1>
       </header>
 
       <div className="px-4">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-surface p-5 rounded-2xl shadow-sm border border-line">
           <div className="mb-4">
-            <label className="text-sm text-gray-500 font-medium mb-1 block">Số tiền</label>
+            <label className="text-sm text-muted font-medium mb-1 block">Số tiền</label>
             <input 
               type="number" 
               value={amount} 
               onChange={e => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full text-2xl font-bold text-gray-800 border-b-2 border-gray-200 pb-2 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full text-2xl font-bold text-ink border-b-2 border-line pb-2 focus:outline-none focus:border-primary transition-colors"
               placeholder="0"
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 mt-6 bg-gray-50 p-2 rounded-xl">
-            <select value={from} onChange={e => changeFrom(e.target.value)} className="w-full bg-transparent font-semibold text-gray-700 p-2 outline-none cursor-pointer text-center">
+          <div className="flex items-center justify-between gap-2 mt-6 bg-haze p-2 rounded-xl">
+            <select value={from} onChange={e => changeFrom(e.target.value)} className="w-full bg-transparent font-semibold text-ink p-2 outline-none cursor-pointer text-center">
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            <button onClick={handleSwap} className="p-2 bg-white rounded-full shadow-sm text-blue-500 hover:bg-blue-50 transition shrink-0">
+            <button onClick={handleSwap} className="p-2 bg-surface rounded-full shadow-sm text-primary hover:bg-haze transition shrink-0">
               <ArrowRightLeft size={20} />
             </button>
 
-            <select value={to} onChange={e => changeTo(e.target.value)} className="w-full bg-transparent font-semibold text-gray-700 p-2 outline-none cursor-pointer text-center">
+            <select value={to} onChange={e => changeTo(e.target.value)} className="w-full bg-transparent font-semibold text-ink p-2 outline-none cursor-pointer text-center">
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
-          <div className="mt-8 p-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl text-white shadow-md relative overflow-hidden">
+          <div className="mt-8 p-5 bg-primary rounded-xl text-on-primary shadow-md relative overflow-hidden">
             <div className="relative z-10">
-              <p className="text-blue-100 text-sm mb-1">Kết quả quy đổi</p>
+              <p className="text-on-primary/80 text-sm mb-1">Kết quả quy đổi</p>
               <div className="text-3xl font-bold flex items-center justify-between mb-4">
                 <span>{convertedAmount.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} {to}</span>
-                <button onClick={fetchRate} disabled={loading} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition">
+                <button onClick={fetchRate} disabled={loading} className="p-2 bg-on-primary/20 rounded-full hover:bg-on-primary/30 transition">
                   <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
                 </button>
               </div>
@@ -168,21 +171,22 @@ export default function CurrencyClient() {
               <button 
                 onClick={handleSaveHistory}
                 disabled={loading || !Number.isFinite(convertedAmount) || convertedAmount <= 0 || !activeRate || activeRate <= 0}
-                className="w-full py-2 bg-white text-blue-600 font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+                className="w-full py-2 bg-surface text-primary font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-haze transition"
               >
                 {saved ? <CheckCircle2 size={18} /> : <Save size={18} />} 
                 {saved ? 'Đã lưu!' : 'Lưu lịch sử'}
               </button>
+              {saveError && <p role="alert" className="mt-2 rounded-lg bg-surface px-3 py-2 text-sm text-danger">{saveError}</p>}
             </div>
-            <div className="absolute -bottom-6 -right-6 text-blue-400 opacity-30">
+            <div className="absolute -bottom-6 -right-6 text-on-primary opacity-20">
               <ArrowRightLeft size={120} />
             </div>
           </div>
 
-          <div className="mt-6 text-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+          <div className="mt-6 text-center bg-haze p-3 rounded-lg border border-line">
             {isEditingRate ? (
               <div className="flex items-center justify-center gap-2">
-                <span className="text-sm text-gray-600">1 {from} =</span>
+                <span className="text-sm text-muted">1 {from} =</span>
                 <input 
                   type="number" 
                   autoFocus
@@ -197,18 +201,18 @@ export default function CurrencyClient() {
                       setIsEditingRate(false);
                     }
                   }}
-                  className="w-32 p-1 text-center font-bold text-blue-600 border-b-2 border-blue-500 outline-none bg-transparent"
+                  className="w-32 p-1 text-center font-bold text-primary border-b-2 border-primary outline-none bg-transparent"
                 />
-                <span className="text-sm text-gray-600">{to}</span>
+                <span className="text-sm text-muted">{to}</span>
               </div>
             ) : (
               <p 
-                className="text-sm text-gray-600 cursor-pointer hover:text-blue-500 transition"
+                className="text-sm text-muted cursor-pointer hover:text-primary transition"
                 onClick={() => setIsEditingRate(true)}
               >
-                1 {from} = <span className="font-bold text-blue-600 border-b border-dashed border-blue-400">
+                1 {from} = <span className="font-bold text-primary border-b border-dashed border-primary">
                   {activeRate ? activeRate.toLocaleString('vi-VN', { maximumFractionDigits: 4 }) : '...'}
-                </span> {to} <span className="text-xs text-gray-400 ml-1">(Sửa)</span>
+                </span> {to} <span className="text-xs text-muted ml-1">(Sửa)</span>
               </p>
             )}
           </div>
@@ -216,25 +220,25 @@ export default function CurrencyClient() {
         </div>
 
         <div className="mt-6">
-          <h2 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-ink mb-3 flex items-center gap-2">
             <Clock size={16} /> Lịch sử gần đây
           </h2>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
+          <div className="bg-surface rounded-xl shadow-sm border border-line overflow-hidden divide-y divide-line">
             {historyError ? <p role="alert" className="p-4">{historyError}</p> : history.length === 0 ? (
-              <p className="p-4 text-center text-sm text-gray-500">Chưa có lịch sử quy đổi.</p>
+              <p className="p-4 text-center text-sm text-muted">Chưa có lịch sử quy đổi.</p>
             ) : (
               history.map((item) => (
                 <div key={item.id} className="p-3 flex justify-between items-center text-sm">
                   <div>
-                    <p className="font-semibold text-gray-800">
+                    <p className="font-semibold text-ink">
                       {Number(item.amount).toLocaleString('vi-VN')} {item.from_currency}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted">
                       Tỷ giá: {Number(item.rate_used).toLocaleString('vi-VN')}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-blue-600">
+                    <p className="font-bold text-primary">
                       {Number(item.result).toLocaleString('vi-VN')} {item.to_currency}
                     </p>
                   </div>

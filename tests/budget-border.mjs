@@ -3,7 +3,7 @@ import { chromium } from 'playwright';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const browser = await chromium.launch({ channel: 'msedge' });
+const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge' });
 try {
     const page = await browser.newPage();
     let usage = 50;
@@ -22,7 +22,7 @@ try {
             await card.waitFor();
             const box = await card.boundingBox();
             assert.ok(box.height < 215, `Compact card at ${width}px, ${usage}%`);
-            assert.equal(await card.locator('.budget-border-fill').evaluate(el => getComputedStyle(el).stroke), usage >= 100 ? 'rgb(196, 50, 50)' : 'rgb(32, 131, 75)');
+            assert.equal(await card.locator('.budget-border-fill').evaluate(el => getComputedStyle(el).stroke), usage >= 100 ? 'rgb(198, 40, 40)' : 'rgb(20, 117, 78)');
             assert.equal(await card.locator('.budget-border-fill').getAttribute('stroke-dasharray'), `${Math.min(100, usage)} 100`);
             assert.equal(await card.getByRole('progressbar').getAttribute('aria-valuetext'), `${usage}%`);
             assert.equal(await page.locator('progress').count(), 0);

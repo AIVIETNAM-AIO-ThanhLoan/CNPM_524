@@ -133,10 +133,13 @@ export async function browserCoreChecks({ origin, admin, check }) {
         await page.goto(`${origin}/transactions/new`); await fillTransaction('Keep at logout', '444'); await waitEntries(1);
         const logoutKey = (await entries())[0].requestKey;
         await page.goto(`${origin}/profile`);
-        await Promise.all([page.waitForEvent('dialog').then((dialog) => dialog.dismiss()), page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()]);
+        await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+        // Hộp xác nhận chung của ứng dụng (không còn dùng window.confirm).
+        await page.getByRole('dialog', { name: 'Đăng xuất khi còn giao dịch chưa gửi?' }).getByRole('button', { name: 'Ở lại', exact: true }).click();
         await until(() => page.getByRole('button', { name: 'Đăng xuất', exact: true }).isEnabled(), 'Logout cancellation completes');
         check((await (await context.request.get(`${origin}/api/auth/me`)).json()).user.id === userId, 'Dismissing the pending-entry warning cancels logout');
-        await Promise.all([page.waitForEvent('dialog').then((dialog) => dialog.accept()), page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()]);
+        await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+        await page.getByRole('dialog', { name: 'Đăng xuất khi còn giao dịch chưa gửi?' }).getByRole('button', { name: 'Đăng xuất', exact: true }).click();
         await page.getByText('Bạn chưa đăng nhập', { exact: true }).waitFor();
         check((await entries()).some((item) => item.requestKey === logoutKey), 'Confirmed logout retains unsent entries on the device');
         await page.unroute('**/api/transactions'); await login('pwa-a@example.com'); await waitEntries(0);

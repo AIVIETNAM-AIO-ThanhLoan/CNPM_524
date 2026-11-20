@@ -2,7 +2,7 @@
 .ledger-page .page-header { padding-left: 0; padding-right: 0; }
 .ledger-form { display: flex; flex-direction: column; gap: 16px; }
 .ledger-form label { display: flex; flex-direction: column; gap: 6px; font-weight: 500; }
-.ledger-form input, .ledger-form select, .ledger-form textarea { width: 100%; max-width: 100%; padding: 12px; border: 1px solid var(--color-line); background: white; border-radius: 8px; color: var(--color-ink); }
+.ledger-form input, .ledger-form select, .ledger-form textarea { width: 100%; max-width: 100%; padding: 12px; border: 1px solid var(--color-line); background: var(--color-surface); border-radius: 8px; color: var(--color-ink); }
 .ledger-form textarea { min-height: 96px; resize: vertical; }
 .ledger-form .review-check { flex-direction: row; align-items: flex-start; }
 .ledger-form .review-check input { width: 20px; min-width: 20px; height: 20px; }
@@ -13,7 +13,7 @@ button:disabled { opacity: 0.55; cursor: wait; }
 details summary { cursor: pointer; }
 .action-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .management-item { border-top: 1px solid var(--color-line); margin-top: 16px; padding-top: 16px; }
-.offline-status { display: flex; align-items: flex-start; gap: 12px; width: calc(100% - 32px); max-width: 608px; margin: 16px auto 0; padding: 16px; border-radius: 12px; background: #fff4d6; color: #664b12; }
+.offline-status { display: flex; align-items: flex-start; gap: 12px; width: calc(100% - 32px); max-width: 608px; margin: 16px auto 0; padding: 16px; border-radius: 12px; background: var(--color-warning-soft); color: var(--color-warning); }
 .offline-status > svg { flex: none; margin-top: 2px; }
 .offline-status strong { font-size: 16px; }
 .offline-status p { margin-top: 4px; font-size: 14px; line-height: 1.6; }
@@ -58,7 +58,7 @@ details[open] summary { margin-bottom: 16px; }
 
 .offline-sections { display: flex; flex-wrap: wrap; gap: 8px; }
 .offline-sections button { min-height: 44px; padding: 8px 14px; font-size: 16px; flex: none; }
-.offline-sections button[aria-current="page"] { background: var(--color-primary); color: white; }
+.offline-sections button[aria-current="page"] { background: var(--color-primary); color: var(--color-on-primary); }
 .offline-home .card { padding: 16px; min-width: 0; }
 .offline-saved { color: var(--color-muted); line-height: 1.6; font-size: 14px; }
 .offline-home .offline-wallets li { font-variant-numeric: tabular-nums; }

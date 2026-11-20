@@ -1,21 +1,56 @@
 @import "tailwindcss";
 
-/* Bảng màu thương hiệu. Tailwind tạo sẵn class như bg-burgundy, text-wine... */
+/* Bảng màu chung. Mọi màu trong CSS và component phải lấy từ các biến này, không ghi mã màu trực tiếp.
+   Tailwind tạo sẵn class tương ứng: text-ink, bg-surface, text-income... Các chủ đề trong themes.css ghi đè nhóm màu chủ đạo. */
 @theme {
   --color-ink: #0b2f4f; /* Tiêu đề, chữ chính */
-  --color-brand: #3c98e6; /* Xanh nước biển nhạt: màu chủ đạo, tab đang chọn */
+  --color-primary: #0b5cad; /* Màu chủ đạo: nút chính, tab đang chọn */
+  --color-brand: #3c98e6; /* Màu chủ đạo nhạt hơn */
   --color-sky: #5bb0e8; /* Điểm nhấn phụ, thanh tiến độ */
   --color-sky-soft: #9fd3f2; /* Điểm nhấn nhạt cho biểu đồ */
   --color-frost: #dceefa; /* Nền icon, badge nhạt */
   --color-haze: #eaf4fb; /* Vùng chức năng nền nhạt */
   --color-muted: #5f7385; /* Chữ phụ */
   --color-line: #d6e6f2; /* Đường kẻ, viền */
-  --color-danger: #c62828; /* Lỗi */
+  --color-surface: #ffffff; /* Nền thẻ, ô nhập, hộp thoại */
+  --color-on-primary: #ffffff; /* Chữ và icon đặt trên nền màu chủ đạo */
+  /* Màu theo ý nghĩa, giữ nguyên ở mọi chủ đề */
+  --color-income: #14754e; /* Khoản thu */
+  --color-income-soft: #e3f3ea;
+  --color-expense: #b53c1b; /* Khoản chi */
+  --color-expense-soft: #fbe9e3;
+  --color-danger: #c62828; /* Lỗi, thao tác nguy hiểm */
+  --color-danger-soft: #fdecea;
+  --color-warning: #664b12; /* Cảnh báo, trạng thái ngoại tuyến */
+  --color-warning-soft: #fff4d6;
+  --color-highlight: #b7791f; /* Đánh dấu: ngày hôm nay, giá vàng */
+  --color-highlight-soft: #fff3b0;
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Khai báo lại ngoài @theme để biến luôn có mặt, kể cả khi chỉ được dùng trong các file CSS riêng. */
+:root {
+  --color-surface: #ffffff;
+  --color-on-primary: #ffffff;
+  --color-line: #d6e6f2;
+  --color-income: #14754e;
+  --color-income-soft: #e3f3ea;
+  --color-expense: #b53c1b;
+  --color-expense-soft: #fbe9e3;
+  --color-danger: #c62828;
+  --color-danger-soft: #fdecea;
+  --color-warning: #664b12;
+  --color-warning-soft: #fff4d6;
+  --color-highlight: #b7791f;
+  --color-highlight-soft: #fff3b0;
+  --shadow-sm: 0 1px 4px color-mix(in srgb, var(--color-ink) 8%, transparent);
+  --shadow-md: 0 8px 24px color-mix(in srgb, var(--color-ink) 10%, transparent);
+  --shadow-lg: 0 20px 60px color-mix(in srgb, var(--color-ink) 15%, transparent);
+  --color-backdrop: color-mix(in srgb, var(--color-ink) 40%, transparent);
+}
+
 body {
-  background: #ffffff;
+  background: var(--color-surface);
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
@@ -30,7 +65,7 @@ body {
 
 .page-header {
   padding: 20px 16px;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-line);
 }
 
@@ -63,11 +98,11 @@ body {
 }
 
 .text-income {
-  color: #1f9d6b;
+  color: var(--color-income);
 }
 
 .text-expense {
-  color: #e4572e;
+  color: var(--color-expense);
 }
 
 /* Nhóm nút chọn (Tháng/Ngày, Tuần/Tháng) */
@@ -91,7 +126,7 @@ body {
 
 .segmented-btn.active {
   background-color: var(--color-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 /* Nút hành động */
@@ -114,12 +149,12 @@ body {
 .btn-primary {
   border: none;
   background-color: var(--color-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .btn-secondary {
   border: 1px solid var(--color-brand);
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   color: var(--color-brand);
 }
 
@@ -151,7 +186,7 @@ body {
   padding: 14px 12px;
   border: 1px dashed var(--color-brand);
   border-radius: 12px;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   color: var(--color-ink);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 18px;
@@ -179,8 +214,8 @@ body {
   .page-header > a { display: inline-flex; align-items: center; min-height: 44px; }
   :is(.btn-primary, .btn-secondary) { text-align: center; overflow-wrap: anywhere; }
   :is(.app-page, .tx-page, .auth-container, .chat-page, .notif-page) :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
-  .text-income { color: #14754e; }
-  .text-expense { color: #b53c1b; }
+  .text-income { color: var(--color-income); }
+  .text-expense { color: var(--color-expense); }
   .segmented-btn.active, .btn-primary, .auth-submit { background-color: var(--color-primary); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -200,12 +235,12 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-on-primary) 60%, transparent), transparent);
   transform: translateX(-100%);
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
-.skeleton-on-brand { background-color: rgba(255, 255, 255, 0.22); }
-.skeleton-on-brand::after { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent); }
+.skeleton-on-brand { background-color: color-mix(in srgb, var(--color-on-primary) 22%, transparent); }
+.skeleton-on-brand::after { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-on-primary) 30%, transparent), transparent); }
 @keyframes skeleton-shimmer { to { transform: translateX(100%); } }
 .skeleton-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .skeleton-stack { display: flex; flex-direction: column; gap: 12px; }
@@ -217,3 +252,24 @@ body {
 .skeleton-list { padding: 4px 0; }
 .skeleton-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
 .skeleton-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+
+/* Hộp thoại dùng chung cho cả ứng dụng (thẻ <dialog>): thêm danh mục, xác nhận, trợ lý giọng nói.
+   Cùng khung, cùng vị trí nút; phím Esc luôn đóng hộp thoại mà không gửi dữ liệu. */
+.app-dialog { width: min(440px, calc(100% - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 22px; border: none; border-radius: 20px; color: var(--color-ink); background: var(--color-surface); box-shadow: var(--shadow-lg); overflow-y: auto; }
+.app-dialog::backdrop { background: var(--color-backdrop); }
+.app-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.app-dialog-header h2 { font-size: 20px; font-weight: 650; }
+.app-dialog-text { color: var(--color-muted); margin-bottom: 20px; font-size: 14px; line-height: 1.5; }
+.app-dialog-actions { display: flex; gap: 10px; }
+.app-dialog-error { margin-bottom: 12px; color: var(--color-danger); font-size: 14px; }
+
+/* Nút cho thao tác nguy hiểm (xóa, đăng xuất khi còn dữ liệu): cùng khuôn với btn-primary nhưng màu cảnh báo. */
+.btn-danger { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; border: none; border-radius: 12px; background-color: var(--color-danger); color: var(--color-on-primary); font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-danger:disabled, .btn-primary:disabled, .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 767px) {
+  .app-dialog { width: calc(100% - 24px); max-height: calc(100dvh - 24px - env(safe-area-inset-bottom)); padding: 16px; border-radius: 14px; }
+  .app-dialog .icon-btn { min-width: 44px; min-height: 44px; }
+  .app-dialog :is(input, select) { font-size: 16px; min-height: 48px; }
+  .app-dialog button { min-height: 44px; }
+}

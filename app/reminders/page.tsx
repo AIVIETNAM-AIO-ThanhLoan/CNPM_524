@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import BottomNav from '../components/BottomNav';
+import { askConfirm } from '../components/ConfirmDialog';
 import { formatDate, requestJson, today, type Wallet, type Category } from '../lib/client-api';
 import { notifyFinanceUpdated } from '../lib/finance-updates';
 
@@ -26,8 +27,8 @@ export default function RemindersPage() {
         catch (error) { setError(error instanceof Error ? error.message : 'Không lưu được.'); }
         finally { setBusy(false); }
     }
-    function confirm(item: Recurring) {
-        if (!window.confirm(`Bạn đã thanh toán ${item.name}, ${Number(item.amount).toLocaleString('vi-VN')}đ? Chỉ xác nhận sau khi đã trả tiền.`)) return;
+    async function confirmPaid(item: Recurring) {
+        if (!await askConfirm({ title: `Bạn đã thanh toán ${item.name}?`, message: `Ứng dụng sẽ ghi khoản chi ${Number(item.amount).toLocaleString('vi-VN')}đ. Chỉ xác nhận sau khi đã trả tiền.`, confirmLabel: 'Đã thanh toán', cancelLabel: 'Chưa' })) return;
         const key = `${item.id}:${item.nextDueOn}`;
         if (!pending.current.has(key)) pending.current.set(key, crypto.randomUUID());
         void save({ id: item.id, action: 'confirm', dueOn: item.nextDueOn, requestKey: pending.current.get(key) });
@@ -51,7 +52,7 @@ export default function RemindersPage() {
             <p>Hạn {formatDate(item.nextDueOn)} ·{item.enabled ? 'Đang nhắc' : 'Đã tạm dừng'}</p>
             <div className="action-row"><button className="btn-secondary" disabled={busy} onClick={() => setEditing(item)}>Sửa</button>
                 <button className="btn-secondary" disabled={busy} onClick={() => save({ id: item.id, action: 'toggle', enabled: !item.enabled })}>{item.enabled ? 'Tạm dừng' : 'Bật lại'}</button>
-                {Boolean(item.enabled) && item.nextDueOn <= today() && <button className="btn-primary" disabled={busy} onClick={() => confirm(item)}>Xác nhận đã thanh toán</button>}</div>
+                {Boolean(item.enabled) && item.nextDueOn <= today() && <button className="btn-primary" disabled={busy} onClick={() => void confirmPaid(item)}>Xác nhận đã thanh toán</button>}</div>
         </article>)}
         <BottomNav />
     </main>;
