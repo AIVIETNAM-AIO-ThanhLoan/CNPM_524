@@ -46,7 +46,7 @@ Chưa chạy `test:voice` hay `test:browser`, vì `VoiceAssistant.tsx` không b�
 
 ## Chưa làm và lý do
 
-- **Tách `VoiceAssistant.tsx`** (333 dòng, khoảng 103 điểm rẽ nhánh, 27 chỗ style viết thẳng trong code). Đây là phần có rủi ro làm hỏng trợ lý giọng nói, cần chạy `npm run test:voice` trước và sau khi tách. Nên làm riêng khi còn thời gian.
+- **Tách `VoiceAssistant.tsx`**: khi rà soát file có 333 dòng và khoảng 103 điểm rẽ nhánh; sau khi merge PR #33 của `loan` file dài 390 dòng. Đây là phần có rủi ro làm hỏng trợ lý giọng nói, cần chạy `npm run test:voice` trước và sau khi tách. Nên làm riêng khi còn thời gian.
 - **Các component lớn khác:** `scan/page.tsx`, `transaction-form.tsx`, `budgets-client.tsx`, `currency-client.tsx`, `home-client.tsx`, `reports-client.tsx`.
 - **Chưa có formatter** (Prettier, Biome hoặc `.editorconfig`). Thụt lề đang lẫn 2 và 4 khoảng trắng; comment lẫn tiếng Việt và tiếng Anh.
-- **Màu cố định trong `VoiceAssistant`** không đổi theo theme người dùng chọn.
+- **Style và màu cố định trong `VoiceAssistant`** (27 style inline, mã màu hex không đổi theo theme) đã được `loan` chuyển sang `app/styles/voice.css` trong PR #33. Sau khi merge, file không còn style inline hay mã màu cố định, nên mục này không cần xử lý nữa.
