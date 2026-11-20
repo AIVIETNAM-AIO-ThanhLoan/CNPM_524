@@ -1,6 +1,10 @@
 /* global self, caches, indexedDB */
-const CACHE = 'tingting-static-v9';
+const CACHE = 'tingting-static-v10';
 let preparingOffline;
+// Chuẩn hóa một đoạn URL; gặp chuỗi % không hợp lệ thì giữ nguyên để không làm hỏng cả bước cài đặt.
+function normalizeSegment(part) {
+    try { return encodeURIComponent(decodeURIComponent(part)); } catch { return part; }
+}
 function prepareOffline() {
     if (preparingOffline) return preparingOffline;
     preparingOffline = (async () => {
@@ -8,11 +12,25 @@ function prepareOffline() {
         const response = await fetch('/offline', { cache: 'reload' });
         if (!response.ok) throw new Error('Offline shell unavailable');
         const html = await response.clone().text();
-        const assets = [...html.matchAll(/(?:src|href)="([^" ]+)"/g)].map((match) => match[1].replaceAll('&amp;', '&'))
-            .filter((url) => url.startsWith('/_next/static/'));
-        await Promise.all([...new Set([...assets, '/icon-192.png', '/icon-512.png'])].map(async (url) => {
-            if (!(await cache.match(url))) await cache.add(url);
-        }));
+        const assets = (source) => [...source.matchAll(/["']((?:\/_next\/)?static\/(?:chunks|media)\/[^"'\\\s<>?]+\.(?:js|css|woff2?))\\?["']/g)]
+            .map((match) => {
+                const path = match[1].startsWith('/') ? match[1] : `/_next/${match[1]}`;
+                return path.replaceAll('&amp;', '&').split('/').map(normalizeSegment).join('/');
+            });
+        const visited = new Set();
+        async function save(url) {
+            if (visited.has(url)) return;
+            visited.add(url);
+            // Dev chunks can keep their URL while their contents and dependencies change.
+            const file = await fetch(url, { cache: 'reload' });
+            if (!file.ok) throw new Error(`Offline asset unavailable: ${url}`);
+            if (url.endsWith('.js') || url.endsWith('.css')) {
+                await Promise.all(assets(await file.clone().text()).map(save));
+            }
+            await cache.put(url, file);
+        }
+        // Turbopack loaders reference additional chunks absent from the HTML script tags.
+        await Promise.all([...assets(html), '/icon-192.png', '/icon-512.png'].map(save));
         // Publish the shell only after all files needed to start it are available.
         await cache.put('/offline', response);
     })().finally(() => { preparingOffline = null; });
