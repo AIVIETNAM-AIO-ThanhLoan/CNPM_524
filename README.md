@@ -72,6 +72,8 @@ Trên máy đã được cấu hình, giữ nguyên `.env.local`; chỉ cần b�
 
 Chi tiết bảng, ERD, API, giới hạn hiện tại và cách kiểm thử: [database/README.md](database/README.md).
 
+Project requirements and proposed design: [Topic 10 — Microfinance Personal Wealth & Expense Tracker](docs/TOPIC_10_MICROFINANCE_REQUIREMENTS.md) (Google Docs snapshot imported on 2026-11-12).
+
 Scripts:
 
 - `npm run dev`: chạy môi trường phát triển
