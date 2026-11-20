@@ -22,3 +22,5 @@ export const formatDateTime = (utc: string) => {
 // Ngày lịch 'YYYY-MM-DD' (không có múi giờ) → 'DD/MM/YYYY'.
 export const formatDate = (day: string) => /^\d{4}-\d{2}-\d{2}$/.test(day) ? day.split('-').reverse().join('/') : day;
 export const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// Số tiền VND dạng '1.500.000đ'; dùng chung để mọi màn hình hiển thị giống nhau.
+export const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';

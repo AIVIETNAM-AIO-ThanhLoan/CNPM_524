@@ -3,15 +3,14 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronLeft, ChevronRight, ReceiptText, Search } from 'lucide-react';
-import { dateKey, type Transaction } from '../lib/client-api';
+import { dateKey, formatMoney, type Transaction } from '../lib/client-api';
 import { useFinance } from '../lib/use-finance';
 import BottomNav from '../components/BottomNav';
 import { Skeleton, SkeletonList } from '../components/Skeleton';
 import TransactionRevision from '../components/TransactionRevision';
 import '../styles/history.css';
 
-const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
-const monthLabel = (month: string) => `Tháng ${month.slice(5, 7)}/${month.slice(0, 4)}`;
+const monthLabel =(month: string) => `Tháng ${month.slice(5, 7)}/${month.slice(0, 4)}`;
 const shiftMonth = (month: string, delta: number) => {
     const d = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + delta, 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;

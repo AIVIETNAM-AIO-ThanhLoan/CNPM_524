@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Coins, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
+import { formatMoney } from '../lib/client-api';
 
 type GoldPrice = {
   id: number;
@@ -44,8 +45,6 @@ export default function GoldClient() {
     const interval = setInterval(refresh, 10000);
     return () => { clearInterval(interval); controller?.abort(); };
   }, [reload]);
-
-  const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 
   return (
     <div className="app-page pb-24">

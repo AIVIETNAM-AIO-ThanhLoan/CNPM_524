@@ -3,7 +3,7 @@ import VoiceAssistant from './components/VoiceAssistant';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { dateKey } from './lib/client-api';
+import { dateKey, formatMoney } from './lib/client-api';
 import { useFinance } from './lib/use-finance';
 import {
   ArrowDown,
@@ -33,8 +33,7 @@ const suggestions: { label: string; color: string; Icon?: typeof BellRing; mark?
 
 const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
-const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
-const pad = (n: number) => String(n).padStart(2, '0');
+const pad =(n: number) => String(n).padStart(2, '0');
 const monthKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
 const monthLabel = (d: Date) => `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
 const dayLabel = (d: Date) =>

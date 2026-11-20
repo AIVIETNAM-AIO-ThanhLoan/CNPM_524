@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { dateKey } from '../lib/client-api';
+import { dateKey, formatMoney } from '../lib/client-api';
 import { useFinance } from '../lib/use-finance';
 import { Skeleton, SkeletonStatus } from '../components/Skeleton';
 import {
@@ -27,8 +27,7 @@ import '../styles/reports.css';
 
 type Category = { name: string; amount: number };
 
-const formatMoney = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
-const sumOf = (items: Category[]) => items.reduce((sum, item) => sum + item.amount, 0);
+const sumOf =(items: Category[]) => items.reduce((sum, item) => sum + item.amount, 0);
 
 // Icon theo tên danh mục; danh mục khác dùng icon ví
 const ICONS: Record<string, typeof Wallet> = {
