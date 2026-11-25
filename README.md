@@ -16,7 +16,6 @@
 | Thành viên | Công việc |
 | --- | --- |
 | Anh | Giao diện, dashboard, ngân sách và biểu mẫu giao dịch |
-| Tín | API giao dịch, quy đổi tiền tệ và cảnh báo ngân sách |
 | Loan | Cơ sở dữ liệu sổ kép, xác thực, bảo mật và sao lưu |
 | Linh | Kiểm thử sổ kép, API và tích hợp CI/CD |
 
